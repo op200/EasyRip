@@ -10,27 +10,42 @@ from easyrip_log import log
 from ripper import Ripper
 
 
+os.system('title Easy Rip')
+
 try:
     ctypes.windll.user32.SetProcessDPIAware()
 except:
     log.warning("Windows DPI Aware failed")
 
-root = tk.Tk()
-root.withdraw()
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.2"
-PROJECT_URL = "https://github.com/op200/"
+PROJECT_VERSION = "0.3"
+PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
 def file_dialog():
+    tkRoot = tk.Tk()
+    tkRoot.withdraw()
     file_paths = filedialog.askopenfilenames()
-    root.destroy()
+    tkRoot.destroy()
     return file_paths
 
 
-def run_command(cmd_list: list[str]):
+def run_ripper_list(is_exit_when_runned: bool = False):
+    total = len(Ripper.ripper_list)
+    for i, ripper in enumerate(Ripper.ripper_list):
+        progress = f'{i+1} / {total} in Easy Rip'
+        log.info(progress)
+        os.system('title ' + progress)
+        ripper.run()
+    Ripper.ripper_list = []
+
+    if is_exit_when_runned:
+        sys.exit()
+
+
+def run_command(cmd_list: list[str]) -> bool:
 
     cmd_list.append('')
 
@@ -45,13 +60,21 @@ def run_command(cmd_list: list[str]):
             "Commands:\n"
             "  help\n"
             "    Show help\n"
+            "  exit\n"
+            "    Exit this program\n"
+            "  cd <string>\n"
+            "    Change current path\n"
+            "  cls / clear\n"
+            "    Clear screen\n"
             "  list\n"
             "    Show ripper list\n"
+            "  clear list\n"
+            "    Clear ripper list\n"
+            "  run\n"
+            "    Run ripper list\n"
             "  <Option>\n"
             "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
-            "    -run [<run option>]\n"
-            "      Run ripper list\n"
             "\n"
             "Options:\n"
             "  -i <string | 'fd'>\n"
@@ -78,11 +101,33 @@ def run_command(cmd_list: list[str]):
         )
 
 
-    elif cmd_list[0] == "list":
+    elif cmd_list[0] == "exit":
+        sys.exit()
 
-        print('ripper list:')
-        for ripper in Ripper.ripper_list:
-            print(f'  {ripper}')
+
+    elif cmd_list[0] == "cd":
+        os.chdir(cmd_list[1])
+
+
+    elif cmd_list[0] in ("cls", "clear") and cmd_list[1] == '':
+        if os.name == 'nt':
+            os.system('cls')
+        else:
+            os.system('clear')
+
+
+    elif cmd_list[0] == "list":
+        print(f'ripper list ({len(Ripper.ripper_list)}):')
+        for i, ripper in enumerate(Ripper.ripper_list):
+            print(f'  {i+1}.\n  {ripper}\n  {log.hr}')
+
+
+    elif cmd_list[0] == "clear" and cmd_list[1] == "list":
+        Ripper.ripper_list = []
+
+
+    elif cmd_list[0] == "run":
+        run_ripper_list(cmd_list[1] == 'exit')
 
 
     else:
@@ -106,8 +151,8 @@ def run_command(cmd_list: list[str]):
             if cmd_list[i] == '-o':
                 output_basename = cmd_list[i+1]
                 if re.search(r'[<>:"/\\|?*]', output_basename):
-                    log.error(f'Illegal character in -o {output_basename}')
-                    sys.exit()
+                    log.error(f'Illegal char in -o "{output_basename}"')
+                    return False
 
             if cmd_list[i] == '-preset':
                 preset_name = cmd_list[i+1]
@@ -125,7 +170,7 @@ def run_command(cmd_list: list[str]):
 
         if not preset_name:
             log.error("Missing -preset")
-            return
+            return False
 
         for input_pathname in input_pathname_list:
             Ripper.ripper_list.append(Ripper(
@@ -134,13 +179,10 @@ def run_command(cmd_list: list[str]):
 
 
         if is_run:
+            run_ripper_list(is_exit_when_runned)
 
-            for ripper in Ripper.ripper_list:
-                ripper.run()
-            Ripper.ripper_list = []
+    return True
 
-            if is_exit_when_runned:
-                sys.exit()
 
 
 if __name__ == "__main__":
@@ -156,5 +198,6 @@ if __name__ == "__main__":
         except:
             log.info("Manually force exit")
             sys.exit()
-        run_command(shlex.split(command))
+        if not run_command([cmd.replace('\\\\', '\\') for cmd in shlex.split(command, posix=False)]):
+            log.warning('Stop run command')
 

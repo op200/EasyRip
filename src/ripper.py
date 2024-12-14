@@ -272,9 +272,8 @@ class Ripper:
             suffix: str
 
             # 写入日志
-            hr = '———————————————————————————————————'
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'{hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n')
+                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n')
 
             # 执行
             if self.option.name == Ripper.PresetName.flac:
@@ -323,7 +322,7 @@ class Ripper:
                     break
 
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'原文件路径名："{self.input_pathname}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{hr}\n')
+                file.write(f'原文件路径名："{self.input_pathname}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
 
 
     def __init__(self, input_pathname: str, output_basename: str | None, option: Option | str, option_map: map):
@@ -341,6 +340,6 @@ class Ripper:
 
 
     def __str__(self):
-        return f'-i {self.input_pathname} -o {self.output_basename} -preset {Ripper.PresetName.enum_to_str(self.preset_name)} | option: {self.option} option_map: {self.option_map}'
+        return f'-i "{self.input_pathname}" -o "{self.output_basename}" -preset {Ripper.PresetName.enum_to_str(self.preset_name)} | option: {self.option} option_map: {self.option_map}'
 
 
