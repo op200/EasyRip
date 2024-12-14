@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.3.1"
+PROJECT_VERSION = "0.3.2"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -188,9 +188,13 @@ def run_command(cmd_list: list[str]) -> bool:
 
         option_map['pipe'] = vpy_pathname
         option_map['sub'] = subtitle_pathname
-        for input_pathname in input_pathname_list:
-            Ripper.ripper_list.append(Ripper(
-                input_pathname, output_basename, preset_name, option_map))
+        try:
+            for input_pathname in input_pathname_list:
+                Ripper.ripper_list.append(Ripper(
+                    input_pathname, output_basename, preset_name, option_map))
+        except KeyError as e:
+            log.error(f'Unsupported option: {e}')
+            return False
 
 
         if is_run:
