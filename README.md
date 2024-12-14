@@ -1,6 +1,6 @@
 # Easy Rip
 
-自用的压制脚本
+自用压制脚本
 
 ### 使用
 
@@ -8,7 +8,7 @@
 
 ### 依赖
 
-python
+Python
 ```
 pip install -U loguru
 ```
