@@ -2,6 +2,12 @@
 
 自用压制脚本
 
+### 获取
+
+在[Actions](https://github.com/op200/EasyRip/actions)中下载最新的exe
+
+或者在[Releases](https://github.com/op200/EasyRip/releases)中下载exe或包
+
 ### 使用
 
 运行`easyrip help`查看帮助
