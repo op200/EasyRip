@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.3"
+PROJECT_VERSION = "0.3.1"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -44,8 +44,12 @@ def run_ripper_list(is_exit_when_runned: bool = False):
     if is_exit_when_runned:
         sys.exit()
 
+    os.system('title End in Easy Rip')
+
 
 def run_command(cmd_list: list[str]) -> bool:
+
+    os.system('title Easy Rip')
 
     cmd_list.append('')
 
@@ -76,7 +80,7 @@ def run_command(cmd_list: list[str]) -> bool:
             "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
             "\n"
-            "Options:\n"
+            "Easy Rip options:\n"
             "  -i <string | 'fd'>\n"
             "    Input file's pathname or use file dialog\n"
             "  -o <string>\n"
@@ -98,6 +102,12 @@ def run_command(cmd_list: list[str]) -> bool:
             "      Only run\n"
             "    exit:\n"
             "      Close program when runned\n"
+            "\n"
+            "Codec options:\n"
+            "    -hwaccel <string>\n"
+            "      Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)\n"
+            "    -deinterlacing <bool 0..1>\n"
+            "      Use the filter yadif to deinterlacing\n"
         )
 
 
@@ -137,6 +147,7 @@ def run_command(cmd_list: list[str]) -> bool:
         preset_name = None
         vpy_pathname = None
         subtitle_pathname = None
+        option_map = {}
         is_run = False
         is_exit_when_runned = False
 
@@ -168,14 +179,18 @@ def run_command(cmd_list: list[str]) -> bool:
                 if cmd_list[i+1] == 'exit':
                     is_exit_when_runned = True
 
+            elif match := re.search(r'\-(.+)', cmd_list[i]):
+                option_map[match.group(1)] = cmd_list[i+1]
+
         if not preset_name:
             log.error("Missing -preset")
             return False
 
+        option_map['pipe'] = vpy_pathname
+        option_map['sub'] = subtitle_pathname
         for input_pathname in input_pathname_list:
             Ripper.ripper_list.append(Ripper(
-                input_pathname, output_basename, preset_name,
-                {'pipe': vpy_pathname, 'sub': subtitle_pathname}))
+                input_pathname, output_basename, preset_name, option_map))
 
 
         if is_run:

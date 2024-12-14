@@ -65,7 +65,7 @@ class Ripper:
     def preset_name_to_option(self, preset_name: PresetName) -> Option:
         
         if preset_name == Ripper.PresetName.flac:
-            return Ripper.Option(preset_name, r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -c copy -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -')
+            return Ripper.Option(preset_name, r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -')
 
 
         elif preset_name == Ripper.PresetName.x264sub:
@@ -281,7 +281,7 @@ class Ripper:
                 # 获取 maxlpc
                 process_get_maxlpc = subprocess.Popen([
                     'ffmpeg',
-                    '-i', self.pathname
+                    '-i', self.input_pathname
                 ],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace')
 
                 maxlpc: str
@@ -295,7 +295,9 @@ class Ripper:
 
                 # 执行
                 suffix = '.flac'
-                os.system(self.option.format.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': temp_name+suffix}))
+                cmd = self.option.format.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': temp_name+suffix})
+                log.info(cmd)
+                os.system(cmd)
 
             else:
 
@@ -308,18 +310,23 @@ class Ripper:
             output_filename = basename+suffix
             try:
                 os.rename(org_name, output_filename)
-            except FileExistsError:
-                log.error(f'文件"{output_filename}"已存在，无法重命名"{org_name}"')
+            except FileExistsError as e:
+                log.error(e)
+            except Exception as e:
+                log.error(e)
 
 
             # 写入日志
-            with open('progress.log', 'rt', encoding='utf-8') as file:
-                progress = file.readlines()
-            speed: str
-            for line in progress[::-1]:
-                if res := re.search(r'speed=(.*)', line):
-                    speed = res.group(1)
-                    break
+            try:
+                with open('progress.log', 'rt', encoding='utf-8') as file:
+                    progress = file.readlines()
+                speed: str
+                for line in progress[::-1]:
+                    if res := re.search(r'speed=(.*)', line):
+                        speed = res.group(1)
+                        break
+            except Exception as e:
+                log.error(e)
 
             with open('编码日志.log', 'at', encoding='utf-8') as file:
                 file.write(f'原文件路径名："{self.input_pathname}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
