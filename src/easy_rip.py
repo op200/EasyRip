@@ -20,7 +20,7 @@ root.withdraw()
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.1"
+PROJECT_VERSION = "0.2"
 PROJECT_URL = "https://github.com/op200/"
 
 
@@ -132,10 +132,15 @@ def run_command(cmd_list: list[str]):
                 input_pathname, output_basename, preset_name,
                 {'pipe': vpy_pathname, 'sub': subtitle_pathname}))
 
+
         if is_run:
+
             for ripper in Ripper.ripper_list:
                 ripper.run()
             Ripper.ripper_list = []
+
+            if is_exit_when_runned:
+                sys.exit()
 
 
 if __name__ == "__main__":

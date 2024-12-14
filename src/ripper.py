@@ -21,19 +21,47 @@ class Ripper:
         x265slow = enum.auto()
         x265full = enum.auto()
 
+        @staticmethod
+        def str_to_enum(name: str):
+            return {
+                'custom': Ripper.PresetName.custom,
+                'flac': Ripper.PresetName.flac,
+                'x264sub': Ripper.PresetName.x264sub,
+                'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
+                'x265fast': Ripper.PresetName.x265fast,
+                'x265slow': Ripper.PresetName.x265slow,
+                'x265full': Ripper.PresetName.x265full}[name]
+
+        @staticmethod
+        def enum_to_str(name: 'Ripper.PresetName'):
+            return {
+                Ripper.PresetName.custom: 'custom',
+                Ripper.PresetName.flac: 'flac',
+                Ripper.PresetName.x264sub: 'x264sub',
+                Ripper.PresetName.x265veryfastsub: 'x265veryfastsub',
+                Ripper.PresetName.x265fast: 'x265fast',
+                Ripper.PresetName.x265slow: 'x265slow',
+                Ripper.PresetName.x265full: 'x265full'}[name]
+
 
     class Option:
+
         def __init__(self, name: 'Ripper.PresetName', format: str):
             self.name = name
             self.format = format
+
+        def __str__(self):
+            return f'  option_name = {self.name}\n  option_format = {self.format}'
 
 
     input_pathname: str
     output_basename: str
     option: Option
     option_map: map
-    
-            
+
+    preset_name: PresetName
+
+
     def preset_name_to_option(self, preset_name: PresetName) -> Option:
         
         if preset_name == Ripper.PresetName.flac:
@@ -243,6 +271,11 @@ class Ripper:
             temp_name = f'{basename}-{datetime.now().strftime('%Y-%m-%d_%H：%M：%S')}'
             suffix: str
 
+            # 写入日志
+            hr = '———————————————————————————————————'
+            with open('编码日志.log', 'at', encoding='utf-8') as file:
+                file.write(f'{hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n')
+
             # 执行
             if self.option.name == Ripper.PresetName.flac:
 
@@ -272,7 +305,25 @@ class Ripper:
 
 
             # 将临时名重命名
-            os.rename(temp_name+suffix, basename+suffix)
+            org_name = temp_name+suffix
+            output_filename = basename+suffix
+            try:
+                os.rename(org_name, output_filename)
+            except FileExistsError:
+                log.error(f'文件"{output_filename}"已存在，无法重命名"{org_name}"')
+
+
+            # 写入日志
+            with open('progress.log', 'rt', encoding='utf-8') as file:
+                progress = file.readlines()
+            speed: str
+            for line in progress[::-1]:
+                if res := re.search(r'speed=(.*)', line):
+                    speed = res.group(1)
+                    break
+
+            with open('编码日志.log', 'at', encoding='utf-8') as file:
+                file.write(f'原文件路径名："{self.input_pathname}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{hr}\n')
 
 
     def __init__(self, input_pathname: str, output_basename: str | None, option: Option | str, option_map: map):
@@ -282,21 +333,14 @@ class Ripper:
         self.option_map = option_map
 
         if type(option) == str:
-            name = {
-                'custom': Ripper.PresetName.custom,
-                'flac': Ripper.PresetName.flac,
-                'x264sub': Ripper.PresetName.x264sub,
-                'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
-                'x265fast': Ripper.PresetName.x265fast,
-                'x265slow': Ripper.PresetName.x265slow,
-                'x265full': Ripper.PresetName.x265full}[option]
-            self.option = self.preset_name_to_option(name)
-            print('++++++', self.option)
+            self.preset_name = Ripper.PresetName.str_to_enum(option)
+            self.option = self.preset_name_to_option(self.preset_name)
         else:
+            self.preset_name = Ripper.PresetName.custom
             self.option = option
 
 
     def __str__(self):
-        return f'-i {self.input_pathname} -o '
+        return f'-i {self.input_pathname} -o {self.output_basename} -preset {Ripper.PresetName.enum_to_str(self.preset_name)} | option: {self.option} option_map: {self.option_map}'
 
 
