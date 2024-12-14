@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.3.2"
+PROJECT_VERSION = "0.3.3"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -45,6 +45,7 @@ def run_ripper_list(is_exit_when_runned: bool = False):
         sys.exit()
 
     os.system('title End in Easy Rip')
+    log.info('Run completed')
 
 
 def run_command(cmd_list: list[str]) -> bool:
@@ -74,8 +75,12 @@ def run_command(cmd_list: list[str]) -> bool:
             "    Show ripper list\n"
             "  clear list\n"
             "    Clear ripper list\n"
-            "  run\n"
-            "    Run ripper list\n"
+            "  run [<run option>]\n"
+            "    Run the ripper in the ripper list\n"
+            "    Default:\n"
+            "      Only run\n"
+            "    exit:\n"
+            "      Close program when runned\n"
             "  <Option>\n"
             "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
