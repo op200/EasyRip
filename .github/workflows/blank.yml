@@ -31,7 +31,7 @@ jobs:
         pip install -U nuitka
     - name: Building the application
       run: |
-        python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --output-dir=easyrip_nuitka_output src/easy_rip.py
+        python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --output-dir=easyrip_nuitka_output src/easyrip.py
     - name: Store the artifact
       uses: actions/upload-artifact@v4
       with:
