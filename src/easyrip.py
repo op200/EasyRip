@@ -6,7 +6,7 @@ import os
 import shlex
 import re
 
-from easy_rip_log import log
+from easyrip_log import log
 from ripper import Ripper
 
 

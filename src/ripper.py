@@ -5,7 +5,7 @@ from datetime import datetime
 import enum
 
 
-from easy_rip_log import log
+from easyrip_log import log
 
 
 class Ripper:
