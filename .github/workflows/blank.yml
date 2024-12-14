@@ -32,6 +32,9 @@ jobs:
     - name: Building the application
       run: |
         python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --output-dir=easyrip_nuitka_output src/easy_rip.py
+    - name: Rename the executable
+      run: |
+        mv easyrip_nuitka_output/easy_rip.exe easyrip_nuitka_output/easyrip.exe
     - name: Store the artifact
       uses: actions/upload-artifact@v4
       with:
