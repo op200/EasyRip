@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.3.3"
+PROJECT_VERSION = "0.4"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -82,7 +82,7 @@ def run_command(cmd_list: list[str]) -> bool:
             "    exit:\n"
             "      Close program when runned\n"
             "  <Option>\n"
-            "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-run [<run option>]]\n"
+            "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
             "\n"
             "Easy Rip options:\n"
@@ -101,6 +101,12 @@ def run_command(cmd_list: list[str]) -> bool:
             "  -sub <string>\n"
             "    It makes libass work correctly, input a subtitle pathname when you need hard subtitle\n"
             "    If you are not using it when you use hard subtitle preset, program will error\n"
+            "  -c:a <string>\n"
+            "    Audio encoder:\n"
+            "      copy\n"
+            "      libopus\n"
+            "  -b:a <string>\n"
+            "    Setting audio bitrate. Default '160k'\n"
             "  -run [<string>]\n"
             "    Run the ripper in the ripper list\n"
             "    Default:\n"
@@ -152,6 +158,8 @@ def run_command(cmd_list: list[str]) -> bool:
         preset_name = None
         vpy_pathname = None
         subtitle_pathname = None
+        audio_codec = None
+        audio_bitrate = None
         option_map = {}
         is_run = False
         is_exit_when_runned = False
@@ -179,6 +187,12 @@ def run_command(cmd_list: list[str]) -> bool:
             if cmd_list[i] == '-sub':
                 subtitle_pathname = cmd_list[i+1]
 
+            if cmd_list[i] == '-c:a':
+                audio_codec = cmd_list[i+1]
+
+            if cmd_list[i] == '-b:a':
+                audio_bitrate = cmd_list[i+1]
+
             if cmd_list[i] == '-run':
                 is_run = True
                 if cmd_list[i+1] == 'exit':
@@ -193,6 +207,8 @@ def run_command(cmd_list: list[str]) -> bool:
 
         option_map['pipe'] = vpy_pathname
         option_map['sub'] = subtitle_pathname
+        option_map['c:a'] = audio_codec
+        option_map['b:a'] = audio_bitrate
         try:
             for input_pathname in input_pathname_list:
                 Ripper.ripper_list.append(Ripper(
