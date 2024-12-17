@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.4"
+PROJECT_VERSION = "0.4.1"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -71,10 +71,14 @@ def run_command(cmd_list: list[str]) -> bool:
             "    Change current path\n"
             "  cls / clear\n"
             "    Clear screen\n"
-            "  list\n"
-            "    Show ripper list\n"
-            "  clear list\n"
-            "    Clear ripper list\n"
+            "  list <list option>\n"
+            "    Operate ripper list\n"
+            "    Default:\n"
+            "      Show ripper list\n"
+            "    clear / clean:\n"
+            "      Clear ripper list\n"
+            "    del / pop <index>:\n"
+            "      Delete a ripper from ripper list\n"
             "  run [<run option>]\n"
             "    Run the ripper in the ripper list\n"
             "    Default:\n"
@@ -138,12 +142,23 @@ def run_command(cmd_list: list[str]) -> bool:
 
 
     elif cmd_list[0] == "list":
-        print(f'ripper list ({len(Ripper.ripper_list)}):')
-        for i, ripper in enumerate(Ripper.ripper_list):
-            print(f'  {i+1}.\n  {ripper}\n  {log.hr}')
+        if cmd_list[1] in ('clear', 'clean'):
+            Ripper.ripper_list = []
+        elif cmd_list[1] in ('del', 'pop'):
+            try:
+                del Ripper.ripper_list[int(cmd_list[2])-1]
+            except Exception as e:
+                log.error(e)
+            else:
+                log.info(f'Delete the {cmd_list[2]}th ripper success')
+        else:
+            print(f'ripper list ({len(Ripper.ripper_list)}):')
+            for i, ripper in enumerate(Ripper.ripper_list):
+                print(f'  {i+1}.\n  {ripper}\n  {log.hr}')
 
 
     elif cmd_list[0] == "clear" and cmd_list[1] == "list":
+        log.warning("'clear list' is deprecated, you should use 'list clear', see 'help' for details")
         Ripper.ripper_list = []
 
 
@@ -211,6 +226,8 @@ def run_command(cmd_list: list[str]) -> bool:
         option_map['b:a'] = audio_bitrate
         try:
             for input_pathname in input_pathname_list:
+                if not os.path.exists(input_pathname):
+                    log.warning(f'The file {input_pathname} does not exist')
                 Ripper.ripper_list.append(Ripper(
                     input_pathname, output_basename, preset_name, option_map))
         except KeyError as e:

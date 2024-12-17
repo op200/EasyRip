@@ -83,7 +83,7 @@ class Ripper:
         input_suffix = os.path.splitext(self.input_pathname)[1]
         vpy_pathname = self.option_map.get('pipe')
         if sub_pathname := self.option_map.get('sub'):
-            sub_pathname = "'" +sub_pathname.replace('\\', '/').replace(':', '\\:') + "'"
+            sub_pathname: str = f"'{sub_pathname.replace('\\', '/').replace(':', '\\:')}'"
 
         if audio_encoder := self.option_map.get('c:a'):
             if input_suffix == '.vpy' or vpy_pathname:
@@ -431,6 +431,11 @@ class Ripper:
 
     def run(self, format_map: map = {}):
 
+        if not os.path.exists(self.input_pathname):
+            log.error(f'The file {self.input_pathname} does not exist')
+
+
+
         if self.option.name == Ripper.PresetName.custom:
             os.system(self.option.format.format_map(format_map))
 
@@ -442,13 +447,9 @@ class Ripper:
             temp_name = f'{basename}-{datetime.now().strftime('%Y-%m-%d_%H：%M：%S')}'
             suffix: str
 
-            # 写入日志
-            with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n')
 
 
-
-            # 执行
+            # 根据格式判断
             if self.option.name == Ripper.PresetName.flac:
 
                 # 获取 maxlpc
@@ -466,25 +467,31 @@ class Ripper:
                             maxlpc = '12'
                         break
 
-                # 执行
                 suffix = '.flac'
-                cmd = self.option.format.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': temp_name+suffix})
-                log.info(cmd)
-                os.system(cmd)
+                temp_name = temp_name+suffix
+                cmd = self.option.format.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': temp_name})
 
 
             else:
 
                 suffix = '.va.mkv' if self.option_map.get('c:a') else '.rip.mkv'
-                os.system(self.option.format.format_map({'input': self.input_pathname, 'output': temp_name+suffix}))
+                temp_name = temp_name+suffix
+                cmd = self.option.format.format_map({'input': self.input_pathname, 'output': temp_name})
+
+
+            # 执行
+            output_filename = basename+suffix
+            with open('编码日志.log', 'at', encoding='utf-8') as file:
+                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n原文件路径名："{self.input_pathname}"\n临时文件名："{temp_name}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n')
+
+            log.info(cmd)
+            os.system(cmd)
 
 
 
             # 将临时名重命名
-            org_name = temp_name+suffix
-            output_filename = basename+suffix
             try:
-                os.rename(org_name, output_filename)
+                os.rename(temp_name, output_filename)
             except FileExistsError as e:
                 log.error(e)
             except Exception as e:
@@ -495,7 +502,7 @@ class Ripper:
             try:
                 with open('progress.log', 'rt', encoding='utf-8') as file:
                     progress = file.readlines()
-                speed: str
+                speed: str = 'N/A'
                 for line in progress[::-1]:
                     if res := re.search(r'speed=(.*)', line):
                         speed = res.group(1)
@@ -504,7 +511,7 @@ class Ripper:
                 log.error(e)
 
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'原文件路径名："{self.input_pathname}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\nEncoding speed={speed}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
+                file.write(f'Encoding speed={speed}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
 
 
     def __init__(self, input_pathname: str, output_basename: str | None, option: Option | str, option_map: map):
@@ -522,6 +529,6 @@ class Ripper:
 
 
     def __str__(self):
-        return f'-i "{self.input_pathname}" -o "{self.output_basename}" -preset {Ripper.PresetName.enum_to_str(self.preset_name)} | option: {self.option} option_map: {self.option_map}'
+        return f'-i "{self.input_pathname}" -o "{self.output_basename}" -preset {Ripper.PresetName.enum_to_str(self.preset_name)}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
 
 
