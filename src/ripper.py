@@ -187,6 +187,9 @@ class Ripper:
                 'crqpoffs' : self.option_map.get('crqpoffs') or '-1',
                 'ipratio' : self.option_map.get('ipratio') or '1.4',
                 'pbratio' : self.option_map.get('pbratio') or '1.25',
+                'ctu' : self.option_map.get('ctu') or '64',
+                'min-cu-size' : self.option_map.get('min-cu-size') or self.option_map.get('mincusize') or '8',
+                'max-tu-size' : self.option_map.get('max-tu-size') or self.option_map.get('maxtusize') or '32',
 
                 # No change
                 'sao' : '0',
@@ -255,6 +258,9 @@ class Ripper:
                 'ipratio' : self.option_map.get('ipratio') or '1.4',
                 'pbratio' : self.option_map.get('pbratio') or '1.2',
                 'early-skip' : self.option_map.get('early-skip') or self.option_map.get('earlyskip') or '1',
+                'ctu' : self.option_map.get('ctu') or '64',
+                'min-cu-size' : self.option_map.get('min-cu-size') or self.option_map.get('mincusize') or '8',
+                'max-tu-size' : self.option_map.get('max-tu-size') or self.option_map.get('maxtusize') or '32',
 
                 # No change
                 'sao' : '0',
@@ -326,6 +332,9 @@ class Ripper:
                 'ipratio' : self.option_map.get('ipratio') or '1.4',
                 'pbratio' : self.option_map.get('pbratio') or '1.2',
                 'early-skip' : self.option_map.get('early-skip') or self.option_map.get('earlyskip') or '0',
+                'ctu' : self.option_map.get('ctu') or '64',
+                'min-cu-size' : self.option_map.get('min-cu-size') or self.option_map.get('mincusize') or '8',
+                'max-tu-size' : self.option_map.get('max-tu-size') or self.option_map.get('maxtusize') or '32',
 
                 # No change
                 'sao' : '0',
@@ -398,6 +407,9 @@ class Ripper:
                 'ipratio' : self.option_map.get('ipratio') or '1.43',
                 'pbratio' : self.option_map.get('pbratio') or '1.2',
                 'early-skip' : self.option_map.get('early-skip') or self.option_map.get('earlyskip') or '0',
+                'ctu' : self.option_map.get('ctu') or '64',
+                'min-cu-size' : self.option_map.get('min-cu-size') or self.option_map.get('mincusize') or '8',
+                'max-tu-size' : self.option_map.get('max-tu-size') or self.option_map.get('maxtusize') or '32',
 
                 # No change
                 'sao' : '0',

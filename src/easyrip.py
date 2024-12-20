@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.4.1"
+PROJECT_VERSION = "0.4.2"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -49,6 +49,9 @@ def run_ripper_list(is_exit_when_runned: bool = False):
 
 
 def run_command(cmd_list: list[str]) -> bool:
+
+    if len(cmd_list) == 0:
+        return True
 
     os.system('title Easy Rip')
 
