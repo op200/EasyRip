@@ -33,10 +33,10 @@ jobs:
           ${{ runner.os }}-nuitka-output-
         # 设置为true以允许跨操作系统的缓存
         enableCrossOsArchive: true
-    - name: Set up Python 3.12
+    - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: "3.12"
+        python-version: "3.13"
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
@@ -48,9 +48,9 @@ jobs:
         python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --output-dir=easyrip_nuitka_output src/easyrip.py
     - name: Create 7z archive
       run: |
-        7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z easyrip_nuitka_output\*.exe
+        7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z .\easyrip_nuitka_output\*.exe
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: easyrip_x64
-        path: easyrip.7z
+        path: ./easyrip.7z

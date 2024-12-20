@@ -20,7 +20,7 @@ except:
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.4.2"
+PROJECT_VERSION = "0.4.3"
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
@@ -48,7 +48,10 @@ def run_ripper_list(is_exit_when_runned: bool = False):
     log.info('Run completed')
 
 
-def run_command(cmd_list: list[str]) -> bool:
+def run_command(cmd_list: list[str] | str) -> bool:
+
+    if type(cmd_list) == str:
+        cmd_list = [cmd_list]
 
     if len(cmd_list) == 0:
         return True
@@ -68,6 +71,8 @@ def run_command(cmd_list: list[str]) -> bool:
             "Commands:\n"
             "  help\n"
             "    Show help\n"
+            "  $ <code>\n"
+            "    Run code directly from the internal environment\n"
             "  exit\n"
             "    Exit this program\n"
             "  cd <string>\n"
@@ -127,6 +132,14 @@ def run_command(cmd_list: list[str]) -> bool:
             "    -deinterlacing <bool 0..1>\n"
             "      Use the filter yadif to deinterlacing\n"
         )
+
+
+    elif cmd_list[0][0] == "$":
+        try:
+            exec(' '.join(cmd_list)[1:].lstrip().replace(r"\N","\n"))
+        except Exception as e:
+            log.error("Your input command has error:")
+            print(repr(e))
 
 
     elif cmd_list[0] == "exit":
