@@ -10,18 +10,19 @@ from easyrip_log import log
 from ripper import Ripper
 
 
-os.system('title Easy Rip')
+
+PROJECT_NAME = "Easy Rip"
+PROJECT_VERSION = "0.4.4"
+PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
+PROJECT_URL = "https://github.com/op200/EasyRip"
+
+
+os.system(f'title {PROJECT_TITLE}')
 
 try:
     ctypes.windll.user32.SetProcessDPIAware()
 except:
     log.warning("Windows DPI Aware failed")
-
-
-
-PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.4.3"
-PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
 def file_dialog():
@@ -35,16 +36,16 @@ def file_dialog():
 def run_ripper_list(is_exit_when_runned: bool = False):
     total = len(Ripper.ripper_list)
     for i, ripper in enumerate(Ripper.ripper_list):
-        progress = f'{i+1} / {total} in Easy Rip'
+        progress = f'{i+1} / {total} - {PROJECT_TITLE}'
         log.info(progress)
-        os.system('title ' + progress)
+        os.system(f'title {progress}')
         ripper.run()
     Ripper.ripper_list = []
 
     if is_exit_when_runned:
         sys.exit()
 
-    os.system('title End in Easy Rip')
+    os.system(f'title End - {PROJECT_TITLE}')
     log.info('Run completed')
 
 
@@ -56,7 +57,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
     if len(cmd_list) == 0:
         return True
 
-    os.system('title Easy Rip')
+    os.system(f'title {PROJECT_TITLE}')
 
     cmd_list.append('')
 
