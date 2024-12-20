@@ -4,10 +4,12 @@ on:
   push:
     paths:
       - 'src/**'
+      - '.github/workflows/blank.yml'
     branches: [ "main" ]
   pull_request:
     paths:
       - 'src/**'
+      - '.github/workflows/blank.yml'
     branches: [ "main" ]
 
 permissions:
@@ -20,6 +22,17 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+    - name: Cache nuitka output
+      uses: actions/cache@v4.2.0
+      with:
+        path: easyrip_nuitka_output
+        # 使用一个基于文件内容的键来确保当src目录下的文件发生变化时，可以触发新的缓存
+        key: ${{ runner.os }}-nuitka-output-${{ hashFiles('src/**') }}
+        # 如果主键没有命中，尝试使用旧版本的键来恢复缓存
+        restore-keys: |
+          ${{ runner.os }}-nuitka-output-
+        # 设置为true以允许跨操作系统的缓存
+        enableCrossOsArchive: true
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:
@@ -30,10 +43,14 @@ jobs:
         pip install -U loguru
         pip install -U nuitka
     - name: Building the application
+      if: steps.cache-nuitka-output.outputs.cache-hit != 'true'
       run: |
         python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --output-dir=easyrip_nuitka_output src/easyrip.py
-    - name: Store the artifact
+    - name: Create 7z archive
+      run: |
+        7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z easyrip_nuitka_output\*.exe
+    - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
-        name: easyrip
-        path: easyrip_nuitka_output/*.exe
+        name: easyrip_x64
+        path: easyrip.7z
