@@ -4,8 +4,8 @@ import re
 from datetime import datetime
 import enum
 
-
 from easyrip_log import log
+print = None
 
 
 class Ripper:
@@ -14,6 +14,7 @@ class Ripper:
 
     class PresetName(enum.Enum):
         custom = enum.auto()
+        copy = enum.auto()
         flac = enum.auto()
         x264sub = enum.auto()
         x265veryfastsub = enum.auto()
@@ -23,25 +24,33 @@ class Ripper:
 
         @staticmethod
         def str_to_enum(name: str):
-            return {
-                'custom': Ripper.PresetName.custom,
-                'flac': Ripper.PresetName.flac,
-                'x264sub': Ripper.PresetName.x264sub,
-                'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
-                'x265fast': Ripper.PresetName.x265fast,
-                'x265slow': Ripper.PresetName.x265slow,
-                'x265full': Ripper.PresetName.x265full}[name]
+            try:
+                return {
+                    'custom': Ripper.PresetName.custom,
+                    'copy': Ripper.PresetName.copy,
+                    'flac': Ripper.PresetName.flac,
+                    'x264sub': Ripper.PresetName.x264sub,
+                    'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
+                    'x265fast': Ripper.PresetName.x265fast,
+                    'x265slow': Ripper.PresetName.x265slow,
+                    'x265full': Ripper.PresetName.x265full}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.PresetName: str_to_enum: {e}")
 
         @staticmethod
         def enum_to_str(name: 'Ripper.PresetName'):
-            return {
-                Ripper.PresetName.custom: 'custom',
-                Ripper.PresetName.flac: 'flac',
-                Ripper.PresetName.x264sub: 'x264sub',
-                Ripper.PresetName.x265veryfastsub: 'x265veryfastsub',
-                Ripper.PresetName.x265fast: 'x265fast',
-                Ripper.PresetName.x265slow: 'x265slow',
-                Ripper.PresetName.x265full: 'x265full'}[name]
+            try:
+                return {
+                    Ripper.PresetName.custom: 'custom',
+                    Ripper.PresetName.copy: 'copy',
+                    Ripper.PresetName.flac: 'flac',
+                    Ripper.PresetName.x264sub: 'x264sub',
+                    Ripper.PresetName.x265veryfastsub: 'x265veryfastsub',
+                    Ripper.PresetName.x265fast: 'x265fast',
+                    Ripper.PresetName.x265slow: 'x265slow',
+                    Ripper.PresetName.x265full: 'x265full'}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.PresetName: enum_to_str: {e}")
 
     class AudioCodec(enum.Enum):
         copy = enum.auto()
@@ -49,29 +58,70 @@ class Ripper:
 
         @staticmethod
         def str_to_enum(name: str):
-            return {
-                'libopus': Ripper.AudioCodec.libopus,
-                'copy': Ripper.AudioCodec.copy}[name]
+            try:
+                return {
+                    'libopus': Ripper.AudioCodec.libopus,
+                    'copy': Ripper.AudioCodec.copy}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.AudioCodec: str_to_enum: {e}")
 
         @staticmethod
         def enum_to_str(name: 'Ripper.AudioCodec'):
-            return {
-                Ripper.AudioCodec.libopus: 'libopus',
-                Ripper.AudioCodec.copy: 'copy'}[name]
+            try:
+                return {
+                    Ripper.AudioCodec.libopus: 'libopus',
+                    Ripper.AudioCodec.copy: 'copy'}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.AudioCodec: enum_to_str: {e}")
+
+    class Muxer(enum.Enum):
+        mp4 = enum.auto()
+        mkv = enum.auto()
+
+        @staticmethod
+        def str_to_enum(name: str):
+            try:
+                return {
+                    'mp4': Ripper.Muxer.mp4,
+                    'mkv': Ripper.Muxer.mkv}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.Muxer: str_to_enum: {e}")
+
+        @staticmethod
+        def enum_to_str(name: 'Ripper.Muxer'):
+            try:
+                return {
+                    Ripper.Muxer.mp4: 'mp4',
+                    Ripper.Muxer.mkv: 'mkv'}[name]
+            except KeyError as e:
+                raise KeyError(f"Ripper.Muxer: enum_to_str: {e}")
 
 
     class Option:
 
-        def __init__(self, name: 'Ripper.PresetName', format: str):
-            self.name = name
-            self.format = format
+        preset_name: 'Ripper.PresetName'
+        encoder_format_str: str
+        audio_encoder: 'Ripper.AudioCodec | None'
+        muxer: 'Ripper.Muxer | None'
+        muxer_format_str: str
+
+        def __init__(self,
+                     preset_name: 'Ripper.PresetName', format_str: str,
+                     audio_encoder: 'Ripper.AudioCodec | None',
+                     muxer: 'Ripper.Muxer | None', muxer_format_str: str):
+            self.preset_name = preset_name
+            self.encoder_format_str = format_str
+            self.audio_encoder = audio_encoder
+            self.muxer = muxer
+            self.muxer_format_str = muxer_format_str
 
         def __str__(self):
-            return f'  option_name = {self.name}\n  option_format = {self.format}'
+            return f'  option_name = {self.preset_name}\n  option_format = {self.encoder_format_str}'
 
 
     input_pathname: str
     output_basename: str
+    output_dir: str
     option: Option
     option_map: map
 
@@ -80,21 +130,55 @@ class Ripper:
 
     def preset_name_to_option(self, preset_name: PresetName) -> Option:
 
+        # Path
         input_suffix = os.path.splitext(self.input_pathname)[1]
         vpy_pathname = self.option_map.get('pipe')
         if sub_pathname := self.option_map.get('sub'):
             sub_pathname: str = f"'{sub_pathname.replace('\\', '/').replace(':', '\\:')}'"
 
+        # Audio
         if audio_encoder := self.option_map.get('c:a'):
+            _audio_encoder_str = audio_encoder
+            audio_encoder = Ripper.AudioCodec.str_to_enum(audio_encoder)
             if input_suffix == '.vpy' or vpy_pathname:
-                audio_option = r' -i "{input}" ' + f'-map 1:a -c:a {audio_encoder} -b:a {self.option_map.get('b:a') or '160k'} '
+                audio_option = r' -i "{input}" ' + f'-map 1:a -c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
             else:
-                audio_option = f' -map 0:a -c:a {audio_encoder} -b:a {self.option_map.get('b:a') or '160k'} '
+                audio_option = f' -map 0:a -c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
         else:
             audio_option = ''
 
-        if preset_name == Ripper.PresetName.flac:
-            return Ripper.Option(preset_name, r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -')
+        # Muxer
+        if muxer := self.option_map.get('muxer'):
+            muxer = Ripper.Muxer.str_to_enum(muxer)
+            force_fps = self.option_map.get('r') or self.option_map.get('fps')
+
+            if muxer == Ripper.Muxer.mp4:
+                muxer_format_str = r' && mp4box -add "{output}" -new "{output}" && mp4fpsmod ' + (f'-r 0:{force_fps}' if force_fps else '') + r' -i "{output}"'
+
+            elif muxer == Ripper.Muxer.mkv:
+                muxer_format_str = r' && mkvpropedit "{output}" --add-track-statistics-tags && copy "{output}" "{output}.temp.mkv" && mkvmerge -o "{output}" ' + (f'--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1' if force_fps else '') + r' "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
+
+        else:
+            muxer_format_str = ''
+
+
+
+
+        if preset_name == Ripper.PresetName.custom:
+            if not (encoder_format_str := self.option_map.get('custom:format') or self.option_map.get('custom:template')):
+                log.warning('The preset custom must have custom:format or custom:template')
+                encoder_format_str = ''
+
+            else:
+                encoder_format_str: str = encoder_format_str.replace('\\34/', '"').replace('\\39/', "'").format_map(self.option_map | {'input': r'{input}', 'output': r'{output}'})
+
+
+        elif preset_name == Ripper.PresetName.copy:
+            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" ' + audio_option + r' -map 0:v -c:v copy "{output}"'
+
+
+        elif preset_name == Ripper.PresetName.flac:
+            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -'
 
 
         elif preset_name == Ripper.PresetName.x264sub:
@@ -139,13 +223,13 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                return Ripper.Option('vs264', r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                return Ripper.Option('vs264', r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
                 log.error("Missing subtitle pathname")
@@ -206,15 +290,13 @@ class Ripper:
 
 
             if os.path.splitext(self.input_pathname)[1] == '.vpy':
-
-                return Ripper.Option('vs264', r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname := self.option_map.get('pipe'):
-
-                return Ripper.Option('vs264', r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                    return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
                 log.error("Missing subtitle pathname")
@@ -283,16 +365,16 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                return Ripper.Option('vs264', r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                return Ripper.Option('vs264', r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265slow:
@@ -357,17 +439,15 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-
-                return Ripper.Option('vs264', r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-
-                return Ripper.Option('vs264', r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
             else:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265full:
@@ -432,27 +512,28 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                return Ripper.Option('vs264', r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                return Ripper.Option('vs264', r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"')
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             else:
-                return Ripper.Option(preset_name, f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"')
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
-    def run(self, format_map: map = {}):
+        return Ripper.Option(preset_name, encoder_format_str, audio_encoder, muxer, muxer_format_str)
+
+
+
+    def run(self, prep_func = lambda _: None):
 
         if not os.path.exists(self.input_pathname):
             log.error(f'The file {self.input_pathname} does not exist')
 
 
-
-        if self.option.name == Ripper.PresetName.custom:
-            os.system(self.option.format.format_map(format_map))
-
-
         else:
+
+            prep_func(self)
 
             # 生成临时名
             basename = self.output_basename
@@ -460,9 +541,15 @@ class Ripper:
             suffix: str
 
 
-
             # 根据格式判断
-            if self.option.name == Ripper.PresetName.flac:
+            if self.option.preset_name == Ripper.PresetName.custom:
+
+                suffix = f".{self.option_map.get('custom:suffix') or 'mkv'}"
+                temp_name = temp_name+suffix
+                cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname,  'output': os.path.join(self.output_dir, temp_name)})
+
+
+            elif self.option.preset_name == Ripper.PresetName.flac:
 
                 # 获取 maxlpc
                 process_get_maxlpc = subprocess.Popen([
@@ -481,29 +568,47 @@ class Ripper:
 
                 suffix = '.flac'
                 temp_name = temp_name+suffix
-                cmd = self.option.format.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': temp_name})
+                cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': os.path.join(self.output_dir, temp_name)})
 
 
             else:
 
-                suffix = '.va.mkv' if self.option_map.get('c:a') else '.rip.mkv'
-                temp_name = temp_name+suffix
-                cmd = self.option.format.format_map({'input': self.input_pathname, 'output': temp_name})
+                # 判断 muxer
+                if self.option.muxer == Ripper.Muxer.mp4:
+                    suffix = '.va.mp4' if self.option.audio_encoder else '.rip.mp4'
+                    temp_name = temp_name+suffix
+                    cmd = ' '.join((
+                        self.option.encoder_format_str,
+                        self.option.muxer_format_str
+                        )).format_map({'input': self.input_pathname, 'output': temp_name})
+
+                elif self.option.muxer == Ripper.Muxer.mkv:
+                    suffix = '.va.mkv' if self.option.audio_encoder else '.rip.mkv'
+                    temp_name = temp_name+suffix
+                    cmd = ' '.join((
+                        self.option.encoder_format_str,
+                        self.option.muxer_format_str
+                        )).format_map({'input': self.input_pathname, 'output': temp_name})
+
+                else:
+                    suffix = '.va.mkv' if self.option.audio_encoder else '.rip.mkv'
+                    temp_name = temp_name+suffix
+                    cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname, 'output': os.path.join(self.output_dir, temp_name)})
 
 
             # 执行
             output_filename = basename+suffix
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n原文件路径名："{self.input_pathname}"\n临时文件名："{temp_name}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n')
+                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n原文件路径名："{self.input_pathname}"\n输出目录："{self.output_dir}"\n临时文件名："{temp_name}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n')
 
             log.info(cmd)
-            os.system(cmd)
-
+            if os.system(cmd):
+                log.error('There have error in running')
 
 
             # 将临时名重命名
             try:
-                os.rename(temp_name, output_filename)
+                os.rename(os.path.join(self.output_dir, temp_name), os.path.join(self.output_dir, output_filename))
             except FileExistsError as e:
                 log.error(e)
             except Exception as e:
@@ -526,13 +631,14 @@ class Ripper:
                 file.write(f'Encoding speed={speed}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
 
 
-    def __init__(self, input_pathname: str, output_basename: str | None, option: Option | str, option_map: map):
+    def __init__(self, input_pathname: str, output_basename: str | None, output_dir: str | None, option: Option | str, option_map: map):
 
         self.input_pathname = input_pathname
         self.output_basename = output_basename if output_basename else os.path.splitext(os.path.basename(input_pathname))[0]
-        self.option_map = option_map
+        self.output_dir = output_dir or os.getcwd()
+        self.option_map: map = option_map
 
-        if type(option) == str:
+        if type(option) is str:
             self.preset_name = Ripper.PresetName.str_to_enum(option)
             self.option = self.preset_name_to_option(self.preset_name)
         else:

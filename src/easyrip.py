@@ -5,14 +5,15 @@ import sys
 import os
 import shlex
 import re
+from threading import Thread
 
-from easyrip_log import log
+from easyrip_log import log, print
 from ripper import Ripper
 
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "0.4.4"
+PROJECT_VERSION = "1.0"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -23,6 +24,58 @@ try:
     ctypes.windll.user32.SetProcessDPIAware()
 except:
     log.warning("Windows DPI Aware failed")
+
+
+
+def get_input_prompt():
+    return f'{os.getcwd()}> Easy Rip command>'
+
+
+def check_evn():
+
+    if os.system('ffmpeg -version > nul 2> nul'):
+        print()
+        log.warning('FFmpeg not found')
+        print(get_input_prompt(), end='')
+
+    # elif os.system('ffmpeg -version | findstr "/C:ffmpeg version 7.1-full" > nul'):
+    #     print()
+    #     log.warning('FFmpeg version is not 7.1-full')
+    #     print(get_input_prompt(), end='')
+
+
+    if os.system('flac -v > nul 2> nul'):
+        print()
+        log.warning('flac not found')
+        print(get_input_prompt(), end='')
+
+    # elif os.system('flac -v | findstr "/C:flac 1.4.3" > nul'):
+    #     print()
+    #     log.warning('flac version is not 1.4.3')
+    #     print(get_input_prompt(), end='')
+
+
+    if os.system('mp4box -version > nul 2> nul'):
+        print()
+        log.warning('MP4Box not found')
+        print(get_input_prompt(), end='')
+
+    # elif os.system('mp4box -version 2>&1 | findstr "/C:MP4Box - GPAC version 2.4" > nul'):
+    #     print()
+    #     log.warning('MP4Box version is not GPAC 2.4')
+    #     print(get_input_prompt(), end='')
+
+
+    if os.system('mkvpropedit --version > nul 2> nul'):
+        print()
+        log.warning('mkvpropedit not found')
+        print(get_input_prompt(), end='')
+
+
+    if os.system('mkvmerge --version > nul 2> nul'):
+        print()
+        log.warning('mkvmerge not found')
+        print(get_input_prompt(), end='')
 
 
 def file_dialog():
@@ -39,7 +92,11 @@ def run_ripper_list(is_exit_when_runned: bool = False):
         progress = f'{i+1} / {total} - {PROJECT_TITLE}'
         log.info(progress)
         os.system(f'title {progress}')
-        ripper.run()
+        try:
+            ripper.run()
+        except Exception as e:
+            log.error(e)
+            log.warning('Stop run ripper')
     Ripper.ripper_list = []
 
     if is_exit_when_runned:
@@ -51,7 +108,7 @@ def run_ripper_list(is_exit_when_runned: bool = False):
 
 def run_command(cmd_list: list[str] | str) -> bool:
 
-    if type(cmd_list) == str:
+    if type(cmd_list) is str:
         cmd_list = [cmd_list]
 
     if len(cmd_list) == 0:
@@ -61,7 +118,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
     cmd_list.append('')
 
-    if cmd_list[0] == "help":
+    if cmd_list[0] in ('h', 'help'):
 
         print(
             f"{PROJECT_NAME}\nVersion: {PROJECT_VERSION}\n{PROJECT_URL}\n"
@@ -70,10 +127,14 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "  You can input command or use the argument value to run\n"
             "\n"
             "Commands:\n"
-            "  help\n"
+            "  h / help\n"
             "    Show help\n"
+            "  v / version\n"
+            "    Show version\n"
             "  $ <code>\n"
             "    Run code directly from the internal environment\n"
+            "    Execute the code string directly after the $\n"
+            '    The string "\\N" will be changed to real "\\n"\n'
             "  exit\n"
             "    Exit this program\n"
             "  cd <string>\n"
@@ -95,7 +156,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "    exit:\n"
             "      Close program when runned\n"
             "  <Option>\n"
-            "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-run [<run option>]]\n"
+            "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
             "\n"
             "Easy Rip options:\n"
@@ -105,6 +166,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "    Output file's basename\n"
             "  -preset <string>\n"
             "    Preset name:\n"
+            "      custom\n"
             "      flac\n"
             "      x264sub\n"
             "      x265veryfastsub x265fast x265slow x265full\n"
@@ -120,6 +182,18 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "      libopus\n"
             "  -b:a <string>\n"
             "    Setting audio bitrate. Default '160k'\n"
+            "  -muxer <string>\n"
+            "    Muxer:\n"
+            "      mp4\n"
+            "      mkv\n"
+            "  -r / -fps <string>\n"
+            "    Setting FPS when muxing\n"
+            "  -custom:format / -custom:template <string>\n"
+            "    When -preset custom, this option will run\n"
+            "    The string \\34/ -> \", \\39/ -> '\n"
+            "  -custom:suffix <string>\n"
+            "    When -preset custom, this option will be used as a suffix for the output\n"
+            "    Default: mkv\n"
             "  -run [<string>]\n"
             "    Run the ripper in the ripper list\n"
             "    Default:\n"
@@ -135,6 +209,10 @@ def run_command(cmd_list: list[str] | str) -> bool:
         )
 
 
+    elif cmd_list[0] in ('v', 'version'):
+        print(f'{PROJECT_NAME} version {PROJECT_VERSION}')
+
+
     elif cmd_list[0][0] == "$":
         try:
             exec(' '.join(cmd_list)[1:].lstrip().replace(r"\N","\n"))
@@ -148,10 +226,13 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
 
     elif cmd_list[0] == "cd":
-        os.chdir(cmd_list[1])
+        try:
+            os.chdir(cmd_list[1])
+        except OSError as e:
+            log.error(e)
 
 
-    elif cmd_list[0] in ("cls", "clear") and cmd_list[1] == '':
+    elif cmd_list[0] in ('cls', 'clear') and cmd_list[1] == '':
         if os.name == 'nt':
             os.system('cls')
         else:
@@ -187,6 +268,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
         input_pathname_list = []
         output_basename = None
+        output_dir = None
         preset_name = None
         vpy_pathname = None
         subtitle_pathname = None
@@ -208,6 +290,12 @@ def run_command(cmd_list: list[str] | str) -> bool:
                 output_basename = cmd_list[i+1]
                 if re.search(r'[<>:"/\\|?*]', output_basename):
                     log.error(f'Illegal char in -o "{output_basename}"')
+                    return False
+
+            if cmd_list[i] == '-o:dir':
+                output_dir = cmd_list[i+1]
+                if not os.path.isdir(output_dir):
+                    log.error(f'The directory "{output_dir}" does not exist')
                     return False
 
             if cmd_list[i] == '-preset':
@@ -244,9 +332,9 @@ def run_command(cmd_list: list[str] | str) -> bool:
         try:
             for input_pathname in input_pathname_list:
                 if not os.path.exists(input_pathname):
-                    log.warning(f'The file {input_pathname} does not exist')
+                    log.warning(f'The file "{input_pathname}" does not exist')
                 Ripper.ripper_list.append(Ripper(
-                    input_pathname, output_basename, preset_name, option_map))
+                    input_pathname, output_basename, output_dir, preset_name, option_map))
         except KeyError as e:
             log.error(f'Unsupported option: {e}')
             return False
@@ -261,6 +349,8 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
 if __name__ == "__main__":
 
+    Thread(target=check_evn).start()
+
     Ripper.ripper_list = []
 
     if sys.argv[1:] != []:
@@ -268,10 +358,17 @@ if __name__ == "__main__":
 
     while True:
         try:
-            command = input(f'{os.getcwd()}> Easy Rip command>')
+            command = input(get_input_prompt())
         except:
             log.info("Manually force exit")
             sys.exit()
-        if not run_command([cmd.replace('\\\\', '\\') for cmd in shlex.split(command, posix=False)]):
+
+        try:
+            cmd_list = [cmd.strip('"').strip("'").replace('\\\\', '\\')
+                        for cmd in shlex.split(command, posix=False)]
+        except ValueError as e:
+            cmd_list = None
+            log.error(e)
+        if cmd_list == None or not run_command(cmd_list):
             log.warning('Stop run command')
 

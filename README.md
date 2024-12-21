@@ -23,4 +23,8 @@ pip install -U loguru
 ```
 ffmpeg.exe
 flac.exe
+mp4box.exe
+mp4fpsmod.exe
+mkvpropedit.exe
+mkvmerge.exe
 ```
