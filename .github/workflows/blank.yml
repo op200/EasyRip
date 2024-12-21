@@ -4,11 +4,13 @@ on:
   push:
     paths:
       - 'src/**'
+      - 'resources/*.ico'
       - '.github/workflows/blank.yml'
     branches: [ "main" ]
   pull_request:
     paths:
       - 'src/**'
+      - 'resources/*.ico'
       - '.github/workflows/blank.yml'
     branches: [ "main" ]
 
