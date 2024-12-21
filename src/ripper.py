@@ -156,7 +156,7 @@ class Ripper:
                 muxer_format_str = r' && mp4box -add "{output}" -new "{output}" && mp4fpsmod ' + (f'-r 0:{force_fps}' if force_fps else '') + r' -i "{output}"'
 
             elif muxer == Ripper.Muxer.mkv:
-                muxer_format_str = r' && mkvpropedit "{output}" --add-track-statistics-tags && copy "{output}" "{output}.temp.mkv" && mkvmerge -o "{output}" ' + (f'--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1' if force_fps else '') + r' "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
+                muxer_format_str = r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" ' + (f'--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1' if force_fps else '') + r' "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
 
         else:
             muxer_format_str = ''
