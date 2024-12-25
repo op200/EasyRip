@@ -598,8 +598,25 @@ class Ripper:
 
             # 执行
             output_filename = basename+suffix
+            _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'{log.hr}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} Start\n原文件路径名："{self.input_pathname}"\n输出目录："{self.output_dir}"\n临时文件名："{temp_name}"\n输出文件名："{output_filename}"\nOption:\n{self.option}\n')
+                file.write(f'{log.hr}\n'
+                           f'{_write_log_time} Start\n'
+                           f'原文件路径名："{self.input_pathname}"\n'
+                           f'输出目录："{self.output_dir}"\n'
+                           f'临时文件名："{temp_name}"\n'
+                           f'输出文件名："{output_filename}"\n'
+                           f'Option:\n'
+                           f'{self.option}\n')
+            with open('编码日志.html', 'at', encoding='utf-8') as file:
+                file.write(f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
+                           f'<span style="color:green;">{_write_log_time}</span> <span style="color:aqua;">Start</span><br>'
+                           f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
+                           f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
+                           f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
+                           f'输出文件名：<span style="color:darkcyan;">"{output_filename}"</span><br>'
+                           f'Option:<br>'
+                           f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
 
             log.info(cmd)
             if os.system(cmd):
@@ -627,8 +644,15 @@ class Ripper:
             except Exception as e:
                 log.error(e)
 
+            _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
             with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'Encoding speed={speed}\n{datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]} End\n{log.hr}\n')
+                file.write(f'Encoding speed={speed}\n'
+                           f'{_write_log_time} End\n'
+                           f'{log.hr}\n')
+            with open('编码日志.html', 'at', encoding='utf-8') as file:
+                file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
+                           f'<span style="color:green;">{_write_log_time}</span> <span style="color:brown;">End</span><br>'
+                           f'</div><hr style="color:brown;margin:0 0 6px;">')
 
 
     def __init__(self, input_pathname: str, output_basename: str | None, output_dir: str | None, option: Option | str, option_map: map):
