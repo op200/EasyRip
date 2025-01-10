@@ -257,9 +257,9 @@ class Ripper:
                 'tu-intra-depth' : self.option_map.get('tu-intra-depth') or self.option_map.get('tuintradepth') or '3',
                 'tu-inter-depth' : self.option_map.get('tu-inter-depth') or self.option_map.get('tuinterdepth') or '2',
                 'limit-tu' : self.option_map.get('limit-tu') or self.option_map.get('limittu') or '4',
-                'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '4',
+                'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '3',
                 'bframes' : self.option_map.get('bframes') or '16',
-                'ref' : self.option_map.get('ref') or '8',
+                'ref' : self.option_map.get('ref') or '6',
                 'rd' : self.option_map.get('rd') or '3',
                 'subme' : self.option_map.get('subme') or '5',
                 'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '0',
@@ -403,7 +403,7 @@ class Ripper:
                 'ref' : self.option_map.get('ref') or '8',
                 'rd' : self.option_map.get('rd') or '5',
                 'subme' : self.option_map.get('subme') or '7',
-                'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '0',
+                'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '1',
                 'gop-lookahead' : self.option_map.get('gop-lookahead') or self.option_map.get('goplookahead') or '14',
                 'rc-lookahead' : self.option_map.get('rc-lookahead') or self.option_map.get('rclookahead') or '250',
                 'rect' : self.option_map.get('rect') or '0',
@@ -476,7 +476,7 @@ class Ripper:
                 'ref' : self.option_map.get('ref') or '8',
                 'rd' : self.option_map.get('rd') or '5',
                 'subme' : self.option_map.get('subme') or '7',
-                'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '0',
+                'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '1',
                 'gop-lookahead' : self.option_map.get('gop-lookahead') or self.option_map.get('goplookahead') or '14',
                 'rc-lookahead' : self.option_map.get('rc-lookahead') or self.option_map.get('rclookahead') or '250',
                 'rect' : self.option_map.get('rect') or '1',
@@ -599,15 +599,15 @@ class Ripper:
             # 执行
             output_filename = basename+suffix
             _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
-            with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'{log.hr}\n'
-                           f'{_write_log_time} Start\n'
-                           f'原文件路径名："{self.input_pathname}"\n'
-                           f'输出目录："{self.output_dir}"\n'
-                           f'临时文件名："{temp_name}"\n'
-                           f'输出文件名："{output_filename}"\n'
-                           f'Option:\n'
-                           f'{self.option}\n')
+            # with open('编码日志.log', 'at', encoding='utf-8') as file:
+            #     file.write(f'{log.hr}\n'
+            #                f'{_write_log_time} Start\n'
+            #                f'原文件路径名："{self.input_pathname}"\n'
+            #                f'输出目录："{self.output_dir}"\n'
+            #                f'临时文件名："{temp_name}"\n'
+            #                f'输出文件名："{output_filename}"\n'
+            #                f'Option:\n'
+            #                f'{self.option}\n')
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
                            f'<span style="color:green;">{_write_log_time}</span> <span style="color:aqua;">Start</span><br>'
@@ -645,10 +645,10 @@ class Ripper:
                 log.error(e)
 
             _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
-            with open('编码日志.log', 'at', encoding='utf-8') as file:
-                file.write(f'Encoding speed={speed}\n'
-                           f'{_write_log_time} End\n'
-                           f'{log.hr}\n')
+            # with open('编码日志.log', 'at', encoding='utf-8') as file:
+            #     file.write(f'Encoding speed={speed}\n'
+            #                f'{_write_log_time} End\n'
+            #                f'{log.hr}\n')
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
                            f'<span style="color:green;">{_write_log_time}</span> <span style="color:brown;">End</span><br>'

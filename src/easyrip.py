@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.0.2"
+PROJECT_VERSION = "1.1"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -127,9 +127,9 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "  You can input command or use the argument value to run\n"
             "\n"
             "Commands:\n"
-            "  h / help\n"
+            "  h / help [exit]\n"
             "    Show help\n"
-            "  v / version\n"
+            "  v / version [exit]\n"
             "    Show version\n"
             "  $ <code>\n"
             "    Run code directly from the internal environment\n"
@@ -208,9 +208,15 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "      Use the filter yadif to deinterlacing\n"
         )
 
+        if cmd_list[1] == 'exit':
+            sys.exit()
+
 
     elif cmd_list[0] in ('v', 'version'):
         print(f'{PROJECT_NAME} version {PROJECT_VERSION}')
+
+        if cmd_list[1] == 'exit':
+            sys.exit()
 
 
     elif cmd_list[0][0] == "$":

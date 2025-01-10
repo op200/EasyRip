@@ -7,8 +7,7 @@ logger.remove()
 
 logger.add(sys.stderr, format="<green>{time:YYYY.MM.DD HH:mm:ss.SS}</green><blue><level> [{level}] {message}</level></blue>")
 
-# TODO: 下个版本弃用
-logger.add('编码日志.log', format="[{level}] {time:YYYY.MM.DD HH:mm:ss.SS} {message}")
+# logger.add('编码日志.log', format="[{level}] {time:YYYY.MM.DD HH:mm:ss.SS} {message}")
 
 def html_log_formatter(record):
     if record["level"].name == 'INFO':
