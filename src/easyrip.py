@@ -13,18 +13,28 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.1"
+PROJECT_VERSION = "1.2"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
 
-os.system(f'title {PROJECT_TITLE}')
 
-try:
-    ctypes.windll.user32.SetProcessDPIAware()
-except:
-    log.warning("Windows DPI Aware failed")
+def change_title(title):
+    if os.name == 'nt':
+        os.system(f'title {title}')
+    elif os.name == 'posix':
+        sys.stdout.write(f'\x1b]2;{title}\x07')
+        sys.stdout.flush()
 
+
+change_title(PROJECT_TITLE)
+
+
+if os.name == 'nt':
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except:
+        log.warning("Windows DPI Aware failed")
 
 
 def get_input_prompt():
@@ -91,7 +101,7 @@ def run_ripper_list(is_exit_when_runned: bool = False):
     for i, ripper in enumerate(Ripper.ripper_list):
         progress = f'{i+1} / {total} - {PROJECT_TITLE}'
         log.info(progress)
-        os.system(f'title {progress}')
+        change_title(progress)
         try:
             ripper.run()
         except Exception as e:
@@ -102,7 +112,7 @@ def run_ripper_list(is_exit_when_runned: bool = False):
     if is_exit_when_runned:
         sys.exit()
 
-    os.system(f'title End - {PROJECT_TITLE}')
+    change_title(f'End - {PROJECT_TITLE}')
     log.info('Run completed')
 
 
@@ -114,7 +124,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
     if len(cmd_list) == 0:
         return True
 
-    os.system(f'title {PROJECT_TITLE}')
+    change_title(PROJECT_TITLE)
 
     cmd_list.append('')
 
@@ -123,87 +133,127 @@ def run_command(cmd_list: list[str] | str) -> bool:
         print(
             f"{PROJECT_NAME}\nVersion: {PROJECT_VERSION}\n{PROJECT_URL}\n"
             "\n"
+            "\n"
             "Help:\n"
             "  You can input command or use the argument value to run\n"
             "\n"
+            "\n"
             "Commands:\n"
+            "\n"
             "  h / help [exit]\n"
             "    Show help\n"
+            "\n"
             "  v / version [exit]\n"
             "    Show version\n"
+            "\n"
             "  $ <code>\n"
             "    Run code directly from the internal environment\n"
             "    Execute the code string directly after the $\n"
             '    The string "\\N" will be changed to real "\\n"\n'
+            "\n"
             "  exit\n"
             "    Exit this program\n"
+            "\n"
             "  cd <string>\n"
             "    Change current path\n"
+            "\n"
             "  cls / clear\n"
             "    Clear screen\n"
+            "\n"
             "  list <list option>\n"
             "    Operate ripper list\n"
+            "\n"
             "    Default:\n"
             "      Show ripper list\n"
+            "\n"
             "    clear / clean:\n"
             "      Clear ripper list\n"
+            "\n"
             "    del / pop <index>:\n"
             "      Delete a ripper from ripper list\n"
+            "\n"
             "  run [<run option>]\n"
             "    Run the ripper in the ripper list\n"
+            "\n"
             "    Default:\n"
             "      Only run\n"
+            "\n"
             "    exit:\n"
             "      Close program when runned\n"
+            "\n"
             "  <Option>\n"
             "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
             "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"
             "\n"
+            "\n"
             "Easy Rip options:\n"
+            "\n"
             "  -i <string | 'fd'>\n"
             "    Input file's pathname or use file dialog\n"
+            "\n"
             "  -o <string>\n"
             "    Output file's basename\n"
+            "\n"
             "  -preset <string>\n"
+            "    Setting preset\n"
+            "\n"
             "    Preset name:\n"
             "      custom\n"
             "      flac\n"
             "      x264sub\n"
             "      x265veryfastsub x265fast x265slow x265full\n"
+            "\n"
             "  -pipe <string>\n"
             "    Select a vpy file as pipe to input, this vpy must can input\n"
             "    The input in vspipe: vspipe -a input=<input> xxx.vpy\n"
+            "\n"
             "  -sub <string>\n"
             "    It makes libass work correctly, input a subtitle pathname when you need hard subtitle\n"
             "    If you are not using it when you use hard subtitle preset, program will error\n"
+            "\n"
             "  -c:a <string>\n"
+            "    Setting audio encoder\n"
+            "\n"
             "    Audio encoder:\n"
             "      copy\n"
             "      libopus\n"
+            "\n"
             "  -b:a <string>\n"
             "    Setting audio bitrate. Default '160k'\n"
+            "\n"
             "  -muxer <string>\n"
+            "    Setting muxer\n"
+            "\n"
             "    Muxer:\n"
             "      mp4\n"
             "      mkv\n"
+            "\n"
             "  -r / -fps <string>\n"
             "    Setting FPS when muxing\n"
+            "\n"
             "  -custom:format / -custom:template <string>\n"
             "    When -preset custom, this option will run\n"
             "    The string \\34/ -> \", \\39/ -> '\n"
+            "\n"
             "  -custom:suffix <string>\n"
             "    When -preset custom, this option will be used as a suffix for the output\n"
             "    Default: mkv\n"
+            "\n"
             "  -run [<string>]\n"
             "    Run the ripper in the ripper list\n"
+            "\n"
             "    Default:\n"
             "      Only run\n"
+            "\n"
             "    exit:\n"
             "      Close program when runned\n"
             "\n"
+            "\n"
             "Codec options:\n"
+            "\n"
             "    -hwaccel <string>\n"
             "      Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)\n"
+            "\n"
             "    -deinterlacing <bool 0..1>\n"
             "      Use the filter yadif to deinterlacing\n"
         )
@@ -276,10 +326,6 @@ def run_command(cmd_list: list[str] | str) -> bool:
         output_basename = None
         output_dir = None
         preset_name = None
-        vpy_pathname = None
-        subtitle_pathname = None
-        audio_codec = None
-        audio_bitrate = None
         option_map = {}
         is_run = False
         is_exit_when_runned = False
@@ -307,34 +353,18 @@ def run_command(cmd_list: list[str] | str) -> bool:
             if cmd_list[i] == '-preset':
                 preset_name = cmd_list[i+1]
 
-            if cmd_list[i] == '-pipe':
-                vpy_pathname = cmd_list[i+1]
-
-            if cmd_list[i] == '-sub':
-                subtitle_pathname = cmd_list[i+1]
-
-            if cmd_list[i] == '-c:a':
-                audio_codec = cmd_list[i+1]
-
-            if cmd_list[i] == '-b:a':
-                audio_bitrate = cmd_list[i+1]
-
             if cmd_list[i] == '-run':
                 is_run = True
                 if cmd_list[i+1] == 'exit':
                     is_exit_when_runned = True
 
-            elif match := re.search(r'\-(.+)', cmd_list[i]):
+            elif match := re.search(r'^\-(.+)', cmd_list[i]):
                 option_map[match.group(1)] = cmd_list[i+1]
 
         if not preset_name:
             log.error("Missing -preset")
             return False
 
-        option_map['pipe'] = vpy_pathname
-        option_map['sub'] = subtitle_pathname
-        option_map['c:a'] = audio_codec
-        option_map['b:a'] = audio_bitrate
         try:
             for input_pathname in input_pathname_list:
                 if not os.path.exists(input_pathname):

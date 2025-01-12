@@ -116,14 +116,14 @@ class Ripper:
             self.muxer_format_str = muxer_format_str
 
         def __str__(self):
-            return f'  option_name = {self.preset_name}\n  option_format = {self.encoder_format_str}'
+            return f'  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str}'
 
 
     input_pathname: str
     output_basename: str
     output_dir: str
     option: Option
-    option_map: map
+    option_map: dict
 
     preset_name: PresetName
 
@@ -250,7 +250,7 @@ class Ripper:
 
                 # Default
                 'qpmin' : self.option_map.get('qpmin') or '14',
-                'qpmax' : self.option_map.get('qpmax') or '30',
+                'qpmax' : self.option_map.get('qpmax') or '28',
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '57',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '0.8',
@@ -307,7 +307,7 @@ class Ripper:
 
             _option_map = {
                 # Select
-                'crf' : self.option_map.get('crf') or '19.5',
+                'crf' : self.option_map.get('crf') or '19',
                 'psy-rd' : self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '1.8',
                 'rdoq-level' : self.option_map.get('rdoq-level') or self.option_map.get('rdoqlevel') or '2',
                 'psy-rdoq' : self.option_map.get('psy-rdoq') or self.option_map.get('psyrdoq') or '0.4',
@@ -317,7 +317,7 @@ class Ripper:
 
                 # Default
                 'qpmin' : self.option_map.get('qpmin') or '12',
-                'qpmax' : self.option_map.get('qpmax') or '30',
+                'qpmax' : self.option_map.get('qpmax') or '28',
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '57',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1',
@@ -381,7 +381,7 @@ class Ripper:
 
             _option_map = {
                 # Select
-                'crf' : self.option_map.get('crf') or '19.5',
+                'crf' : self.option_map.get('crf') or '19',
                 'psy-rd' : self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '1.8',
                 'rdoq-level' : self.option_map.get('rdoq-level') or self.option_map.get('rdoqlevel') or '2',
                 'psy-rdoq' : self.option_map.get('psy-rdoq') or self.option_map.get('psyrdoq') or '0.4',
@@ -391,7 +391,7 @@ class Ripper:
 
                 # Default
                 'qpmin' : self.option_map.get('qpmin') or '12',
-                'qpmax' : self.option_map.get('qpmax') or '30',
+                'qpmax' : self.option_map.get('qpmax') or '28',
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '57',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1',
@@ -454,7 +454,7 @@ class Ripper:
 
             _option_map = {
                 # Select
-                'crf' : self.option_map.get('crf') or '17.5',
+                'crf' : self.option_map.get('crf') or '17',
 
                 # Default
                 'psy-rd' : self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '2.2',
@@ -464,7 +464,7 @@ class Ripper:
                 'keyint' : self.option_map.get('keyint') or '266',
                 'deblock' : self.option_map.get('deblock') or '-1,-1',
                 'qpmin' : self.option_map.get('qpmin') or '3',
-                'qpmax' : self.option_map.get('qpmax') or '25',
+                'qpmax' : self.option_map.get('qpmax') or '20',
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '160',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1.2',
@@ -598,19 +598,10 @@ class Ripper:
 
             # 执行
             output_filename = basename+suffix
-            _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
-            # with open('编码日志.log', 'at', encoding='utf-8') as file:
-            #     file.write(f'{log.hr}\n'
-            #                f'{_write_log_time} Start\n'
-            #                f'原文件路径名："{self.input_pathname}"\n'
-            #                f'输出目录："{self.output_dir}"\n'
-            #                f'临时文件名："{temp_name}"\n'
-            #                f'输出文件名："{output_filename}"\n'
-            #                f'Option:\n'
-            #                f'{self.option}\n')
+            run_start_time = datetime.now()
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
-                           f'<span style="color:green;">{_write_log_time}</span> <span style="color:aqua;">Start</span><br>'
+                           f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
                            f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
                            f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
                            f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
@@ -623,9 +614,13 @@ class Ripper:
                 log.error('There have error in running')
 
 
+            # 获取体积
+            temp_name_full = os.path.join(self.output_dir, temp_name)
+            file_size = round(os.path.getsize(temp_name_full) / (1024 * 1024), 2) # MB .2f
+
             # 将临时名重命名
             try:
-                os.rename(os.path.join(self.output_dir, temp_name), os.path.join(self.output_dir, output_filename))
+                os.rename(temp_name_full, os.path.join(self.output_dir, output_filename))
             except FileExistsError as e:
                 log.error(e)
             except Exception as e:
@@ -644,23 +639,21 @@ class Ripper:
             except Exception as e:
                 log.error(e)
 
-            _write_log_time = datetime.now().strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]
-            # with open('编码日志.log', 'at', encoding='utf-8') as file:
-            #     file.write(f'Encoding speed={speed}\n'
-            #                f'{_write_log_time} End\n'
-            #                f'{log.hr}\n')
+            run_end_time = datetime.now()
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
-                           f'<span style="color:green;">{_write_log_time}</span> <span style="color:brown;">End</span><br>'
+                           f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
+                           f'Time consuming=<span style="color:darkcyan;">{run_end_time - run_start_time}</span><br>'
+                           f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
                            f'</div><hr style="color:brown;margin:0 0 6px;">')
 
 
-    def __init__(self, input_pathname: str, output_basename: str | None, output_dir: str | None, option: Option | str, option_map: map):
+    def __init__(self, input_pathname: str, output_basename: str | None, output_dir: str | None, option: Option | str, option_map: dict):
 
         self.input_pathname = input_pathname
         self.output_basename = output_basename if output_basename else os.path.splitext(os.path.basename(input_pathname))[0]
         self.output_dir = output_dir or os.getcwd()
-        self.option_map: map = option_map
+        self.option_map = option_map
 
         if type(option) is str:
             self.preset_name = Ripper.PresetName.str_to_enum(option)
@@ -671,6 +664,6 @@ class Ripper:
 
 
     def __str__(self):
-        return f'-i "{self.input_pathname}" -o "{self.output_basename}" -preset {Ripper.PresetName.enum_to_str(self.preset_name)}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
+        return f'{" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
 
 
