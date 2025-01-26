@@ -12,6 +12,8 @@
 
 运行`easyrip help`查看帮助
 
+[Wiki](https://github.com/op200/EasyRip/wiki)
+
 ### 依赖
 
 Python
