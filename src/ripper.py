@@ -190,7 +190,7 @@ class Ripper:
                 # Select
                 'crf': self.option_map.get('crf') or '21',
                 'psy-rd': self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '0.6,0.15',
-                'qcomp': self.option_map.get('qcomp') or '0.65',
+                'qcomp': self.option_map.get('qcomp') or '0.66',
                 'keyint': self.option_map.get('keyint') or '250',
                 'deblock': self.option_map.get('deblock') or '-1,-1',
 
@@ -263,8 +263,8 @@ class Ripper:
                 'me' : self.option_map.get('me') or 'hex',
                 'merange' : self.option_map.get('merange') or '57',
                 'hme' : self.option_map.get('hme') or '1',
-                'hme-search' : self.option_map.get('hme-search') or 'hex,hex,hex',
-                'hme-range' : self.option_map.get('hme-range') or '16,57,92',
+                'hme-search' : self.option_map.get('hme-search') or self.option_map.get('hmesearch') or 'hex,hex,hex',
+                'hme-range' : self.option_map.get('hme-range') or self.option_map.get('hmerange') or '16,57,92',
 
                 'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '3',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1',
@@ -348,8 +348,8 @@ class Ripper:
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '57',
                 'hme' : self.option_map.get('hme') or '1',
-                'hme-search' : self.option_map.get('hme-search') or 'umh,hex,hex',
-                'hme-range' : self.option_map.get('hme-range') or '16,57,92',
+                'hme-search' : self.option_map.get('hme-search') or self.option_map.get('hmesearch') or 'umh,hex,hex',
+                'hme-range' : self.option_map.get('hme-range') or self.option_map.get('hmerange') or '16,57,92',
 
                 'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '4',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1',
@@ -433,8 +433,8 @@ class Ripper:
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '57',
                 'hme' : self.option_map.get('hme') or '1',
-                'hme-search' : self.option_map.get('hme-search') or 'umh,hex,hex',
-                'hme-range' : self.option_map.get('hme-range') or '16,57,184',
+                'hme-search' : self.option_map.get('hme-search') or self.option_map.get('hmesearch') or 'umh,hex,hex',
+                'hme-range' : self.option_map.get('hme-range') or self.option_map.get('hmerange') or '16,57,184',
 
                 'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '4',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1',
@@ -524,8 +524,8 @@ class Ripper:
                 'me' : self.option_map.get('me') or 'umh',
                 'merange' : self.option_map.get('merange') or '160',
                 'hme' : self.option_map.get('hme') or '1',
-                'hme-search' : self.option_map.get('hme-search') or 'full,umh,hex',
-                'hme-range' : self.option_map.get('hme-range') or '16,92,320',
+                'hme-search' : self.option_map.get('hme-search') or self.option_map.get('hmesearch') or 'full,umh,hex',
+                'hme-range' : self.option_map.get('hme-range') or self.option_map.get('hmerange') or '16,92,320',
 
                 'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '4',
                 'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '1.2',
