@@ -16,7 +16,7 @@ class Ripper:
         custom = enum.auto()
         copy = enum.auto()
         flac = enum.auto()
-        x264sub = enum.auto()
+        x264slow = enum.auto()
         x265veryfastsub = enum.auto()
         x265fast2 = enum.auto()
         x265fast = enum.auto()
@@ -30,7 +30,7 @@ class Ripper:
                     'custom': Ripper.PresetName.custom,
                     'copy': Ripper.PresetName.copy,
                     'flac': Ripper.PresetName.flac,
-                    'x264sub': Ripper.PresetName.x264sub,
+                    'x264slow': Ripper.PresetName.x264slow,
                     'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
                     'x265fast2': Ripper.PresetName.x265fast2,
                     'x265fast': Ripper.PresetName.x265fast,
@@ -46,7 +46,7 @@ class Ripper:
                     Ripper.PresetName.custom: 'custom',
                     Ripper.PresetName.copy: 'copy',
                     Ripper.PresetName.flac: 'flac',
-                    Ripper.PresetName.x264sub: 'x264sub',
+                    Ripper.PresetName.x264slow: 'x264slow',
                     Ripper.PresetName.x265veryfastsub: 'x265veryfastsub',
                     Ripper.PresetName.x265fast2: 'x265fast2',
                     Ripper.PresetName.x265fast: 'x265fast',
@@ -184,11 +184,11 @@ class Ripper:
             encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -'
 
 
-        elif preset_name == Ripper.PresetName.x264sub:
+        elif preset_name == Ripper.PresetName.x264slow:
 
             _option_map = {
                 # Select
-                'crf': self.option_map.get('crf') or '24',
+                'crf': self.option_map.get('crf') or '21',
                 'psy-rd': self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '0.6,0.15',
                 'qcomp': self.option_map.get('qcomp') or '0.65',
                 'keyint': self.option_map.get('keyint') or '250',
@@ -225,6 +225,12 @@ class Ripper:
                 hwaccel = ""
 
 
+            if self.option_map.get('deinterlacing') not in ('0', None):
+                custom_vf = "-vf yadif"
+            else:
+                custom_vf = ""
+
+
             if input_suffix == '.vpy':
                 encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
 
@@ -235,98 +241,19 @@ class Ripper:
                 encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
-                log.error("Missing subtitle pathname")
-                raise Exception("Missing subtitle pathname")
-
-
-        elif preset_name == Ripper.PresetName.x265veryfastsub:
-
-            _option_map = {
-                # Select
-                'crf' : self.option_map.get('crf') or '19.5',
-                'psy-rd' : self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '1.8',
-                'rdoq-level' : self.option_map.get('rdoq-level') or self.option_map.get('rdoqlevel') or '0',
-                'psy-rdoq' : self.option_map.get('psy-rdoq') or self.option_map.get('psyrdoq') or '0.4',
-                'qcomp' : self.option_map.get('qcomp') or '0.66',
-                'keyint' : self.option_map.get('keyint') or '250',
-                'deblock' : self.option_map.get('deblock') or '0,0',
-
-                # Default
-                'qpmin' : self.option_map.get('qpmin') or '14',
-                'qpmax' : self.option_map.get('qpmax') or '28',
-
-                'me' : self.option_map.get('me') or 'umh',
-                'merange' : self.option_map.get('merange') or '57',
-                'hme' : self.option_map.get('hme') or '1',
-                'hme-search' : self.option_map.get('hme-search') or 'hex,hex,hex',
-                'hme-range' : self.option_map.get('hme-range') or '16,57,92',
-
-                'aq-mode' : self.option_map.get('aq-mode') or self.option_map.get('aqmode') or '3',
-                'aq-strength' : self.option_map.get('aq-strength') or self.option_map.get('aqstrength') or '0.8',
-
-                'tu-intra-depth' : self.option_map.get('tu-intra-depth') or self.option_map.get('tuintradepth') or '3',
-                'tu-inter-depth' : self.option_map.get('tu-inter-depth') or self.option_map.get('tuinterdepth') or '2',
-                'limit-tu' : self.option_map.get('limit-tu') or self.option_map.get('limittu') or '4',
-
-                'bframes' : self.option_map.get('bframes') or '16',
-                'ref' : self.option_map.get('ref') or '6',
-
-                'rd' : self.option_map.get('rd') or '3',
-                'subme' : self.option_map.get('subme') or '5',
-                'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '0',
-                'rc-lookahead' : self.option_map.get('rc-lookahead') or self.option_map.get('rclookahead') or '192',
-
-                'rect' : self.option_map.get('rect') or '0',
-                'amp' : self.option_map.get('amp') or '0',
-
-                'min-keyint' : self.option_map.get('min-keyint') or self.option_map.get('minkeyint') or '2',
-                'cbqpoffs' : self.option_map.get('cbqpoffs') or '-1',
-                'crqpoffs' : self.option_map.get('crqpoffs') or '-1',
-                'ipratio' : self.option_map.get('ipratio') or '1.4',
-                'pbratio' : self.option_map.get('pbratio') or '1.25',
-
-                'ctu' : self.option_map.get('ctu') or '64',
-                'min-cu-size' : self.option_map.get('min-cu-size') or self.option_map.get('mincusize') or '8',
-                'max-tu-size' : self.option_map.get('max-tu-size') or self.option_map.get('maxtusize') or '32',
-
-                # No change
-                'sao' : self.option_map.get('sao') or '0',
-                'weightb' : '1',
-                'info' : '1'
-            }
-
-            _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-            if hwaccel := self.option_map.get('hwaccel'):
-                hwaccel = f"-hwaccel {hwaccel}"
-            else:
-                hwaccel = ""
-
-
-            if os.path.splitext(self.input_pathname)[1] == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-            elif vpy_pathname := self.option_map.get('pipe'):
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-            elif sub_pathname:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
-
-            else:
-                log.error("Missing subtitle pathname")
-                raise Exception("Missing subtitle pathname")
+                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}" {custom_vf} ' + r' "{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265fast2:
 
             _option_map = {
                 # Select
-                'crf' : self.option_map.get('crf') or '19',
+                'crf' : self.option_map.get('crf') or '18',
                 'psy-rd' : self.option_map.get('psy-rd') or self.option_map.get('psyrd') or '2',
                 'rdoq-level' : self.option_map.get('rdoq-level') or self.option_map.get('rdoqlevel') or '2',
                 'psy-rdoq' : self.option_map.get('psy-rdoq') or self.option_map.get('psyrdoq') or '0',
-                'qcomp' : self.option_map.get('qcomp') or '0.66',
-                'keyint' : self.option_map.get('keyint') or '266',
+                'qcomp' : self.option_map.get('qcomp') or '0.68',
+                'keyint' : self.option_map.get('keyint') or '250',
                 'deblock' : self.option_map.get('deblock') or '-1,-1',
 
                 # Default
@@ -334,7 +261,7 @@ class Ripper:
                 'qpmax' : self.option_map.get('qpmax') or '28',
 
                 'me' : self.option_map.get('me') or 'hex',
-                'merange' : self.option_map.get('merange') or '92',
+                'merange' : self.option_map.get('merange') or '57',
                 'hme' : self.option_map.get('hme') or '1',
                 'hme-search' : self.option_map.get('hme-search') or 'hex,hex,hex',
                 'hme-range' : self.option_map.get('hme-range') or '16,57,92',
@@ -349,11 +276,11 @@ class Ripper:
                 'bframes' : self.option_map.get('bframes') or '16',
                 'ref' : self.option_map.get('ref') or '6',
 
-                'rd' : self.option_map.get('rd') or '2',
+                'rd' : self.option_map.get('rd') or '3',
                 'subme' : self.option_map.get('subme') or '5',
                 'open-gop' : self.option_map.get('open-gop') or self.option_map.get('opengop') or '0',
                 'gop-lookahead' : self.option_map.get('gop-lookahead') or self.option_map.get('goplookahead') or '0',
-                'rc-lookahead' : self.option_map.get('rc-lookahead') or self.option_map.get('rclookahead') or '180',
+                'rc-lookahead' : self.option_map.get('rc-lookahead') or self.option_map.get('rclookahead') or '192',
 
                 'rect' : self.option_map.get('rect') or '0',
                 'amp' : self.option_map.get('amp') or '0',
@@ -362,7 +289,7 @@ class Ripper:
                 'cbqpoffs' : self.option_map.get('cbqpoffs') or '-1',
                 'crqpoffs' : self.option_map.get('crqpoffs') or '-1',
                 'ipratio' : self.option_map.get('ipratio') or '1.4',
-                'pbratio' : self.option_map.get('pbratio') or '1.23',
+                'pbratio' : self.option_map.get('pbratio') or '1.25',
                 'early-skip' : self.option_map.get('early-skip') or self.option_map.get('earlyskip') or '1',
 
                 'ctu' : self.option_map.get('ctu') or '64',
