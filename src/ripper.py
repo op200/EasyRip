@@ -17,7 +17,6 @@ class Ripper:
         copy = enum.auto()
         flac = enum.auto()
         x264slow = enum.auto()
-        x265veryfastsub = enum.auto()
         x265fast2 = enum.auto()
         x265fast = enum.auto()
         x265slow = enum.auto()
@@ -31,7 +30,6 @@ class Ripper:
                     'copy': Ripper.PresetName.copy,
                     'flac': Ripper.PresetName.flac,
                     'x264slow': Ripper.PresetName.x264slow,
-                    'x265veryfastsub': Ripper.PresetName.x265veryfastsub,
                     'x265fast2': Ripper.PresetName.x265fast2,
                     'x265fast': Ripper.PresetName.x265fast,
                     'x265slow': Ripper.PresetName.x265slow,
@@ -47,7 +45,6 @@ class Ripper:
                     Ripper.PresetName.copy: 'copy',
                     Ripper.PresetName.flac: 'flac',
                     Ripper.PresetName.x264slow: 'x264slow',
-                    Ripper.PresetName.x265veryfastsub: 'x265veryfastsub',
                     Ripper.PresetName.x265fast2: 'x265fast2',
                     Ripper.PresetName.x265fast: 'x265fast',
                     Ripper.PresetName.x265slow: 'x265slow',

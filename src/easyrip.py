@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.4.1"
+PROJECT_VERSION = "1.4.2"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -200,8 +200,8 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "    Preset name:\n"
             "      custom\n"
             "      flac\n"
-            "      x264sub\n"
-            "      x265veryfastsub x265fast x265slow x265full\n"
+            "      x264slow\n"
+            "      x265fast2 x265fast x265slow x265full\n"
             "\n"
             "  -pipe <string>\n"
             "    Select a vpy file as pipe to input, this vpy must can input\n"
@@ -209,7 +209,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "\n"
             "  -sub <string>\n"
             "    It makes libass work correctly, input a subtitle pathname when you need hard subtitle\n"
-            "    If you are not using it when you use hard subtitle preset, program will error\n"
+            '    It can add multiple subtitles by "::", e.g. 01.zh-Hans.ass::01.zh-Hant.ass::01.en.srt\n'
             "\n"
             "  -c:a <string>\n"
             "    Setting audio encoder\n"
@@ -369,8 +369,34 @@ def run_command(cmd_list: list[str] | str) -> bool:
             for input_pathname in input_pathname_list:
                 if not os.path.exists(input_pathname):
                     log.warning(f'The file "{input_pathname}" does not exist')
-                Ripper.ripper_list.append(Ripper(
-                    input_pathname, output_basename, output_dir, preset_name, option_map))
+                
+                if sub_map := option_map.get('sub'):
+                    sub_map: str
+                    sub_list = sub_map.split('::')
+                    if len(sub_list) > 1:
+                        for sub_path in sub_list:
+                            option_map['sub'] = sub_path
+                            Ripper.ripper_list.append(Ripper(
+                                input_pathname,
+                                f'{output_basename}.{os.path.splitext(os.path.basename(sub_path))[0]}',
+                                output_dir,
+                                preset_name,
+                                option_map))
+                    else:
+                        option_map['sub'] = sub_list[0]
+                        Ripper.ripper_list.append(Ripper(
+                            input_pathname,
+                            output_basename,
+                            output_dir,
+                            preset_name,
+                            option_map))
+                else:
+                    Ripper.ripper_list.append(Ripper(
+                        input_pathname,
+                        output_basename,
+                        output_dir,
+                        preset_name,
+                        option_map))
         except KeyError as e:
             log.error(f'Unsupported option: {e}')
             return False
