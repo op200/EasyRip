@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.4.2"
+PROJECT_VERSION = "1.4.3"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -338,22 +338,22 @@ def run_command(cmd_list: list[str] | str) -> bool:
                 else:
                     input_pathname_list.append(cmd_list[i+1])
 
-            if cmd_list[i] == '-o':
+            elif cmd_list[i] == '-o':
                 output_basename = cmd_list[i+1]
                 if re.search(r'[<>:"/\\|?*]', output_basename):
                     log.error(f'Illegal char in -o "{output_basename}"')
                     return False
 
-            if cmd_list[i] == '-o:dir':
+            elif cmd_list[i] == '-o:dir':
                 output_dir = cmd_list[i+1]
                 if not os.path.isdir(output_dir):
                     log.error(f'The directory "{output_dir}" does not exist')
                     return False
 
-            if cmd_list[i] == '-preset':
+            elif cmd_list[i] == '-preset':
                 preset_name = cmd_list[i+1]
 
-            if cmd_list[i] == '-run':
+            elif cmd_list[i] == '-run':
                 is_run = True
                 if cmd_list[i+1] == 'exit':
                     is_exit_when_runned = True
@@ -369,19 +369,38 @@ def run_command(cmd_list: list[str] | str) -> bool:
             for input_pathname in input_pathname_list:
                 if not os.path.exists(input_pathname):
                     log.warning(f'The file "{input_pathname}" does not exist')
-                
+
                 if sub_map := option_map.get('sub'):
                     sub_map: str
-                    sub_list = sub_map.split('::')
+                    sub_list: list[str]
+                    
+                    if sub_map == 'auto':
+                        sub_list = []
+
+                        _input_basename = os.path.splitext(os.path.basename(input_pathname))
+                        while _input_basename[1] != '':
+                            _input_basename = os.path.splitext(_input_basename[0])
+                        _input_prefix: str = _input_basename[0]
+
+                        _dir = output_dir or os.getcwd()
+                        for _file_basename in os.listdir(_dir):
+                            if os.path.splitext(_file_basename)[1] in {'.ass', '.srt'} and _file_basename.startswith(f'{_input_prefix}.'):
+                                sub_list.append(os.path.join(_dir, _file_basename))
+
+                    else:
+                        sub_list = sub_map.split('::')
+
                     if len(sub_list) > 1:
                         for sub_path in sub_list:
                             option_map['sub'] = sub_path
+
                             Ripper.ripper_list.append(Ripper(
                                 input_pathname,
                                 f'{output_basename}.{os.path.splitext(os.path.basename(sub_path))[0]}',
                                 output_dir,
                                 preset_name,
                                 option_map))
+
                     else:
                         option_map['sub'] = sub_list[0]
                         Ripper.ripper_list.append(Ripper(
@@ -390,6 +409,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
                             output_dir,
                             preset_name,
                             option_map))
+
                 else:
                     Ripper.ripper_list.append(Ripper(
                         input_pathname,
@@ -397,6 +417,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
                         output_dir,
                         preset_name,
                         option_map))
+
         except KeyError as e:
             log.error(f'Unsupported option: {e}')
             return False

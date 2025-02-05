@@ -156,7 +156,7 @@ class Ripper:
                 muxer_format_str = r' && mp4box -add "{output}" -new "{output}" && mp4fpsmod ' + (f'-r 0:{force_fps}' if force_fps else '') + r' -i "{output}"'
 
             elif muxer == Ripper.Muxer.mkv:
-                muxer_format_str = r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" ' + (f'--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1' if force_fps else '') + r' "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
+                muxer_format_str = r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" ' + (f'--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1' if force_fps else '') + r' --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
 
         else:
             muxer_format_str = ''
@@ -706,7 +706,7 @@ class Ripper:
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
                            f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
-                           f'Time consuming=<span style="color:darkcyan;">{run_end_time - run_start_time}</span><br>'
+                           f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
                            f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
                            f'</div><hr style="color:brown;margin:0 0 6px;">')
 
@@ -716,7 +716,7 @@ class Ripper:
         self.input_pathname = input_pathname
         self.output_basename = output_basename if output_basename else os.path.splitext(os.path.basename(input_pathname))[0]
         self.output_dir = output_dir or os.getcwd()
-        self.option_map = option_map
+        self.option_map = option_map.copy()
 
         if type(option) is str:
             self.preset_name = Ripper.PresetName.str_to_enum(option)
@@ -727,6 +727,7 @@ class Ripper:
 
 
     def __str__(self):
+        log.info(self.option_map.get('sub'))
         return f'{" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
 
 
