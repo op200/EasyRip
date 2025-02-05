@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.4.3+1"
+PROJECT_VERSION = "1.4.3+2"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -391,7 +391,8 @@ def run_command(cmd_list: list[str] | str) -> bool:
                     else:
                         sub_list = sub_map.split('::')
 
-                    if len(sub_list) > 1:
+                    sub_list_len = len(sub_list)
+                    if sub_list_len > 1:
                         for sub_path in sub_list:
                             option_map['sub'] = sub_path
 
@@ -401,6 +402,9 @@ def run_command(cmd_list: list[str] | str) -> bool:
                                 output_dir,
                                 preset_name,
                                 option_map))
+
+                    elif sub_list_len == 0:
+                        log.warning('No subtitle file exist as -sub auto')
 
                     else:
                         option_map['sub'] = sub_list[0]
