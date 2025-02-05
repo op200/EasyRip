@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.4.3"
+PROJECT_VERSION = "1.4.3+1"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -207,9 +207,10 @@ def run_command(cmd_list: list[str] | str) -> bool:
             "    Select a vpy file as pipe to input, this vpy must can input\n"
             "    The input in vspipe: vspipe -a input=<input> xxx.vpy\n"
             "\n"
-            "  -sub <string>\n"
+            "  -sub <string | 'auto'>\n"
             "    It makes libass work correctly, input a subtitle pathname when you need hard subtitle\n"
             '    It can add multiple subtitles by "::", e.g. 01.zh-Hans.ass::01.zh-Hant.ass::01.en.srt\n'
+            "    If use 'auto', the subtitle files with the same prefix will be used\n"
             "\n"
             "  -c:a <string>\n"
             "    Setting audio encoder\n"
