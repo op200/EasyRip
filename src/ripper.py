@@ -120,7 +120,7 @@ class Ripper:
 
 
     input_pathname: str
-    output_basename: str
+    output_prefix: str
     output_dir: str
     option: Option
     option_map: dict
@@ -599,7 +599,7 @@ class Ripper:
             prep_func(self)
 
             # 生成临时名
-            basename = self.output_basename
+            basename = self.output_prefix
             temp_name = f'{basename}-{datetime.now().strftime('%Y-%m-%d_%H：%M：%S')}'
             suffix: str
 
@@ -711,10 +711,10 @@ class Ripper:
                            f'</div><hr style="color:brown;margin:0 0 6px;">')
 
 
-    def __init__(self, input_pathname: str, output_basename: str | None, output_dir: str | None, option: Option | str, option_map: dict):
+    def __init__(self, input_pathname: str, output_prefix: str | None, output_dir: str | None, option: Option | str, option_map: dict):
 
         self.input_pathname = input_pathname
-        self.output_basename = output_basename if output_basename else os.path.splitext(os.path.basename(input_pathname))[0]
+        self.output_prefix = output_prefix if output_prefix else os.path.splitext(os.path.basename(input_pathname))[0]
         self.output_dir = output_dir or os.getcwd()
         self.option_map = option_map.copy()
 
@@ -727,7 +727,6 @@ class Ripper:
 
 
     def __str__(self):
-        log.info(self.option_map.get('sub'))
-        return f'{" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
+        return f'-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} {" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
 
 

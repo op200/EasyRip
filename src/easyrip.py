@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.4.3+3"
+PROJECT_VERSION = "1.5"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -367,6 +367,10 @@ def run_command(cmd_list: list[str] | str) -> bool:
             return False
 
         try:
+            if len(input_pathname_list) == 0:
+                log.warning(f'Input file number == 0')
+                return False
+
             for input_pathname in input_pathname_list:
                 if not os.path.exists(input_pathname):
                     log.warning(f'The file "{input_pathname}" does not exist')
@@ -394,26 +398,28 @@ def run_command(cmd_list: list[str] | str) -> bool:
                     sub_list_len = len(sub_list)
                     if sub_list_len > 1:
                         for sub_path in sub_list:
-                            option_map['sub'] = sub_path
+                            _new_option_map = option_map.copy()
+                            _new_option_map['sub'] = sub_path
 
                             Ripper.ripper_list.append(Ripper(
                                 input_pathname,
                                 f'{output_basename}.{os.path.splitext(os.path.basename(sub_path))[0]}',
                                 output_dir,
                                 preset_name,
-                                option_map))
+                                _new_option_map))
 
                     elif sub_list_len == 0:
                         log.warning(f'No subtitle file exist as -sub auto when -i {input_pathname}')
 
                     else:
-                        option_map['sub'] = sub_list[0]
+                        _new_option_map = option_map.copy()
+                        _new_option_map['sub'] = sub_list[0]
                         Ripper.ripper_list.append(Ripper(
                             input_pathname,
                             output_basename,
                             output_dir,
                             preset_name,
-                            option_map))
+                            _new_option_map))
 
                 else:
                     Ripper.ripper_list.append(Ripper(
