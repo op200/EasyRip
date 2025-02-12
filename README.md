@@ -1,27 +1,31 @@
 # Easy Rip
 
-自用压制脚本
+Self-use tools  
+自用压制工具
 
-### 获取
+### Get file
 
-在[Actions](https://github.com/op200/EasyRip/actions)中下载最新的exe
+Download exe in [Actions](https://github.com/op200/EasyRip/actions)  
+在 [Actions](https://github.com/op200/EasyRip/actions) 中下载最新的 exe
 
-或者在[Releases](https://github.com/op200/EasyRip/releases)中下载exe或包
+Or download exe or bat script collection in [Releases](https://github.com/op200/EasyRip/releases)  
+或者在 [Releases](https://github.com/op200/EasyRip/releases) 中下载 exe 或 bat脚本包
 
-### 使用
+### Use
 
-运行`easyrip help`查看帮助
+运行 `easyrip`，键入 `help` 获取帮助文档  
+Run `easyrip`, input `help` to get help doc
 
 [Wiki](https://github.com/op200/EasyRip/wiki)
 
-### 依赖
+### Dependency
 
 Python
 ```
 pip install -U loguru
 ```
 
-外部
+CLI
 ```
 ffmpeg.exe
 flac.exe
@@ -30,3 +34,12 @@ mp4fpsmod.exe
 mkvpropedit.exe
 mkvmerge.exe
 ```
+
+### TODO
+
+预计后续可能加入的功能
+
+* Web 端控制面板
+* 弃用 loguru 库
+* 自动捕获 ffmpeg 解码器输出的异常
+* 更好用的 CLI 语法（重写命令拼接部分）
