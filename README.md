@@ -43,3 +43,4 @@ mkvmerge.exe
 * 弃用 loguru 库
 * 自动捕获 ffmpeg 解码器输出的异常
 * 更好用的 CLI 语法（重写命令拼接部分）
+* 多语言
