@@ -178,7 +178,7 @@ class Ripper:
 
 
         elif preset_name == Ripper.PresetName.flac:
-            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -8 -e -p -l {maxlpc} -o "{output}" -'
+            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -j 32 -8 -e -p -l {maxlpc} -o "{output}" -'
 
 
         elif preset_name == Ripper.PresetName.x264slow:

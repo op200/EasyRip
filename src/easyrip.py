@@ -13,7 +13,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.5"
+PROJECT_VERSION = "1.5.1"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -59,9 +59,9 @@ def check_evn():
         log.warning('flac not found')
         print(get_input_prompt(), end='')
 
-    # elif os.system('flac -v | findstr "/C:flac 1.4.3" > nul'):
+    # elif os.system('flac -v | findstr "/C:flac 1.5.0" > nul'):
     #     print()
-    #     log.warning('flac version is not 1.4.3')
+    #     log.warning('flac version is not 1.5.0')
     #     print(get_input_prompt(), end='')
 
 
