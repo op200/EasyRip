@@ -164,6 +164,9 @@ class Ripper:
 
 
 
+        FFMPEG_HEADER = 'ffmpeg -progress progress.log -report'
+
+
         if preset_name == Ripper.PresetName.custom:
             if not (encoder_format_str := self.option_map.get('custom:format') or self.option_map.get('custom:template')):
                 log.warning('The preset custom must have custom:format or custom:template')
@@ -174,11 +177,11 @@ class Ripper:
 
 
         elif preset_name == Ripper.PresetName.copy:
-            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" ' + audio_option + r' -map 0:v -c:v copy "{output}"'
+            encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + audio_option + r' -map 0:v -c:v copy "{output}"'
 
 
         elif preset_name == Ripper.PresetName.flac:
-            encoder_format_str = r'ffmpeg -progress progress.log -i "{input}" -map 0:a:0 -f wav - | flac -j 32 -8 -e -p -l {maxlpc} -o "{output}" -'
+            encoder_format_str = FFMPEG_HEADER + r' -i "{input}" -map 0:a:0 -f wav - | flac -j 32 -8 -e -p -l {maxlpc} -o "{output}" -'
 
 
         elif preset_name == Ripper.PresetName.x264slow:
@@ -229,16 +232,16 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}" {custom_vf} ' + r' "{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}" {custom_vf} ' + r' "{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265fast2:
@@ -314,16 +317,16 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265fast:
@@ -399,16 +402,16 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
 
             else:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265slow:
@@ -484,15 +487,15 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif sub_pathname:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
             else:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         elif preset_name == Ripper.PresetName.x265full:
@@ -575,13 +578,13 @@ class Ripper:
 
 
             if input_suffix == '.vpy':
-                encoder_format_str = r'vspipe -c y4m "{input}" - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             elif vpy_pathname:
-                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ffmpeg -progress progress.log -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
 
             else:
-                encoder_format_str = f'ffmpeg -progress progress.log {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
+                encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
 
 
         return Ripper.Option(preset_name, encoder_format_str, audio_encoder, muxer, muxer_format_str)
@@ -673,9 +676,15 @@ class Ripper:
                            f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
 
             log.info(cmd)
+            os.environ["FFREPORT"] = "file=report.log:level=31"
             if os.system(cmd):
                 log.error('There have error in running')
 
+
+            # 获取 ffmpeg report 中的报错
+            with open('report.log', 'rt') as f:
+                for line in f.readlines()[2:]:
+                    log.error(f'FFmpeg report: {line}')
 
             # 获取体积
             temp_name_full = os.path.join(self.output_dir, temp_name)
@@ -689,8 +698,7 @@ class Ripper:
             except Exception as e:
                 log.error(e)
 
-
-            # 写入日志
+            # 读取编码速度
             try:
                 with open('progress.log', 'rt', encoding='utf-8') as file:
                     progress = file.readlines()
@@ -702,6 +710,7 @@ class Ripper:
             except Exception as e:
                 log.error(e)
 
+            # 写入日志
             run_end_time = datetime.now()
             with open('编码日志.html', 'at', encoding='utf-8') as file:
                 file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'

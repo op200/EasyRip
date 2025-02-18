@@ -1,26 +1,7 @@
 import sys
 from typing import Literal
-
-from loguru import logger
-
-logger.remove()
-
-logger.add(sys.stderr, format="<green>{time:YYYY.MM.DD HH:mm:ss.SS}</green><blue><level> [{level}] {message}</level></blue>")
-
-def html_log_formatter(record):
-    if record["level"].name == 'INFO':
-        return '<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time:YYYY.MM.DD HH:mm:ss.SS}\\</span> <span style="color:blue;">[{level}] {message}\\</span>\\</div>\n{exception}'
-
-    elif record["level"].name == 'WARNING':
-        return '<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time:YYYY.MM.DD HH:mm:ss.SS}\\</span> <span style="color:yellow;">[{level}] {message}\\</span>\\</div>\n{exception}'
-
-    elif record["level"].name == 'ERROR':
-        return '<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time:YYYY.MM.DD HH:mm:ss.SS}\\</span> <span style="color:red;">[{level}] {message}\\</span>\\</div>\n{exception}'
-
-    else:
-        return '<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time:YYYY.MM.DD HH:mm:ss.SS}\\</span> <span>[{level}] {message}\\</span>\\</div>\n{exception}'
-logger.add('编码日志.html', format=html_log_formatter)
-
+import enum
+import datetime
 
 _print = print
 
@@ -43,15 +24,39 @@ class log:
 
     hr = '———————————————————————————————————'
 
-    @staticmethod
-    def info( __message: str, *args, **kwargs):
-        logger.info(__message, *args, **kwargs)
+    class LogLevel(enum.Enum):
+        info = enum.auto()
+        warning = enum.auto()
+        error = enum.auto()
 
     @staticmethod
-    def warning( __message: str, *args, **kwargs):
-        logger.warning(__message, *args, **kwargs)
+    def output(log_level: LogLevel, message):
+        time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
+
+        if log_level == log.LogLevel.info:
+            print(f'\033[32m{time_now}\033[34m [INFO] {message}\033[0m')
+            with open('编码日志.html', 'a', encoding='utf-8') as f:
+                f.write(fr'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>')
+
+        if log_level == log.LogLevel.warning:
+            print(f'\033[32m{time_now}\033[33m [WARNING] {message}\033[0m')
+            with open('编码日志.html', 'a', encoding='utf-8') as f:
+                f.write(fr'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>')
+
+        if log_level == log.LogLevel.error:
+            print(f'\033[32m{time_now}\033[31m [ERROR] {message}\033[0m')
+            with open('编码日志.html', 'a', encoding='utf-8') as f:
+                f.write(fr'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>')
 
     @staticmethod
-    def error( __message: str, *args, **kwargs):
-        logger.error(__message, *args, **kwargs)
+    def info(message):
+        log.output(log.LogLevel.info, message)
+
+    @staticmethod
+    def warning(message):
+        log.output(log.LogLevel.warning, message)
+
+    @staticmethod
+    def error(message):
+        log.output(log.LogLevel.error, message)
 

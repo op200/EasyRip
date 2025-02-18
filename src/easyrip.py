@@ -3,6 +3,7 @@ from tkinter import filedialog
 import ctypes
 import sys
 import os
+import shutil
 import shlex
 import re
 from threading import Thread
@@ -13,7 +14,7 @@ from ripper import Ripper
 
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "1.5.1"
+PROJECT_VERSION = "1.6"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
@@ -33,7 +34,7 @@ change_title(PROJECT_TITLE)
 if os.name == 'nt':
     try:
         ctypes.windll.user32.SetProcessDPIAware()
-    except:
+    except:  # noqa: E722
         log.warning("Windows DPI Aware failed")
 
 
@@ -63,6 +64,12 @@ def check_evn():
     #     print()
     #     log.warning('flac version is not 1.5.0')
     #     print(get_input_prompt(), end='')
+
+
+    if not shutil.which('mp4fpsmod'):
+        print()
+        log.warning('mp4fpsmod not found')
+        print(get_input_prompt(), end='')
 
 
     if os.system('mp4box -version > nul 2> nul'):
@@ -331,7 +338,14 @@ def run_command(cmd_list: list[str] | str) -> bool:
         is_run = False
         is_exit_when_runned = False
 
+        _skip:bool = False
         for i in range(0, len(cmd_list)):
+
+            if _skip:
+                _skip = False
+                continue
+
+            _skip = True
 
             if cmd_list[i] == '-i':
                 if cmd_list[i+1] == 'fd':
@@ -362,13 +376,16 @@ def run_command(cmd_list: list[str] | str) -> bool:
             elif match := re.search(r'^\-(.+)', cmd_list[i]):
                 option_map[match.group(1)] = cmd_list[i+1]
 
+            else:
+                _skip = False
+
         if not preset_name:
             log.error("Missing -preset")
             return False
 
         try:
             if len(input_pathname_list) == 0:
-                log.warning(f'Input file number == 0')
+                log.warning('Input file number == 0')
                 return False
 
             for input_pathname in input_pathname_list:
@@ -453,7 +470,7 @@ if __name__ == "__main__":
     while True:
         try:
             command = input(get_input_prompt())
-        except:
+        except:  # noqa: E722
             log.info("Manually force exit")
             sys.exit()
 
@@ -463,6 +480,6 @@ if __name__ == "__main__":
         except ValueError as e:
             cmd_list = None
             log.error(e)
-        if cmd_list == None or not run_command(cmd_list):
+        if cmd_list is None or not run_command(cmd_list):
             log.warning('Stop run command')
 
