@@ -3,6 +3,10 @@ from typing import Literal
 import enum
 import datetime
 
+from easyrip_mlang import gettext
+
+__all__ = ['print', 'log']
+
 _print = print
 
 def print(
@@ -30,8 +34,9 @@ class log:
         error = enum.auto()
 
     @staticmethod
-    def output(log_level: LogLevel, message):
+    def output(log_level: LogLevel, message, *vals):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
+        message = gettext(message, *vals)
 
         if log_level == log.LogLevel.info:
             print(f'\033[32m{time_now}\033[34m [INFO] {message}\033[0m')
@@ -49,14 +54,14 @@ class log:
                 f.write(fr'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>')
 
     @staticmethod
-    def info(message):
-        log.output(log.LogLevel.info, message)
+    def info(message, *vals):
+        log.output(log.LogLevel.info, message, *vals)
 
     @staticmethod
-    def warning(message):
-        log.output(log.LogLevel.warning, message)
+    def warning(message, *vals):
+        log.output(log.LogLevel.warning, message, *vals)
 
     @staticmethod
-    def error(message):
-        log.output(log.LogLevel.error, message)
+    def error(message, *vals):
+        log.output(log.LogLevel.error, message, *vals)
 

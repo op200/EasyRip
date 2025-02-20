@@ -7,6 +7,13 @@ import enum
 from easyrip_log import log
 print = None
 
+__all__ = ['Ripper']
+
+
+ENCODING_LOG_FILE = "编码日志.html"
+FF_PROGRESS_LOG_FILE = "progress.log"
+FF_REPORT_LOG_FILE = "report.log"
+
 
 class Ripper:
 
@@ -164,12 +171,12 @@ class Ripper:
 
 
 
-        FFMPEG_HEADER = 'ffmpeg -progress progress.log -report'
+        FFMPEG_HEADER = f'ffmpeg -progress {FF_PROGRESS_LOG_FILE} -report'
 
 
         if preset_name == Ripper.PresetName.custom:
             if not (encoder_format_str := self.option_map.get('custom:format') or self.option_map.get('custom:template')):
-                log.warning('The preset custom must have custom:format or custom:template')
+                log.warning("The preset custom must have custom:format or custom:template")
                 encoder_format_str = ''
 
             else:
@@ -594,7 +601,7 @@ class Ripper:
     def run(self, prep_func = lambda _: None):
 
         if not os.path.exists(self.input_pathname):
-            log.error(f'The file {self.input_pathname} does not exist')
+            log.error('The file "{}" does not exist', self.input_pathname)
 
 
         else:
@@ -665,7 +672,7 @@ class Ripper:
             # 执行
             output_filename = basename+suffix
             run_start_time = datetime.now()
-            with open('编码日志.html', 'at', encoding='utf-8') as file:
+            with open(ENCODING_LOG_FILE, 'at', encoding='utf-8') as file:
                 file.write(f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
                            f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
                            f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
@@ -676,15 +683,15 @@ class Ripper:
                            f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
 
             log.info(cmd)
-            os.environ["FFREPORT"] = "file=report.log:level=31"
+            os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
             if os.system(cmd):
                 log.error('There have error in running')
 
 
             # 获取 ffmpeg report 中的报错
-            with open('report.log', 'rt') as f:
+            with open(FF_REPORT_LOG_FILE, 'rt') as f:
                 for line in f.readlines()[2:]:
-                    log.error(f'FFmpeg report: {line}')
+                    log.error('FFmpeg report: {}', line)
 
             # 获取体积
             temp_name_full = os.path.join(self.output_dir, temp_name)
@@ -700,7 +707,7 @@ class Ripper:
 
             # 读取编码速度
             try:
-                with open('progress.log', 'rt', encoding='utf-8') as file:
+                with open(FF_PROGRESS_LOG_FILE, 'rt', encoding='utf-8') as file:
                     progress = file.readlines()
                 speed: str = 'N/A'
                 for line in progress[::-1]:
@@ -712,12 +719,19 @@ class Ripper:
 
             # 写入日志
             run_end_time = datetime.now()
-            with open('编码日志.html', 'at', encoding='utf-8') as file:
+            with open(ENCODING_LOG_FILE, 'at', encoding='utf-8') as file:
                 file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
                            f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
                            f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
                            f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
                            f'</div><hr style="color:brown;margin:0 0 6px;">')
+
+            # 删除临时文件
+            if os.path.exists(FF_PROGRESS_LOG_FILE):
+                os.remove(FF_PROGRESS_LOG_FILE)
+            if os.path.exists(FF_REPORT_LOG_FILE):
+                os.remove(FF_REPORT_LOG_FILE)
+
 
 
     def __init__(self, input_pathname: str, output_prefix: str | None, output_dir: str | None, option: Option | str, option_map: dict):
