@@ -22,7 +22,7 @@ Run `easyrip`, input `help` to get help doc
 
 Python
 ```
-pip install -U loguru
+# No third-party dependence
 ```
 
 CLI
