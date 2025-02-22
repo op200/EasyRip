@@ -8,43 +8,17 @@ import shlex
 import re
 from threading import Thread
 
-from easyrip_log import log, print
+from easyrip_log import log, print, Event as LogEvent
 from ripper import Ripper
 from easyrip_mlang import GlobalLangVal, get_system_language, gettext
-
+import easyrip_web
 
 
 PROJECT_NAME = "Easy Rip"
-__version__ = PROJECT_VERSION = "1.7"
+__version__ = PROJECT_VERSION = "2.0"
 PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
 PROJECT_URL = "https://github.com/op200/EasyRip"
 
-
-if __name__ == "__main__":
-    GlobalLangVal.gettext_target_lang = get_system_language()
-
-
-def change_title(title):
-    if os.name == 'nt':
-        os.system(f'title {title}')
-    elif os.name == 'posix':
-        sys.stdout.write(f'\x1b]2;{title}\x07')
-        sys.stdout.flush()
-
-
-change_title(PROJECT_TITLE)
-
-
-if os.name == 'nt':
-    try:
-        ctypes.windll.user32.SetProcessDPIAware()
-    except:  # noqa: E722
-        log.warning("Windows DPI Aware failed")
-
-
-def get_input_prompt():
-    return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
-get_input_prompt()
 
 def check_evn():
 
@@ -98,6 +72,47 @@ def check_evn():
         log.warning('mkvmerge not found')
         print(get_input_prompt(), end='')
 
+
+    if new_ver_str := easyrip_web.get_easyrip_ver():
+        new_ver = [int(v) for v in re.sub(r'^\D*(\d.*\d)\D*$', r'\1', new_ver_str).split('.')]
+        new_ver.extend([0]*(5-len(new_ver)))
+        old_ver = [int(v) for v in re.sub(r'^\D*(\d.*\d)\D*$', r'\1', PROJECT_VERSION).split('.')]
+        old_ver.extend([0]*(5-len(old_ver)))
+        for i in range(5):
+            if new_ver[i] > old_ver[i]:
+                print()
+                log.info(GlobalLangVal.ExtraTextIndex.NEW_VER_TIP, new_ver_str)
+                print(get_input_prompt(), end='')
+                break
+
+
+if __name__ == "__main__":
+    GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言
+
+    Thread(target=check_evn).start()
+
+
+def change_title(title):
+    if os.name == 'nt':
+        os.system(f'title {title}')
+    elif os.name == 'posix':
+        sys.stdout.write(f'\x1b]2;{title}\x07')
+        sys.stdout.flush()
+
+
+change_title(PROJECT_TITLE)
+
+
+if os.name == 'nt':
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except:  # noqa: E722
+        log.warning("Windows DPI Aware failed")
+
+
+def get_input_prompt():
+    return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
+get_input_prompt()
 
 def file_dialog():
     tkRoot = tk.Tk()
@@ -172,6 +187,11 @@ def run_command(cmd_list: list[str] | str) -> bool:
             log.error(e)
 
 
+    elif cmd_list[0] == "dir":
+        for v in os.listdir(os.getcwd()):
+            print(v)
+
+
     elif cmd_list[0] in ('cls', 'clear') and cmd_list[1] == '':
         if os.name == 'nt':
             os.system('cls')
@@ -197,6 +217,11 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
     elif cmd_list[0] == "run":
         run_ripper_list(cmd_list[1] == 'exit')
+
+
+    elif cmd_list[0] == "server":
+        cmd_list += [0, 0]
+        easyrip_web.run_server(str(cmd_list[1]), int(cmd_list[2]))
 
 
     else:
@@ -277,7 +302,7 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
                         _dir = output_dir or os.getcwd()
                         for _file_basename in os.listdir(_dir):
-                            if os.path.splitext(_file_basename)[1] in {'.ass', '.srt'} and _file_basename.startswith(f'{_input_prefix}.'):
+                            if os.path.splitext(_file_basename)[1] in {'.ass', '.ssa'} and _file_basename.startswith(f'{_input_prefix}.'):
                                 sub_list.append(os.path.join(_dir, _file_basename))
 
                     else:
@@ -325,13 +350,17 @@ def run_command(cmd_list: list[str] | str) -> bool:
         if is_run:
             run_ripper_list(is_exit_when_runned)
 
+    easyrip_web.http_server.Event.is_run_command = False
+
     return True
 
 
 
 if __name__ == "__main__":
 
-    Thread(target=check_evn).start()
+    LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
+    easyrip_web.http_server.Event.post_event = lambda cmd: run_command(cmd)
+    
 
     Ripper.ripper_list = []
 

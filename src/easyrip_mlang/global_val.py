@@ -39,5 +39,6 @@ class Region(enum.Enum):
 class GlobalLangVal:
     class ExtraTextIndex(enum.Enum):
         HELP_DOC = enum.auto()
+        NEW_VER_TIP = enum.auto()
 
     gettext_target_lang: tuple[Language, Region] = (Language.Unknow, Region.Unknow)

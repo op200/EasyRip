@@ -1,0 +1,9 @@
+/*
+!.gitignore
+!LICENSE
+!README.md
+!.github/
+!src/
+!resources/
+
+__pycache__
