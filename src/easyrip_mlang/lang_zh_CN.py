@@ -1,11 +1,12 @@
-from . import global_val
+from global_val import GlobalVal
+from . import global_lang_val
 
-lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
-    global_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
-        "{}\nVersion: {}\n{}\n"
+lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
+    global_lang_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
+        f"{GlobalVal.PROJECT_NAME}\n版本: {GlobalVal.PROJECT_VERSION}\n{GlobalVal.PROJECT_URL}\n"
         "\n"
         "\n"
-        "Help:\n"
+        "帮助:\n"
         "  输入命令或使用命令行传参以运行\n"
         "\n"
         "\n"
@@ -54,6 +55,10 @@ lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "    exit:\n"
         "      执行后退出程序\n"
+        "\n"
+        "    server [<address> [<port> [<password>]]]:\n"
+        "      启动 web 服务\n"
+        '      默认: server "" 0\n'
         "\n"
         "  <Option>\n"
         "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
@@ -132,11 +137,13 @@ lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      使用 yadif 滤镜反交错\n"
     ),
-    global_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到新版本 {}。你可以进入此链接下载 https://github.com/op200/EasyRip/releases",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到新版本 {}。你可以进入此链接下载 https://github.com/op200/EasyRip/releases",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
     "Run completed": "执行完成",
     "Your input command has error:\n{}": "输入的命令报错:\n{}",
+    "Delete the {}th ripper success": "成功删除第 {} 个 ripper",
+    "Can not start multiple services": "禁止重复启用服务",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',
     'The directory "{}" does not exist': '目录 "{}" 不存在',
     "Missing -preset": "缺少 -preset",
@@ -146,6 +153,8 @@ lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Unsupported option: {}": "不支持的选项: {}",
     "Manually force exit": "手动强制退出",
     "Stop run command": "命令执行终止",
+    # log
+    "encoding_log.html": "编码日志.html",
     # ripper.py
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
     "There have error in running": "执行时出错",

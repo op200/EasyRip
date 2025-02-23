@@ -1,8 +1,9 @@
-from . import global_val
+from global_val import GlobalVal
+from . import global_lang_val
 
-lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
-    global_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
-        "{}\nVersion: {}\n{}\n"
+lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
+    global_lang_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
+        f"{GlobalVal.PROJECT_NAME}\nVersion: {GlobalVal.PROJECT_VERSION}\n{GlobalVal.PROJECT_URL}\n"
         "\n"
         "\n"
         "Help:\n"
@@ -54,6 +55,10 @@ lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "    exit:\n"
         "      Close program when runned\n"
+        "\n"
+        "    server [<address> [<port> [<password>]]]:\n"
+        "      Boot web service\n"
+        '      Default: server "" 0\n'
         "\n"
         "  <Option>\n"
         "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
@@ -132,5 +137,5 @@ lang_map: dict[str | global_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      Use the filter yadif to deinterlacing\n"
     ),
-    global_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "New version {} detected. You can download it in https://github.com/op200/EasyRip/releases",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "New version {} detected. You can download it in https://github.com/op200/EasyRip/releases",
 }

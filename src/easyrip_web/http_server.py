@@ -1,6 +1,8 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import json
 from threading import Thread
+import secrets
+import hashlib
 
 
 __all__ = ["Event", "run_server"]
@@ -10,11 +12,19 @@ class Event:
     log_queue: list = []
     is_run_command: bool = False
 
+    class log:
+        @staticmethod
+        def info(message, *vals):
+            print(message, *vals)
+
     def post_event(data: dict):
         pass
 
 
 class MainHTTPRequestHandler(BaseHTTPRequestHandler):
+    token: str | None = None
+    password: str | None = None
+
     def do_POST(self):
         # 获取请求体的长度
         content_length = int(self.headers.get("Content-Length", 0))
@@ -32,7 +42,12 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         # 读取请求体数据并使用指定的编码解码
         post_data = self.rfile.read(content_length).decode(charset)
 
-        if self.headers.get("Content-Type") == "application/json":
+        if MainHTTPRequestHandler.token is None:
+            self.send_response(500)
+            response = "Missing token in server"
+            self.send_header("Content-type", "text/html")
+
+        elif self.headers.get("Content-Type") == "application/json":
             try:
                 data = json.loads(post_data)
             except json.JSONDecodeError:
@@ -42,7 +57,24 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             if data.get("shutdown") == "true":
                 self.server.shutdown_requested = True
 
-            if data.get("run_command"):
+            if (
+                not (_token := data.get("token"))
+                or _token != MainHTTPRequestHandler.token
+            ):
+                self.send_response(401)
+                response = "Wrong token in client"
+                self.send_header("Content-type", "text/html")
+
+            elif MainHTTPRequestHandler.password is not None and (
+                not (_password := data.get("password"))
+                or _password
+                != hashlib.sha256(MainHTTPRequestHandler.password.encode()).hexdigest()
+            ):
+                self.send_response(401)
+                response = "Wrong password"
+                self.send_header("Content-type", "text/html")
+
+            elif data.get("run_command"):
                 if Event.is_run_command is False:
                     Thread(target=Event.post_event, args=(data["run_command"],)).start()
                     Event.is_run_command = True
@@ -77,17 +109,20 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(
             json.dumps(
-                {"log_queue": Event.log_queue, "is_run_command": Event.is_run_command}
+                {
+                    "token": MainHTTPRequestHandler.token,
+                    "log_queue": Event.log_queue,
+                    "is_run_command": Event.is_run_command,
+                }
             ).encode("utf-8")
         )
 
 
-def run_server(host: str = "", port: int = 0):
-    server_class = HTTPServer
-    handler_class = MainHTTPRequestHandler
-    from easyrip_log import log
+def run_server(host: str = "", port: int = 0, password: str | None = None):
+    MainHTTPRequestHandler.token = secrets.token_urlsafe(16)
+    MainHTTPRequestHandler.password = password
 
     server_address = (host, port)
-    httpd = server_class(server_address, handler_class)
-    log.info("Starting HTTP server on port {}...", httpd.server_port)
+    httpd = HTTPServer(server_address, MainHTTPRequestHandler)
+    Event.log.info("Starting HTTP server on port {}...", httpd.server_port)
     httpd.serve_forever()

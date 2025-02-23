@@ -10,7 +10,6 @@ print = None
 __all__ = ['Ripper']
 
 
-ENCODING_LOG_FILE = "编码日志.html"
 FF_PROGRESS_LOG_FILE = "progress.log"
 FF_REPORT_LOG_FILE = "report.log"
 
@@ -672,15 +671,15 @@ class Ripper:
             # 执行
             output_filename = basename+suffix
             run_start_time = datetime.now()
-            with open(ENCODING_LOG_FILE, 'at', encoding='utf-8') as file:
-                file.write(f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
-                           f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
-                           f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
-                           f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
-                           f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
-                           f'输出文件名：<span style="color:darkcyan;">"{output_filename}"</span><br>'
-                           f'Option:<br>'
-                           f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
+            log.write_html_log(
+                f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
+                f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
+                f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
+                f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
+                f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
+                f'输出文件名：<span style="color:darkcyan;">"{output_filename}"</span><br>'
+                f'Option:<br>'
+                f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
 
             log.info(cmd)
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
@@ -719,12 +718,12 @@ class Ripper:
 
             # 写入日志
             run_end_time = datetime.now()
-            with open(ENCODING_LOG_FILE, 'at', encoding='utf-8') as file:
-                file.write(f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
-                           f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
-                           f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
-                           f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
-                           f'</div><hr style="color:brown;margin:0 0 6px;">')
+            log.write_html_log(
+                f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
+                f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
+                f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
+                f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
+                f'</div><hr style="color:brown;margin:0 0 6px;">')
 
             # 删除临时文件
             if os.path.exists(FF_PROGRESS_LOG_FILE):

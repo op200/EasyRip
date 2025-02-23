@@ -1,7 +1,11 @@
 import subprocess
 import json
 
+from global_val import GlobalVal
 from . import http_server
+
+
+PROJECT_RELEASE_URL = GlobalVal.PROJECT_RELEASE_URL
 
 
 def get_sys_proxy(target_url: str) -> str | None:
@@ -30,10 +34,9 @@ def get_sys_proxy(target_url: str) -> str | None:
 
 
 def get_easyrip_ver() -> str | None:
-    target_url = "https://api.github.com/repos/op200/EasyRip/releases/latest"
-    proxy = get_sys_proxy(target_url)
+    proxy = get_sys_proxy(PROJECT_RELEASE_URL)
 
-    cmd = f"curl --ssl-no-revoke{f" -x {proxy}" if proxy else ""} {target_url}"
+    cmd = f"curl --ssl-no-revoke{f" -x {proxy}" if proxy else ""} {PROJECT_RELEASE_URL}"
 
     version = None
     try:

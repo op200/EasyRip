@@ -7,17 +7,33 @@ import shutil
 import shlex
 import re
 from threading import Thread
+from itertools import zip_longest
 
+from global_val import GlobalVal
 from easyrip_log import log, print, Event as LogEvent
 from ripper import Ripper
-from easyrip_mlang import GlobalLangVal, get_system_language, gettext
+from easyrip_mlang import GlobalLangVal, get_system_language, gettext, Event as MlangEvent
 import easyrip_web
 
 
-PROJECT_NAME = "Easy Rip"
-__version__ = PROJECT_VERSION = "2.0"
-PROJECT_TITLE = f'{PROJECT_NAME} v{PROJECT_VERSION}'
-PROJECT_URL = "https://github.com/op200/EasyRip"
+PROJECT_NAME = GlobalVal.PROJECT_NAME
+__version__ = PROJECT_VERSION = GlobalVal.PROJECT_VERSION
+PROJECT_TITLE = GlobalVal.PROJECT_TITLE
+PROJECT_URL = GlobalVal.PROJECT_URL
+
+
+MlangEvent.log = easyrip_web.http_server.Event.log = log
+
+
+def change_title(title):
+    if os.name == 'nt':
+        os.system(f'title {title}')
+    elif os.name == 'posix':
+        sys.stdout.write(f'\x1b]2;{title}\x07')
+        sys.stdout.flush()
+
+
+change_title(PROJECT_TITLE)
 
 
 def check_evn():
@@ -74,33 +90,38 @@ def check_evn():
 
 
     if new_ver_str := easyrip_web.get_easyrip_ver():
-        new_ver = [int(v) for v in re.sub(r'^\D*(\d.*\d)\D*$', r'\1', new_ver_str).split('.')]
-        new_ver.extend([0]*(5-len(new_ver)))
-        old_ver = [int(v) for v in re.sub(r'^\D*(\d.*\d)\D*$', r'\1', PROJECT_VERSION).split('.')]
-        old_ver.extend([0]*(5-len(old_ver)))
-        for i in range(5):
-            if new_ver[i] > old_ver[i]:
-                print()
-                log.info(GlobalLangVal.ExtraTextIndex.NEW_VER_TIP, new_ver_str)
-                print(get_input_prompt(), end='')
-                break
+        new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
+        new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
+        new_ver = (
+            [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
+            [int(v) for v in new_ver_add_num[1:]],
+        )
+
+        old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", PROJECT_VERSION).split(".")]
+        old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
+        old_ver = (
+            [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
+            [int(v) for v in old_ver_add_num[1:]],
+        )
+
+        for i in range(2):
+            for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
+                if new > old:
+                    print()
+                    log.info(GlobalLangVal.ExtraTextIndex.NEW_VER_TIP, new_ver_str)
+                    print(get_input_prompt(), end='')
+                    break
+                elif new < old:
+                    break
+            else:
+                continue
+            break
 
 
 if __name__ == "__main__":
     GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言
 
     Thread(target=check_evn).start()
-
-
-def change_title(title):
-    if os.name == 'nt':
-        os.system(f'title {title}')
-    elif os.name == 'posix':
-        sys.stdout.write(f'\x1b]2;{title}\x07')
-        sys.stdout.flush()
-
-
-change_title(PROJECT_TITLE)
 
 
 if os.name == 'nt':
@@ -154,16 +175,16 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
     cmd_list.append('')
 
-    if cmd_list[0] in ('h', 'help'):
+    if cmd_list[0] in {'h', 'help'}:
 
-        print(gettext(GlobalLangVal.ExtraTextIndex.HELP_DOC, PROJECT_NAME, PROJECT_VERSION, PROJECT_URL))
+        print(gettext(GlobalLangVal.ExtraTextIndex.HELP_DOC), file=sys.stdout)
 
         if cmd_list[1] == 'exit':
             sys.exit()
 
 
-    elif cmd_list[0] in ('v', 'version'):
-        print(f'{PROJECT_NAME} version {PROJECT_VERSION}')
+    elif cmd_list[0] in {'v', 'ver', 'version'}:
+        print(f'{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}', file=sys.stdout)
 
         if cmd_list[1] == 'exit':
             sys.exit()
@@ -200,9 +221,9 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
 
     elif cmd_list[0] == "list":
-        if cmd_list[1] in ('clear', 'clean'):
+        if cmd_list[1] in {'clear', 'clean'}:
             Ripper.ripper_list = []
-        elif cmd_list[1] in ('del', 'pop'):
+        elif cmd_list[1] in {'del', 'pop'}:
             try:
                 del Ripper.ripper_list[int(cmd_list[2])-1]
             except Exception as e:
@@ -220,8 +241,11 @@ def run_command(cmd_list: list[str] | str) -> bool:
 
 
     elif cmd_list[0] == "server":
-        cmd_list += [0, 0]
-        easyrip_web.run_server(str(cmd_list[1]), int(cmd_list[2]))
+        if easyrip_web.http_server.Event.is_run_command:
+            log.error("Can not start multiple services")
+            return False
+        cmd_list.extend([None] * 4)
+        easyrip_web.run_server(cmd_list[1], int(cmd_list[2]), cmd_list[3])
 
 
     else:
@@ -361,7 +385,6 @@ if __name__ == "__main__":
     LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
     easyrip_web.http_server.Event.post_event = lambda cmd: run_command(cmd)
     
-
     Ripper.ripper_list = []
 
     if sys.argv[1:] != []:

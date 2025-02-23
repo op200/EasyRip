@@ -2,14 +2,21 @@ import ctypes
 
 from . import lang_en
 from . import lang_zh_CN
-from . import global_val
+from . import global_lang_val
 
 Language, Region, GlobalLangVal = (
-    global_val.Language,
-    global_val.Region,
-    global_val.GlobalLangVal,
+    global_lang_val.Language,
+    global_lang_val.Region,
+    global_lang_val.GlobalLangVal,
 )
 ExtraTextIndex = GlobalLangVal.ExtraTextIndex
+
+
+class Event:
+    class log:
+        @staticmethod
+        def error(message, *vals):
+            print(message, *vals)
 
 
 def get_system_language():
@@ -70,8 +77,6 @@ def gettext(org_text: str | ExtraTextIndex, *vals):
     try:
         new_text = new_text.format(*vals)
     except IndexError:
-        from easyrip_log import log
-
-        log.error("IndexError in gettext when str.format")
+        Event.log.error("IndexError in gettext when str.format")
 
     return new_text
