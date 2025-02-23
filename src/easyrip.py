@@ -94,14 +94,14 @@ def check_evn():
         new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
         new_ver = (
             [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
-            [int(v) for v in new_ver_add_num[1:]],
+            [int(v) for v in new_ver_add_num[1:]]
         )
 
         old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", PROJECT_VERSION).split(".")]
         old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
         old_ver = (
             [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
-            [int(v) for v in old_ver_add_num[1:]],
+            [int(v) for v in old_ver_add_num[1:]]
         )
 
         for i in range(2):
@@ -292,6 +292,8 @@ def run_command(cmd_list: list[str] | str) -> bool:
                 is_run = True
                 if cmd_list[i+1] == 'exit':
                     is_exit_when_runned = True
+                else:
+                    _skip = False
 
             elif match := re.search(r'^\-(.+)', cmd_list[i]):
                 option_map[match.group(1)] = cmd_list[i+1]
