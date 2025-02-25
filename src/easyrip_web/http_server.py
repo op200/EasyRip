@@ -3,13 +3,34 @@ import json
 from threading import Thread
 import secrets
 import hashlib
+from collections import deque
+
+from Crypto.Cipher import AES as CryptoAES
+from Crypto.Util.Padding import pad, unpad
 
 
 __all__ = ["Event", "run_server"]
 
 
+class AES:
+    @staticmethod
+    def encrypt(plaintext: bytes, key: bytes) -> bytes:
+        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC)  # 使用 CBC 模式
+        ciphertext = cipher.encrypt(pad(plaintext, CryptoAES.block_size))  # 加密并填充
+        return cipher.iv + ciphertext  # 返回 IV 和密文
+
+    @staticmethod
+    def decrypt(ciphertext: bytes, key: bytes) -> bytes:
+        iv = ciphertext[:16]  # 提取 IV
+        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC, iv=iv)
+        plaintext = unpad(
+            cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
+        )  # 解密并去除填充
+        return plaintext
+
+
 class Event:
-    log_queue: list = []
+    log_queue: deque = deque()
     is_run_command: bool = False
 
     class log:
@@ -24,6 +45,14 @@ class Event:
 class MainHTTPRequestHandler(BaseHTTPRequestHandler):
     token: str | None = None
     password: str | None = None
+    password_sha3_512_last8: str | None = None
+    aes_key: bytes | None = None
+
+    @staticmethod
+    def str_to_aes_hex(text: str) -> str | None:
+        if MainHTTPRequestHandler.aes_key is None:
+            return None
+        return AES.encrypt(text.encode(), MainHTTPRequestHandler.aes_key).hex()
 
     def do_POST(self):
         # 获取请求体的长度
@@ -57,6 +86,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             if data.get("shutdown") == "true":
                 self.server.shutdown_requested = True
 
+            # 通过 token 判断一致性
             if (
                 not (_token := data.get("token"))
                 or _token != MainHTTPRequestHandler.token
@@ -65,18 +95,32 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 response = "Wrong token in client"
                 self.send_header("Content-type", "text/html")
 
+            # 验证密码加密后的正确性
             elif MainHTTPRequestHandler.password is not None and (
-                not (_password := data.get("password"))
-                or _password
-                != hashlib.sha256(MainHTTPRequestHandler.password.encode()).hexdigest()
+                not (
+                    _password := data.get(
+                        MainHTTPRequestHandler.str_to_aes_hex("password")
+                    )
+                )
+                or _password != MainHTTPRequestHandler.password_sha3_512_last8
             ):
                 self.send_response(401)
                 response = "Wrong password"
                 self.send_header("Content-type", "text/html")
 
-            elif data.get("run_command"):
+            elif _cmd := data.get("run_command"):
                 if Event.is_run_command is False:
-                    Thread(target=Event.post_event, args=(data["run_command"],)).start()
+                    _cmd = AES.decrypt(
+                        bytes.fromhex(_cmd), MainHTTPRequestHandler.aes_key
+                    ).decode("utf-8")
+                    Thread(
+                        target=Event.post_event,
+                        args=(
+                            "$log.error('Prohibited from use $ <code> in web service')"
+                            if _cmd.startswith("$")
+                            else _cmd,
+                        ),
+                    ).start()
                     Event.is_run_command = True
 
                     self.send_response(200)
@@ -84,7 +128,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-type", "application/json")
 
             elif data.get("clear_log_queue") == "true":
-                Event.log_queue = []
+                Event.log_queue.clear()
                 self.send_response(200)
                 response = json.dumps({"res": "true"})
                 self.send_header("Content-type", "application/json")
@@ -111,7 +155,10 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             json.dumps(
                 {
                     "token": MainHTTPRequestHandler.token,
-                    "log_queue": Event.log_queue,
+                    "log_queue": AES.encrypt(
+                        json.dumps(list(Event.log_queue)).encode("utf-8"),
+                        MainHTTPRequestHandler.password,
+                    ).hex(),
                     "is_run_command": Event.is_run_command,
                 }
             ).encode("utf-8")
@@ -120,9 +167,13 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
 def run_server(host: str = "", port: int = 0, password: str | None = None):
     MainHTTPRequestHandler.token = secrets.token_urlsafe(16)
-    MainHTTPRequestHandler.password = password
+    if password:
+        MainHTTPRequestHandler.password = password
+        _pw_sha3_512 = hashlib.sha3_512(MainHTTPRequestHandler.password.encode())
+        MainHTTPRequestHandler.password_sha3_512_last8 = _pw_sha3_512.hexdigest()[-8]
+        MainHTTPRequestHandler.aes_key = _pw_sha3_512.digest()[:16]
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
-    Event.log.info("Starting HTTP server on port {}...", httpd.server_port)
+    Event.log.info("Starting HTTP service on port {}...", httpd.server_port)
     httpd.serve_forever()

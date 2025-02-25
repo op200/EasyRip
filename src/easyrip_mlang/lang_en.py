@@ -15,8 +15,8 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  h / help [exit]\n"
         "    Show help\n"
         "\n"
-        "  v / version [exit]\n"
-        "    Show version\n"
+        "  v / ver / version [exit]\n"
+        "    Show version info\n"
         "\n"
         "  $ <code>\n"
         "    Run code directly from the internal environment\n"
@@ -137,5 +137,5 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      Use the filter yadif to deinterlacing\n"
     ),
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "New version {} detected. You can download it in https://github.com/op200/EasyRip/releases",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: f"New version {{}} detected. You can download it in {GlobalVal.PROJECT_RELEASE_URL}",
 }

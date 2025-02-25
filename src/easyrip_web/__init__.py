@@ -5,7 +5,7 @@ from global_val import GlobalVal
 from . import http_server
 
 
-PROJECT_RELEASE_URL = GlobalVal.PROJECT_RELEASE_URL
+PROJECT_RELEASE_API = GlobalVal.PROJECT_RELEASE_API
 
 
 def get_sys_proxy(target_url: str) -> str | None:
@@ -34,9 +34,9 @@ def get_sys_proxy(target_url: str) -> str | None:
 
 
 def get_easyrip_ver() -> str | None:
-    proxy = get_sys_proxy(PROJECT_RELEASE_URL)
+    proxy = get_sys_proxy(PROJECT_RELEASE_API)
 
-    cmd = f"curl --ssl-no-revoke{f" -x {proxy}" if proxy else ""} {PROJECT_RELEASE_URL}"
+    cmd = f"curl --ssl-no-revoke{f' -x {proxy}' if proxy else ''} {PROJECT_RELEASE_API}"
 
     version = None
     try:

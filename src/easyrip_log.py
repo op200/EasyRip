@@ -3,7 +3,7 @@ from typing import Literal
 import enum
 import datetime
 
-from easyrip_mlang import gettext
+from easyrip_mlang import gettext, GlobalLangVal
 
 __all__ = ["Event", "print", "log"]
 
@@ -40,7 +40,10 @@ class log:
     @staticmethod
     def output(log_level: LogLevel, message, *vals):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
-        message = gettext(str(message), *vals)
+        message = gettext(
+            message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
+            *vals,
+        )
 
         if log_level == log.LogLevel.info:
             print(f"\033[32m{time_now}\033[34m [INFO] {message}\033[0m")

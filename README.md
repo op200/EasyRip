@@ -20,20 +20,17 @@ Run `easyrip`, input `help` to get help doc
 
 ### Dependency
 
-Python
-```
-# No third-party dependence
+Python 3.13
+```bash
+pip install -U pycryptodome
 ```
 
 CLI
-```
-ffmpeg.exe
-flac.exe
-mp4box.exe
-mp4fpsmod.exe
-mkvpropedit.exe
-mkvmerge.exe
-```
+* [ffmpeg](https://ffmpeg.org/)
+* [flac](https://xiph.org/flac/)
+* [mp4box](https://gpac.io/)
+* [mp4fpsmod](https://github.com/nu774/mp4fpsmod)
+* [mkvpropedit & mkvmerge](https://mkvtoolnix.download/)
 
 ### TODO
 

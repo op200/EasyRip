@@ -15,8 +15,8 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  h / help [exit]\n"
         "    打印 help\n"
         "\n"
-        "  v / version [exit]\n"
-        "    打印版本\n"
+        "  v / ver / version [exit]\n"
+        "    打印版本信息\n"
         "\n"
         "  $ <code>\n"
         "    直接从内部环境运行代码\n"
@@ -137,7 +137,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      使用 yadif 滤镜反交错\n"
     ),
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到新版本 {}。你可以进入此链接下载 https://github.com/op200/EasyRip/releases",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: f"检测到新版本 {{}}。你可以进入此链接下载 {GlobalVal.PROJECT_RELEASE_URL}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
     "Run completed": "执行完成",
@@ -160,5 +160,6 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "There have error in running": "执行时出错",
     "FFmpeg report: {}": "FFmpeg report: {}",
     # web
-    "Starting HTTP server on port {}...": "在端口 {} 启动 HTTP 服务器...",
+    "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
+    "Prohibited from use $ <code> in web service": "禁止在 Web 服务中使用 $ <code>",
 }
