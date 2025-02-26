@@ -23,9 +23,8 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
     - name: Cache nuitka output
-      uses: actions/cache@v4.2.0
+      uses: actions/cache@v4
       with:
         path: easyrip_nuitka_output
         # 使用一个基于文件内容的键来确保当src目录下的文件发生变化时，可以触发新的缓存
@@ -52,3 +51,4 @@ jobs:
       with:
         name: easyrip_x64
         path: ./easyrip.7z
+        compression-level: 0

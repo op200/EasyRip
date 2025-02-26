@@ -222,6 +222,7 @@ class Ripper:
                     for k, v in [
                         s.split('=')
                         for s in str(self.option_map.get('x264-params', '')).split(':')
+                        if s != ""
                     ]
                 }
             }
@@ -322,6 +323,7 @@ class Ripper:
                     for k, v in [
                         s.split('=')
                         for s in str(self.option_map.get('x265-params', '')).split(':')
+                        if s != ""
                     ]
                 }
             }
@@ -417,6 +419,7 @@ class Ripper:
                     for k, v in [
                         s.split('=')
                         for s in str(self.option_map.get('x265-params', '')).split(':')
+                        if s != ""
                     ]
                 }
             }
@@ -512,6 +515,7 @@ class Ripper:
                     for k, v in [
                         s.split('=')
                         for s in str(self.option_map.get('x265-params', '')).split(':')
+                        if s != ""
                     ]
                 }
             }
@@ -613,6 +617,7 @@ class Ripper:
                     for k, v in [
                         s.split('=')
                         for s in str(self.option_map.get('x265-params', '')).split(':')
+                        if s != ""
                     ]
                 }
             }
