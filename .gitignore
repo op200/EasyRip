@@ -5,5 +5,6 @@
 !.github/
 !src/
 !resources/
+!requirements.txt
 
 __pycache__
