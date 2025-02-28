@@ -52,7 +52,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
     def str_to_aes_hex(text: str) -> str | None:
         if MainHTTPRequestHandler.aes_key is None:
             return None
-        return AES.encrypt(text.encode(), MainHTTPRequestHandler.aes_key).hex()
+        return AES.encrypt(text.encode("utf-8"), MainHTTPRequestHandler.aes_key).hex()
 
     def do_POST(self):
         # 获取请求体的长度
@@ -150,19 +150,37 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.send_header("Content-Type", "application/json")
+        self.send_header("Access-Control-Allow-Origin", "*")
         self.end_headers()
-        self.wfile.write(
-            json.dumps(
-                {
-                    "token": MainHTTPRequestHandler.token,
-                    "log_queue": AES.encrypt(
-                        json.dumps(list(Event.log_queue)).encode("utf-8"),
-                        MainHTTPRequestHandler.password,
-                    ).hex(),
-                    "is_run_command": Event.is_run_command,
-                }
-            ).encode("utf-8")
+        s = MainHTTPRequestHandler.str_to_aes_hex(json.dumps([1, "asd", "zh驱蚊扣"]))
+        msg = json.dumps(
+            {
+                "token": MainHTTPRequestHandler.token,
+                "log_queue": MainHTTPRequestHandler.str_to_aes_hex(
+                    json.dumps(list(Event.log_queue))
+                ),
+                "is_run_command": Event.is_run_command,
+                "test": s,
+            }
+        ).encode("utf-8")
+        print(f"msg: {msg.decode('utf-8')}")
+        print(
+            f"test: {json.loads(msg.decode('utf-8'))['test']}"
         )
+        print(
+            f"test decode: {AES.decrypt(bytes.fromhex(json.loads(msg.decode('utf-8'))['test']), MainHTTPRequestHandler.aes_key)}"
+        )
+        print(f"key: {MainHTTPRequestHandler.aes_key.hex()}")
+        # print(f"msg.en: {msg.encode('utf-8')}")
+        self.wfile.write(msg)
+
+        # test
+        # en = MainHTTPRequestHandler.str_to_aes_hex(json.dumps([1, "asd", "zh驱蚊扣"]))
+        # print(f"en: {en}")
+        # de = AES.decrypt(bytes.fromhex(en), MainHTTPRequestHandler.aes_key).decode(
+        #     "utf-8"
+        # )
+        # print(f"de: {de}")
 
 
 def run_server(host: str = "", port: int = 0, password: str | None = None):
@@ -172,6 +190,7 @@ def run_server(host: str = "", port: int = 0, password: str | None = None):
         _pw_sha3_512 = hashlib.sha3_512(MainHTTPRequestHandler.password.encode())
         MainHTTPRequestHandler.password_sha3_512_last8 = _pw_sha3_512.hexdigest()[-8]
         MainHTTPRequestHandler.aes_key = _pw_sha3_512.digest()[:16]
+        print("@@@", MainHTTPRequestHandler.aes_key.hex())
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
