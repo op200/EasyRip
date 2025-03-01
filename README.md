@@ -3,6 +3,8 @@
 Self-use tools  
 自用压制工具
 
+**[Easy Rip Web Panel](https://op200.github.io/EasyRip-WebPanel/)**
+
 ### Get file
 
 Download exe in [Actions](https://github.com/op200/EasyRip/actions)  
@@ -36,5 +38,4 @@ CLI
 
 预计后续可能加入的功能
 
-* Web 端控制面板
 * 更好用的 CLI 语法（重写命令拼接部分）
