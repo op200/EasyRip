@@ -4,6 +4,7 @@ from threading import Thread
 import secrets
 import hashlib
 from collections import deque
+import os
 
 from Crypto.Cipher import AES as CryptoAES
 from Crypto.Util.Padding import pad, unpad
@@ -38,8 +39,13 @@ class Event:
         def info(message, *vals):
             print(message, *vals)
 
-    def post_event(data: dict):
+        @staticmethod
+        def http_send(header: str, message, *vals):
+            pass
+
+    def post_event(data: str):
         pass
+
 
 
 class MainHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -49,10 +55,29 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
     aes_key: bytes | None = None
 
     @staticmethod
-    def str_to_aes_hex(text: str) -> str | None:
-        if MainHTTPRequestHandler.aes_key is None:
-            return None
-        return AES.encrypt(text.encode("utf-8"), MainHTTPRequestHandler.aes_key).hex()
+    def str_to_aes(text: str) -> str:
+        return (
+            text
+            if MainHTTPRequestHandler.aes_key is None
+            else AES.encrypt(text.encode("utf-8"), MainHTTPRequestHandler.aes_key).hex()
+        )
+
+    @staticmethod
+    def aes_to_str(text: str) -> str:
+        return (
+            text.strip('"')
+            if MainHTTPRequestHandler.aes_key is None
+            else AES.decrypt(
+                bytes.fromhex(text), MainHTTPRequestHandler.aes_key
+            ).decode("utf-8").strip('"')
+        )
+
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self.end_headers()
 
     def do_POST(self):
         # 获取请求体的长度
@@ -71,19 +96,23 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         # 读取请求体数据并使用指定的编码解码
         post_data = self.rfile.read(content_length).decode(charset)
 
+        status_code: int
+        header: tuple[str, str]
+        response: str
+
         if MainHTTPRequestHandler.token is None:
-            self.send_response(500)
+            status_code = 500
             response = "Missing token in server"
-            self.send_header("Content-type", "text/html")
+            header = ("Content-type", "text/html")
 
         elif self.headers.get("Content-Type") == "application/json":
             try:
                 data = json.loads(post_data)
             except json.JSONDecodeError:
-                data = {}
+                data: dict[str] = {}
 
-            # 设置标志请求关闭服务器
-            if data.get("shutdown") == "true":
+            # 设置标志请求关闭服务
+            if data.get("shutdown") == "shutdown":
                 self.server.shutdown_requested = True
 
             # 通过 token 判断一致性
@@ -91,96 +120,79 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 not (_token := data.get("token"))
                 or _token != MainHTTPRequestHandler.token
             ):
-                self.send_response(401)
+                status_code = 401
                 response = "Wrong token in client"
-                self.send_header("Content-type", "text/html")
+                header = ("Content-type", "text/html")
 
-            # 验证密码加密后的正确性
+            # 验证密码
             elif MainHTTPRequestHandler.password is not None and (
-                not (
-                    _password := data.get(
-                        MainHTTPRequestHandler.str_to_aes_hex("password")
-                    )
-                )
+                not (_password := data.get("password"))
                 or _password != MainHTTPRequestHandler.password_sha3_512_last8
             ):
-                self.send_response(401)
+                status_code = 401
                 response = "Wrong password"
-                self.send_header("Content-type", "text/html")
+                header = ("Content-type", "text/html")
 
             elif _cmd := data.get("run_command"):
                 if Event.is_run_command is False:
-                    _cmd = AES.decrypt(
-                        bytes.fromhex(_cmd), MainHTTPRequestHandler.aes_key
-                    ).decode("utf-8")
+                    _cmd: str
+                    _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
+
+                    Event.log.http_send(f'{os.getcwd()}>', _cmd)
+
+                    if not MainHTTPRequestHandler.password and _cmd.startswith("$"):
+                        _cmd = "$log.error('Prohibited from use $ <code> in web service when no password')"
+
                     Thread(
                         target=Event.post_event,
-                        args=(
-                            "$log.error('Prohibited from use $ <code> in web service')"
-                            if _cmd.startswith("$")
-                            else _cmd,
-                        ),
+                        args=(_cmd,),
                     ).start()
                     Event.is_run_command = True
 
-                    self.send_response(200)
-                    response = json.dumps({"res": "true"})
-                    self.send_header("Content-type", "application/json")
+                    status_code = 200
+                    response = json.dumps({"res": "success"})
+                    header = ("Content-type", "application/json")
 
-            elif data.get("clear_log_queue") == "true":
+            elif data.get("clear_log_queue") == "clear":
                 Event.log_queue.clear()
-                self.send_response(200)
-                response = json.dumps({"res": "true"})
-                self.send_header("Content-type", "application/json")
+                status_code = 200
+                response = json.dumps({"res": "success"})
+                header = ("Content-type", "application/json")
 
             else:
-                self.send_response(406)
+                status_code = 406
                 response = "Unknown requests"
-                self.send_header("Content-type", "text/html")
+                header = ("Content-type", "text/html")
 
         else:
-            self.send_response(400)
+            status_code = 400
             response = "Must send JSON"
-            self.send_header("Content-type", "text/html")
+            header = ("Content-type", "text/html")
 
+        self.send_response(status_code)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header(*header)
         self.send_header("Content-Length", str(len(response)))
         self.end_headers()
         self.wfile.write(response.encode(encoding="utf-8"))
 
     def do_GET(self):
         self.send_response(200)
-        self.send_header("Content-Type", "application/json")
         self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Content-Type", "application/json")
         self.end_headers()
-        s = MainHTTPRequestHandler.str_to_aes_hex(json.dumps([1, "asd", "zh驱蚊扣"]))
-        msg = json.dumps(
-            {
-                "token": MainHTTPRequestHandler.token,
-                "log_queue": MainHTTPRequestHandler.str_to_aes_hex(
-                    json.dumps(list(Event.log_queue))
-                ),
-                "is_run_command": Event.is_run_command,
-                "test": s,
-            }
-        ).encode("utf-8")
-        print(f"msg: {msg.decode('utf-8')}")
-        print(
-            f"test: {json.loads(msg.decode('utf-8'))['test']}"
+        self.wfile.write(
+            json.dumps(
+                {
+                    "token": MainHTTPRequestHandler.token,
+                    "cwd": MainHTTPRequestHandler.str_to_aes(json.dumps(os.getcwd())),
+                    "log_queue": MainHTTPRequestHandler.str_to_aes(
+                        json.dumps(list(Event.log_queue))
+                    ),
+                    "is_run_command": Event.is_run_command,
+                }
+            ).encode("utf-8")
         )
-        print(
-            f"test decode: {AES.decrypt(bytes.fromhex(json.loads(msg.decode('utf-8'))['test']), MainHTTPRequestHandler.aes_key)}"
-        )
-        print(f"key: {MainHTTPRequestHandler.aes_key.hex()}")
-        # print(f"msg.en: {msg.encode('utf-8')}")
-        self.wfile.write(msg)
-
-        # test
-        # en = MainHTTPRequestHandler.str_to_aes_hex(json.dumps([1, "asd", "zh驱蚊扣"]))
-        # print(f"en: {en}")
-        # de = AES.decrypt(bytes.fromhex(en), MainHTTPRequestHandler.aes_key).decode(
-        #     "utf-8"
-        # )
-        # print(f"de: {de}")
 
 
 def run_server(host: str = "", port: int = 0, password: str | None = None):
@@ -188,9 +200,8 @@ def run_server(host: str = "", port: int = 0, password: str | None = None):
     if password:
         MainHTTPRequestHandler.password = password
         _pw_sha3_512 = hashlib.sha3_512(MainHTTPRequestHandler.password.encode())
-        MainHTTPRequestHandler.password_sha3_512_last8 = _pw_sha3_512.hexdigest()[-8]
+        MainHTTPRequestHandler.password_sha3_512_last8 = _pw_sha3_512.hexdigest()[-8:]
         MainHTTPRequestHandler.aes_key = _pw_sha3_512.digest()[:16]
-        print("@@@", MainHTTPRequestHandler.aes_key.hex())
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)

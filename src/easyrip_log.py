@@ -9,7 +9,7 @@ __all__ = ["Event", "print", "log"]
 
 
 class Event:
-    def append_http_server_log_queue(message: str):
+    def append_http_server_log_queue(message: tuple[str, str, str]):
         pass
 
 
@@ -47,27 +47,33 @@ class log:
 
         if log_level == log.LogLevel.info:
             print(f"\033[32m{time_now}\033[34m [INFO] {message}\033[0m")
+
             with open("编码日志.html", "a", encoding="utf-8") as f:
                 f.write(
                     rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
                 )
-            Event.append_http_server_log_queue(f"{time_now} [INFO] {message}")
+
+            Event.append_http_server_log_queue((time_now, "INFO", message))
 
         if log_level == log.LogLevel.warning:
             print(f"\033[32m{time_now}\033[33m [WARNING] {message}\033[0m")
+
             with open("编码日志.html", "a", encoding="utf-8") as f:
                 f.write(
                     rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
                 )
-            Event.append_http_server_log_queue(f"{time_now} [WARNING] {message}")
+
+            Event.append_http_server_log_queue((time_now, "WARNING", message))
 
         if log_level == log.LogLevel.error:
             print(f"\033[32m{time_now}\033[31m [ERROR] {message}\033[0m")
+
             with open("编码日志.html", "a", encoding="utf-8") as f:
                 f.write(
                     rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
                 )
-            Event.append_http_server_log_queue(f"{time_now} [ERROR] {message}")
+
+            Event.append_http_server_log_queue((time_now, "ERROR", message))
 
     @staticmethod
     def info(message, *vals):
@@ -85,3 +91,18 @@ class log:
     def write_html_log(message: str):
         with open("编码日志.html", "at", encoding="utf-8") as f:
             f.write(message)
+
+    @staticmethod
+    def http_send(header: str, message, *vals):
+        Event.append_http_server_log_queue(
+            (
+                header,
+                "Send",
+                gettext(
+                    message
+                    if type(message) is GlobalLangVal.ExtraTextIndex
+                    else str(message),
+                    *vals,
+                ),
+            )
+        )

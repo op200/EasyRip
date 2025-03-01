@@ -18,6 +18,12 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  v / ver / version [exit]\n"
         "    打印版本信息\n"
         "\n"
+        "  log [<日志级别>] <message>\n"
+        "    输出自定义日志\n"
+        "    日志级别:\n"
+        "      info, warning | warn, error | err\n"
+        "      默认: info\n"
+        "\n"
         "  $ <code>\n"
         "    直接从内部环境运行代码\n"
         "    直接执行 $ 之后的代码\n"
@@ -35,7 +41,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  cls / clear\n"
         "    清屏\n"
         "\n"
-        "  list <list option>\n"
+        "  list <list 选项>\n"
         "    操作 ripper list\n"
         "\n"
         "    默认:\n"
@@ -56,12 +62,16 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    exit:\n"
         "      执行后退出程序\n"
         "\n"
-        "    server [<address> [<port> [<password>]]]:\n"
+        "    shutdown [<秒数>]:\n"
+        "      执行后关机\n"
+        "      默认: 60\n"
+        "\n"
+        "    server [<地址> [<端口> [<密码>]]]:\n"
         "      启动 web 服务\n"
         '      默认: server "" 0\n'
         "\n"
         "  <Option>\n"
-        "    -i <input> -o <output> -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio codec> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
+        "    -i <输入> -o <输出> [-o:dir <目录>] -preset <预设名> [-pipe <vpy 路径名> -crf <值> -psy-rd <值> ...] [-sub <字幕文件路径名>] [-c:a <音频编码器> -b:a <音频码率>] [-muxer <复用器> [-r <帧率>]] [-run [<run 选项>]]\n"
         "      往 ripper list 中添加一个 ripper，你可以单独设置预设中每个选项的值，使用 -run 执行 ripper\n"
         "\n"
         "\n"
@@ -73,17 +83,20 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  -o <string>\n"
         "    输出文件的文件名前缀\n"
         "\n"
+        "  -o:dir <string>\n"
+        "    输出文件的目标目录\n"
+        "\n"
         "  -preset <string>\n"
         "    设置预设\n"
         "\n"
-        "    Preset name:\n"
+        "    预设名:\n"
         "      custom\n"
         "      flac\n"
         "      x264slow\n"
         "      x265fast2 x265fast x265slow x265full\n"
         "\n"
         "  -pipe <string>\n"
-        "    选择一个 vpy 文件作为管道的输入，这个 vpy 必须有 input\n"
+        "    选择一个 vpy 文件作为管道的输入，这个 vpy 必须有 input 全局变量\n"
         "    演示如何 input: vspipe -a input=<input> filter.vpy\n"
         "\n"
         "  -sub <string | 'auto'>\n"
@@ -94,7 +107,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "  -c:a <string>\n"
         "    设置音频编码器\n"
         "\n"
-        "    Audio encoder:\n"
+        "    音频编码器:\n"
         "      copy\n"
         "      libopus\n"
         "\n"
@@ -128,6 +141,10 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    exit:\n"
         "      执行后退出程序\n"
         "\n"
+        "    shutdown [<秒数>]:\n"
+        "      执行后关机\n"
+        "      默认: 60\n"
+        "\n"
         "\n"
         "Codec options:\n"
         "\n"
@@ -152,6 +169,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",
     "Unsupported option: {}": "不支持的选项: {}",
     "Manually force exit": "手动强制退出",
+    "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误，改为默认值 60s",
     "Stop run command": "命令执行终止",
     # log
     "encoding_log.html": "编码日志.html",
@@ -161,5 +179,5 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "FFmpeg report: {}": "FFmpeg report: {}",
     # web
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
-    "Prohibited from use $ <code> in web service": "禁止在 Web 服务中使用 $ <code>",
+    "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
 }

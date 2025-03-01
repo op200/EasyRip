@@ -229,7 +229,7 @@ class Ripper:
 
             _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
 
-            _threads = self.option_map.get('threads') or '16',
+            _threads = self.option_map.get('threads', '16')
             if _threads != '16':
                 _param += f':threads={_threads}'
 
