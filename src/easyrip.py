@@ -214,15 +214,16 @@ def run_command(command: list[str] | str) -> bool:
 
 
         case "log":
+            msg = ' '.join(cmd_list[2:])
             match cmd_list[1]:
                 case "info":
-                    log.info(cmd_list[2])
+                    log.info(msg)
                 case "warning" | "warn":
-                    log.warning(cmd_list[2])
+                    log.warning(msg)
                 case "error" | "err":
-                    log.error(cmd_list[2])
+                    log.error(msg)
                 case _:
-                    log.info(cmd_list[1])
+                    log.info(f"{cmd_list[1]} {msg}")
 
 
         case str() as s if s[0] == '$':
