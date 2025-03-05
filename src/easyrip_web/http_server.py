@@ -5,6 +5,8 @@ import secrets
 import hashlib
 from collections import deque
 import os
+import signal
+from time import sleep
 
 from Crypto.Cipher import AES as CryptoAES
 from Crypto.Util.Padding import pad, unpad
@@ -31,8 +33,12 @@ class AES:
 
 
 class Event:
-    log_queue: deque = deque()
-    is_run_command: bool = False
+    log_queue: deque[tuple[str, str, str]] = deque()
+    is_run_command: deque[bool] = deque([False])
+    """
+    用于防止 server 二次运行，以及告知客户端运行状态
+    """
+    progress: deque[dict] = deque([{}])
 
     class log:
         @staticmethod
@@ -40,12 +46,20 @@ class Event:
             print(message, *vals)
 
         @staticmethod
+        def warning(message, *vals):
+            print(message, *vals)
+
+        @staticmethod
+        def error(message, *vals):
+            print(message, *vals)
+
+        @staticmethod
         def http_send(header: str, message, *vals):
             pass
 
-    def post_event(data: str):
+    @staticmethod
+    def post_run_event(data: str):
         pass
-
 
 
 class MainHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -67,9 +81,9 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         return (
             text.strip('"')
             if MainHTTPRequestHandler.aes_key is None
-            else AES.decrypt(
-                bytes.fromhex(text), MainHTTPRequestHandler.aes_key
-            ).decode("utf-8").strip('"')
+            else AES.decrypt(bytes.fromhex(text), MainHTTPRequestHandler.aes_key)
+            .decode("utf-8")
+            .strip('"')
         )
 
     def do_OPTIONS(self):
@@ -134,24 +148,42 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 header = ("Content-type", "text/html")
 
             elif _cmd := data.get("run_command"):
-                if Event.is_run_command is False:
-                    _cmd: str
-                    _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
+                _cmd: str
+                _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
 
-                    Event.log.http_send(f'{os.getcwd()}>', _cmd)
+                Event.log.http_send(f"{os.getcwd()}>", _cmd)
 
+                status_code = 200
+                response = json.dumps({"res": "success"})
+                header = ("Content-type", "application/json")
+
+                if _cmd == "kill":
+                    try:
+                        os.kill(os.getpid(), signal.CTRL_C_EVENT)
+                        while True:
+                            sleep(1)
+                    except KeyboardInterrupt:
+                        Event.log.error("Manually force exit")
+                        # Event.is_run_command.append(False)
+                        # Event.is_run_command.popleft()
+                        # sleep(1)
+                        # Event.progress.append({})
+                        # Event.progress.popleft()
+
+                elif Event.is_run_command[-1] is True:
+                    Event.log.warning("There is a running command, terminate this request")
+
+                elif Event.is_run_command[-1] is False:
                     if not MainHTTPRequestHandler.password and _cmd.startswith("$"):
                         _cmd = "$log.error('Prohibited from use $ <code> in web service when no password')"
 
-                    Thread(
-                        target=Event.post_event,
+                    post_run = Thread(
+                        target=Event.post_run_event,
                         args=(_cmd,),
-                    ).start()
-                    Event.is_run_command = True
-
-                    status_code = 200
-                    response = json.dumps({"res": "success"})
-                    header = ("Content-type", "application/json")
+                    )
+                    Event.is_run_command.append(True)
+                    Event.is_run_command.popleft()
+                    post_run.start()
 
             elif data.get("clear_log_queue") == "clear":
                 Event.log_queue.clear()
@@ -189,7 +221,10 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                     "log_queue": MainHTTPRequestHandler.str_to_aes(
                         json.dumps(list(Event.log_queue))
                     ),
-                    "is_run_command": Event.is_run_command,
+                    "is_run_command": Event.is_run_command[-1],
+                    "progress": MainHTTPRequestHandler.str_to_aes(
+                        json.dumps(Event.progress[-1])
+                    ),
                 }
             ).encode("utf-8")
         )

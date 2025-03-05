@@ -72,6 +72,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    server [<address> [<port> [<password>]]]:\n"
         "      Boot web service\n"
         '      Default: server "" 0\n'
+        "      Client send command 'kill' can exit ripper's run, note that FFmpeg needs to accept multiple ^C signals to forcibly terminate, and a single ^C signal will wait for the file output to be complete before terminating\n"
         "\n"
         "  <Option>\n"
         "    -i <input> -o <output> [-o:dir <dir>] -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio encoder> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"

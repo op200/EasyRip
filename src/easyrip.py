@@ -38,6 +38,12 @@ change_title(PROJECT_TITLE)
 
 def check_evn():
 
+    if not shutil.which('MediaInfo'):
+        print()
+        log.warning('MediaInfo not found')
+        print(get_input_prompt(), end='')
+
+
     if os.system('ffmpeg -version > nul 2> nul'):
         print()
         log.warning('FFmpeg not found')
@@ -276,8 +282,9 @@ def run_command(command: list[str] | str) -> bool:
                 else:
                     log.info('Delete the {}th ripper success', cmd_list[2])
             else:
-                msg = f'ripper list ({len(Ripper.ripper_list)}):\n'
-                msg += f'  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}\n' for i, ripper in enumerate(Ripper.ripper_list)])
+                msg = f'ripper list ({len(Ripper.ripper_list)}):'
+                if Ripper.ripper_list:
+                    msg += '\n' + f'\n  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}' for i, ripper in enumerate(Ripper.ripper_list)])
                 log.http_send('', msg, is_format=False)
 
 
@@ -286,7 +293,7 @@ def run_command(command: list[str] | str) -> bool:
 
 
         case "server":
-            if easyrip_web.http_server.Event.is_run_command:
+            if easyrip_web.http_server.Event.is_run_command[-1]:
                 log.error("Can not start multiple services")
                 return False
             cmd_list.extend([None] * 4)
@@ -424,8 +431,6 @@ def run_command(command: list[str] | str) -> bool:
             if is_run:
                 run_ripper_list(is_exit_when_runned, shutdown_sec_str)
 
-    easyrip_web.http_server.Event.is_run_command = False
-
     return True
 
 
@@ -433,8 +438,15 @@ def run_command(command: list[str] | str) -> bool:
 if __name__ == "__main__":
 
     LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
-    easyrip_web.http_server.Event.post_event = lambda cmd: run_command(cmd)
-    
+
+    def _post_run_event(cmd: str):
+        run_command(cmd)
+        easyrip_web.http_server.Event.is_run_command.append(False)
+        easyrip_web.http_server.Event.is_run_command.popleft()
+
+    easyrip_web.http_server.Event.post_run_event = _post_run_event
+
+
     Ripper.ripper_list = []
 
     if sys.argv[1:] != []:

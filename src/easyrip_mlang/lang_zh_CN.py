@@ -72,6 +72,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    server [<地址> [<端口> [<密码>]]]:\n"
         "      启动 web 服务\n"
         '      默认: server "" 0\n'
+        "      客户端发送命令 'kill' 可以退出 ripper 的运行，注意，FFmpeg需要接受多次^C信号才能强制终止，单次^C会等待文件输出完才会终止\n"
         "\n"
         "  <Option>\n"
         "    -i <输入> -o <输出> [-o:dir <目录>] -preset <预设名> [-pipe <vpy 路径名> -crf <值> -psy-rd <值> ...] [-sub <字幕文件路径名>] [-c:a <音频编码器> -b:a <音频码率>] [-muxer <复用器> [-r <帧率>]] [-run [<run 选项>]]\n"
@@ -182,5 +183,6 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "FFmpeg report: {}": "FFmpeg report: {}",
     # web
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
+    "There is a running command, terminate this request": "存在正在运行的命令，终止此次请求",
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
 }

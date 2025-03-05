@@ -3,15 +3,19 @@ import subprocess
 import re
 from datetime import datetime
 import enum
+from time import sleep
+import json
+from threading import Thread
 
+import easyrip_web
 from easyrip_log import log
 print = None
 
 __all__ = ['Ripper']
 
 
-FF_PROGRESS_LOG_FILE = "progress.log"
-FF_REPORT_LOG_FILE = "report.log"
+FF_PROGRESS_LOG_FILE = "FFProgress.log"
+FF_REPORT_LOG_FILE = "FFReport.log"
 
 
 class Ripper:
@@ -132,6 +136,18 @@ class Ripper:
     option_map: dict
 
     preset_name: PresetName
+
+    _progress: dict
+    '''
+    .frame_count : int 总帧数
+    .frame : int 已输出帧数
+    .fps : float 当前输出帧率
+
+    .duration : float 视频总时长 s
+    .out_time_us : int 已输出时长 us
+
+    .speed : float 当前输出速率 倍
+    '''
 
 
     def preset_name_to_option(self, preset_name: PresetName) -> Option:
@@ -650,6 +666,60 @@ class Ripper:
 
 
 
+    def _flush_progress(self, sleep_sec: float) -> None:
+        while True:
+            sleep(sleep_sec)
+
+            if easyrip_web.http_server.Event.is_run_command[-1] is False:
+                break
+
+            try:
+                with open(FF_PROGRESS_LOG_FILE, "rt", encoding="utf-8") as file:
+                    file.seek(0, 2) # 将文件指针移动到文件末尾
+                    total_size = file.tell() # 获取文件的总大小
+                    buffer = []
+                    while len(buffer) < 12:
+                        # 每次向前移动400字节
+                        step = min(400, total_size)
+                        total_size -= step
+                        file.seek(total_size)
+                        # 读取当前块的内容
+                        lines = file.readlines()
+                        # 将读取到的行添加到缓冲区
+                        buffer = lines + buffer
+                        # 如果已经到达文件开头，退出循环
+                        if total_size == 0:
+                            break
+            except FileNotFoundError:
+                continue
+            except Exception as e:
+                log.error(e)
+                continue
+
+            res = {line[0]:line[1] for line in (line.strip().split('=') for line in buffer[-12:])}
+
+            if p := res.get('progress'):
+                out_time_us = res.get('out_time_us')
+                speed = res.get('speed').rstrip('x')
+
+                self._progress['frame'] = int(res.get('frame'))
+                self._progress['fps'] = float(res.get('fps'))
+                self._progress['out_time_us'] = int(out_time_us) if out_time_us != 'N/A' else 0
+                self._progress['speed'] = float(speed) if speed != 'N/A' else 0
+
+                easyrip_web.http_server.Event.progress.append(self._progress)
+                easyrip_web.http_server.Event.progress.popleft()
+
+                if p != 'continue':
+                    break
+
+            else:
+                continue
+                
+        easyrip_web.http_server.Event.progress.append({})
+        easyrip_web.http_server.Event.progress.popleft()
+
+
     def run(self, prep_func = lambda _: None):
 
         if not os.path.exists(self.input_pathname):
@@ -734,6 +804,32 @@ class Ripper:
                 f'Ripper:<br>'
                 f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span></div>')
 
+            # 先删除，防止直接读到结束标志
+            if os.path.exists(FF_PROGRESS_LOG_FILE):
+                os.remove(FF_PROGRESS_LOG_FILE)
+
+            try:
+                media_info = subprocess.Popen(
+                    [
+                        "MediaInfo",
+                        "--Output=JSON",
+                        self.input_pathname,
+                    ],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                ).communicate()[0]
+                media_info: dict[str, str] = json.loads(media_info)
+                self._progress['frame_count'] = int(media_info["media"]["track"][0]["FrameCount"])
+                self._progress['duration'] = float(media_info["media"]["track"][0]["Duration"])
+
+                del media_info
+
+            except Exception as e:
+                log.error(e)
+
+            Thread(target=self._flush_progress, args=(1,)).start()
+
             log.info(cmd)
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
             if os.system(cmd):
@@ -800,8 +896,7 @@ class Ripper:
             self.preset_name = Ripper.PresetName.custom
             self.option = option
 
+        self._progress = {}
 
     def __str__(self):
         return f'-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} {" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
-
-
