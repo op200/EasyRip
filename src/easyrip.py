@@ -251,6 +251,13 @@ def run_command(command: list[str] | str) -> bool:
             log.http_send('', ' | '.join(files))
 
 
+        case "mkdir" | "makedir":
+            try:
+                os.makedirs(cmd_list[1])
+            except Exception as e:
+                log.warning(e)
+
+
         case "cls" | "clear":
             if os.name == 'nt':
                 os.system('cls')
@@ -269,9 +276,9 @@ def run_command(command: list[str] | str) -> bool:
                 else:
                     log.info('Delete the {}th ripper success', cmd_list[2])
             else:
-                print(f'ripper list ({len(Ripper.ripper_list)}):')
-                for i, ripper in enumerate(Ripper.ripper_list):
-                    print(f'  {i+1}.\n  {ripper}\n  {log.hr}')
+                msg = f'ripper list ({len(Ripper.ripper_list)}):\n'
+                msg += f'  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}\n' for i, ripper in enumerate(Ripper.ripper_list)])
+                log.http_send('', msg, is_format=False)
 
 
         case "run":

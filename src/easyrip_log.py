@@ -41,10 +41,15 @@ class log:
     @staticmethod
     def output(log_level: LogLevel, message, *vals, **kwargs):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
-        message = gettext(
-            message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
-            *vals,
-        )
+        if kwargs.get("is_format", True):
+            message = gettext(
+                message
+                if type(message) is GlobalLangVal.ExtraTextIndex
+                else str(message),
+                *vals,
+            )
+        else:
+            message = str(message)
 
         match log_level:
             case log.LogLevel.info:
@@ -90,22 +95,28 @@ class log:
                 )
 
     @staticmethod
-    def info(message, *vals):
-        log.output(log.LogLevel.info, message, *vals)
+    def info(message, *vals, is_format: bool = True):
+        log.output(log.LogLevel.info, message, *vals, is_format=is_format)
 
     @staticmethod
-    def warning(message, *vals):
-        log.output(log.LogLevel.warning, message, *vals)
+    def warning(message, *vals, is_format: bool = True):
+        log.output(log.LogLevel.warning, message, *vals, is_format=is_format)
 
     @staticmethod
-    def error(message, *vals):
-        log.output(log.LogLevel.error, message, *vals)
+    def error(message, *vals, is_format: bool = True):
+        log.output(log.LogLevel.error, message, *vals, is_format=is_format)
+
+    @staticmethod
+    def http_send(header: str, message, *vals, is_format: bool = True):
+        log.output(
+            log.LogLevel.http_send,
+            message,
+            *vals,
+            http_send_header=header,
+            is_format=is_format,
+        )
 
     @staticmethod
     def write_html_log(message: str):
         with open("编码日志.html", "at", encoding="utf-8") as f:
             f.write(message)
-
-    @staticmethod
-    def http_send(header: str, message, *vals):
-        log.output(log.LogLevel.http_send, message, *vals, http_send_header=header)

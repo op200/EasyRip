@@ -731,8 +731,8 @@ class Ripper:
                 f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
                 f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
                 f'输出文件名：<span style="color:darkcyan;">"{output_filename}"</span><br>'
-                f'Option:<br>'
-                f'<span style="white-space:pre-wrap;color:darkcyan;">{self.option}</span></div>')
+                f'Ripper:<br>'
+                f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span></div>')
 
             log.info(cmd)
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
