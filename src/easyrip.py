@@ -232,7 +232,7 @@ def run_command(command: list[str] | str) -> bool:
                     log.info(f"{cmd_list[1]} {msg}")
 
 
-        case str() as s if s[0] == '$':
+        case str() as s if len(s) > 0 and s[0] == '$':
             try:
                 exec(' '.join(cmd_list)[1:].lstrip().replace(r"\N","\n"))
             except Exception as e:
@@ -297,7 +297,18 @@ def run_command(command: list[str] | str) -> bool:
                 log.error("Can not start multiple services")
                 return False
             cmd_list.extend([None] * 4)
-            easyrip_web.run_server(cmd_list[1], int(cmd_list[2]), cmd_list[3])
+            try:
+                cmd_list[2] = int(cmd_list[2])
+            except ValueError:
+                cmd_list[2] = 0
+            input_vals: dict = {}
+            if cmd_list[1]:
+                input_vals['host'] = cmd_list[1]
+            if cmd_list[2]:
+                input_vals['port'] = cmd_list[2]
+            if cmd_list[3]:
+                input_vals['password'] = cmd_list[3]
+            easyrip_web.run_server(**input_vals)
 
 
         case _:
