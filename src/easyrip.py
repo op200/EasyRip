@@ -8,6 +8,7 @@ import shlex
 import re
 from threading import Thread
 from itertools import zip_longest
+import subprocess
 
 from global_val import GlobalVal
 from easyrip_log import log, print, Event as LogEvent
@@ -36,92 +37,129 @@ def change_title(title):
 change_title(PROJECT_TITLE)
 
 
+def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
+    new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
+    new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
+    new_ver = (
+        [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
+        [int(v) for v in new_ver_add_num[1:]]
+    )
+
+    old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split(".")]
+    old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
+    old_ver = (
+        [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
+        [int(v) for v in old_ver_add_num[1:]]
+    )
+
+    for i in range(2):
+        for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
+            if new > old:
+                return True
+            elif new < old:
+                break
+        else:
+            continue
+        break
+    return False
+
+
+def log_new_ver(new_ver: str, old_ver: str, program_name: str, dl_url: str):
+    try:
+        if check_ver(new_ver, old_ver):
+            print()
+            log.info(GlobalLangVal.ExtraTextIndex.NEW_VER_TIP,
+                     program_name, new_ver, dl_url)
+            print(get_input_prompt(), end='')
+    except Exception as e:
+        log.warning(e)
+
+
 def check_evn():
 
-    if not shutil.which('MediaInfo'):
+    _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
+    if not shutil.which(_name):
         print()
-        log.warning('MediaInfo not found')
+        log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
         print(get_input_prompt(), end='')
 
 
-    if os.system('ffmpeg -version > nul 2> nul'):
+    _name, _url = 'FFmpeg', 'https://ffmpeg.org/download.html'
+    if not shutil.which(_name):
         print()
-        log.warning('FFmpeg not found')
+        log.warning('{} not found, download it: {}', _name, f'(full build ver) {_url}')
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            '7.1',
+            subprocess.run('ffmpeg -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0],
+            _name, _url)
 
-    # elif os.system('ffmpeg -version | findstr "/C:ffmpeg version 7.1-full" > nul'):
-    #     print()
-    #     log.warning('FFmpeg version is not 7.1-full')
-    #     print(get_input_prompt(), end='')
 
-
-    if os.system('flac -v > nul 2> nul'):
+    _name, _url = 'flac', 'https://github.com/xiph/flac/releases'
+    if not shutil.which(_name):
         print()
-        log.warning('flac not found')
+        log.warning('{} not found, download it: {}', _name, f'(ver >= 1.5.0) {_url}')
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            easyrip_web.get_github_api_ver("https://api.github.com/repos/xiph/flac/releases/latest"),
+            subprocess.run('flac -v', capture_output=True, text=True).stdout.split()[1],
+            _name, _url)
 
-    # elif os.system('flac -v | findstr "/C:flac 1.5.0" > nul'):
-    #     print()
-    #     log.warning('flac version is not 1.5.0')
-    #     print(get_input_prompt(), end='')
 
-
-    if not shutil.which('mp4fpsmod'):
+    _name, _url = 'mp4fpsmod', 'https://github.com/xiph/flac/releases'
+    if not shutil.which(_name):
         print()
-        log.warning('mp4fpsmod not found')
+        log.warning('{} not found, download it: {}', _name, _url)
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            easyrip_web.get_github_api_ver("https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"),
+            subprocess.run(_name, capture_output=True, text=True).stderr.split(maxsplit=2)[1],
+            _name, _url)
 
 
-    if os.system('mp4box -version > nul 2> nul'):
+    _name, _url = 'MP4Box', 'https://gpac.io/downloads/gpac-nightly-builds/'
+    if not shutil.which(_name):
         print()
-        log.warning('MP4Box not found')
+        log.warning('{} not found, download it: {}', _name, _url)
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            '2.5',
+            subprocess.run('mp4box -version', capture_output=True, text=True).stderr.split('-', 2)[1].strip().split()[2],
+            _name, _url)
 
-    # elif os.system('mp4box -version 2>&1 | findstr "/C:MP4Box - GPAC version 2.4" > nul'):
-    #     print()
-    #     log.warning('MP4Box version is not GPAC 2.4')
-    #     print(get_input_prompt(), end='')
 
-
-    if os.system('mkvpropedit --version > nul 2> nul'):
+    _name, _url = 'mkvpropedit', 'https://mkvtoolnix.download/downloads.html'
+    if not shutil.which(_name):
         print()
-        log.warning('mkvpropedit not found')
+        log.warning('{} not found, download it: {}', _name, _url)
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            '90',
+            subprocess.run('mkvpropedit --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
+            _name, _url)
 
 
-    if os.system('mkvmerge --version > nul 2> nul'):
+    _name = 'mkvmerge'
+    if not shutil.which(_name):
         print()
-        log.warning('mkvmerge not found')
+        log.warning('{} not found, download it: {}', _name, _url)
         print(get_input_prompt(), end='')
+    else:
+        log_new_ver(
+            '90',
+            subprocess.run('mkvmerge --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
+            _name, _url)
 
 
-    if new_ver_str := easyrip_web.get_easyrip_ver():
-        new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
-        new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
-        new_ver = (
-            [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
-            [int(v) for v in new_ver_add_num[1:]]
-        )
-
-        old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", PROJECT_VERSION).split(".")]
-        old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
-        old_ver = (
-            [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
-            [int(v) for v in old_ver_add_num[1:]]
-        )
-
-        for i in range(2):
-            for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
-                if new > old:
-                    print()
-                    log.info(GlobalLangVal.ExtraTextIndex.NEW_VER_TIP, new_ver_str)
-                    print(get_input_prompt(), end='')
-                    break
-                elif new < old:
-                    break
-            else:
-                continue
-            break
+    log_new_ver(
+        easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
+        PROJECT_VERSION, PROJECT_NAME,
+        GlobalVal.PROJECT_RELEASE_URL)
 
 
 if __name__ == "__main__":
@@ -296,19 +334,39 @@ def run_command(command: list[str] | str) -> bool:
             if easyrip_web.http_server.Event.is_run_command[-1]:
                 log.error("Can not start multiple services")
                 return False
-            cmd_list.extend([None] * 4)
-            try:
-                cmd_list[2] = int(cmd_list[2])
-            except ValueError:
-                cmd_list[2] = 0
-            input_vals: dict = {}
-            if cmd_list[1]:
-                input_vals['host'] = cmd_list[1]
-            if cmd_list[2]:
-                input_vals['port'] = cmd_list[2]
-            if cmd_list[3]:
-                input_vals['password'] = cmd_list[3]
-            easyrip_web.run_server(**input_vals)
+
+            address, password = None, None
+
+            for i in range(1, len(cmd_list)):
+                match cmd_list[i]:
+                    case '-a' | '-address':
+                        address = cmd_list[i+1]
+                    case '-p' | 'password':
+                        password = cmd_list[i+1]
+                    case _:
+                        if address is None:
+                            address = cmd_list[i]
+                        elif password is None:
+                            password = cmd_list[i]
+            if address:
+                res = re.match(
+                    r"^([a-zA-Z0-9.-]+)(:(\d+))?$",
+                    address,
+                )
+                if res:
+                    host = res.group(1)
+                    port = res.group(2)
+                    if port:
+                        port = int(port)
+                    elif host.isdigit():
+                        port = int(host)
+                        host = None
+                else:
+                    host = "localhost"
+            else:
+                host, port = "localhost", 0
+
+            easyrip_web.run_server(host=host or "",port=port or 0, password=password)
 
 
         case _:

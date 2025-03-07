@@ -158,5 +158,5 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      Use the filter yadif to deinterlacing\n"
     ),
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: f"New version {{}} detected. You can download it in {GlobalVal.PROJECT_RELEASE_URL}",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "{} has new version {}. You can download it: {}",
 }

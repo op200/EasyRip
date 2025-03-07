@@ -33,10 +33,10 @@ def get_sys_proxy(target_url: str) -> str | None:
     return url if url.rstrip("/") != target_url.rstrip("/") else None
 
 
-def get_easyrip_ver() -> str | None:
-    proxy = get_sys_proxy(PROJECT_RELEASE_API)
+def get_github_api_ver(github_api_url: str) -> str | None:
+    proxy = get_sys_proxy(github_api_url)
 
-    cmd = f"curl --ssl-no-revoke{f' -x {proxy}' if proxy else ''} {PROJECT_RELEASE_API}"
+    cmd = f"curl --ssl-no-revoke{f' -x {proxy}' if proxy else ''} {github_api_url}"
 
     version = None
     try:

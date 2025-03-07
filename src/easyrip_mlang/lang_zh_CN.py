@@ -158,7 +158,8 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      使用 yadif 滤镜反交错\n"
     ),
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: f"检测到新版本 {{}}。你可以进入此链接下载 {GlobalVal.PROJECT_RELEASE_URL}",
+    "{} not found, download it: {}": "没找到 {}，在此下载: {}",
+    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
     "Run completed": "执行完成",
