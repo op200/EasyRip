@@ -108,7 +108,7 @@ def check_evn():
             _name, _url)
 
 
-    _name, _url = 'mp4fpsmod', 'https://github.com/xiph/flac/releases'
+    _name, _url = 'mp4fpsmod', 'https://github.com/nu774/mp4fpsmod/releases'
     if not shutil.which(_name):
         print()
         log.warning('{} not found, download it: {}', _name, _url)
