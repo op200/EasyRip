@@ -55,40 +55,36 @@ class log:
             case log.LogLevel.info:
                 print(f"\033[32m{time_now}\033[34m [INFO] {message}\033[0m")
 
-                with open("编码日志.html", "a", encoding="utf-8") as f:
-                    f.write(
-                        rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
-                    )
+                log.write_html_log(
+                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
+                )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
             case log.LogLevel.warning:
                 print(f"\033[32m{time_now}\033[33m [WARNING] {message}\033[0m")
 
-                with open("编码日志.html", "a", encoding="utf-8") as f:
-                    f.write(
-                        rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
-                    )
+                log.write_html_log(
+                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
+                )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
             case log.LogLevel.error:
                 print(f"\033[32m{time_now}\033[31m [ERROR] {message}\033[0m")
 
-                with open("编码日志.html", "a", encoding="utf-8") as f:
-                    f.write(
-                        rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
-                    )
+                log.write_html_log(
+                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
+                )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
             case log.LogLevel.http_send:
                 print(f"\033[32m{time_now}\033[35m [Send] {message}\033[0m")
 
-                with open("编码日志.html", "a", encoding="utf-8") as f:
-                    f.write(
-                        rf'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:deeppink;">[Send] {message}</span></div>'
-                    )
+                log.write_html_log(
+                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:deeppink;">[Send] {message}</span></div>'
+                )
 
                 Event.append_http_server_log_queue(
                     (kwargs.get("http_send_header", ""), "Send", message)
@@ -118,5 +114,5 @@ class log:
 
     @staticmethod
     def write_html_log(message: str):
-        with open("编码日志.html", "at", encoding="utf-8") as f:
+        with open(log.html_log_file, "at", encoding="utf-8") as f:
             f.write(message)

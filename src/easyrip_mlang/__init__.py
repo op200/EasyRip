@@ -73,7 +73,7 @@ def gettext(org_text: str | ExtraTextIndex, *vals):
     if GlobalLangVal.gettext_target_lang[0] is Language.zh:
         new_text = lang_zh_CN.lang_map.get(org_text)
 
-    new_text = new_text or lang_en.lang_map.get(org_text) or org_text
+    new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 
     try:
         new_text = new_text.format(*vals)
