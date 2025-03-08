@@ -164,7 +164,7 @@ def check_evn():
 
 if __name__ == "__main__":
     GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言
-
+    log.html_log_file = gettext("encoding_log.html")
     Thread(target=check_evn).start()
 
 

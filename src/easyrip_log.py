@@ -28,7 +28,7 @@ def print(
 
 
 class log:
-    html_log_file = gettext("encoding_log.html")
+    html_log_file: str # 在调用前定义
 
     hr = "———————————————————————————————————"
 
