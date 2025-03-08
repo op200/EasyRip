@@ -77,17 +77,10 @@ def log_new_ver(new_ver: str, old_ver: str, program_name: str, dl_url: str):
 
 def check_evn():
 
-    _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
-    if not shutil.which(_name):
-        print()
-        log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
-        print(get_input_prompt(), end='')
-
-
     _name, _url = 'FFmpeg', 'https://ffmpeg.org/download.html'
     if not shutil.which(_name):
         print()
-        log.warning('{} not found, download it: {}', _name, f'(full build ver) {_url}')
+        log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
         print(get_input_prompt(), end='')
     else:
         log_new_ver(
@@ -154,6 +147,13 @@ def check_evn():
             '90',
             subprocess.run('mkvmerge --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
             _name, _url)
+
+
+    _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
+    if not shutil.which(_name):
+        print()
+        log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
+        print(get_input_prompt(), end='')
 
 
     log_new_ver(
