@@ -394,7 +394,7 @@ def run_command(command: list[str] | str) -> bool:
 
                 if cmd_list[i] == '-i':
                     if cmd_list[i+1] == 'fd':
-                        if easyrip_web.http_server.Event.is_run_command:
+                        if easyrip_web.http_server.Event.is_run_command[-1]:
                             log.error("Disable the use of 'fd' on the web")
                             return False
                         input_pathname_list += file_dialog()
@@ -509,19 +509,20 @@ def run_command(command: list[str] | str) -> bool:
 
 
 def init():
+    GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言必须优先级最高
+
     new_path = os.getcwd()
     if os.pathsep in (current_path := os.environ.get("PATH", "")):
         if new_path not in current_path.split(os.pathsep):
             updated_path = f"{new_path}{os.pathsep}{current_path}"
             os.environ["PATH"] = updated_path
 
+    Thread(target=check_evn).start()
+
     change_title(PROJECT_TITLE)
 
     log.html_log_file = gettext("encoding_log.html")
     MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore
-
-    GlobalLangVal.gettext_target_lang = get_system_language()
-    Thread(target=check_evn).start()
 
     LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
 

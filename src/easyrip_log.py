@@ -29,7 +29,7 @@ def print(
 
 
 class log:
-    html_log_file: str = "encoding_log.html" # 在调用前重定义
+    html_log_file = "encoding_log.html" # 在调用前重定义
 
     hr = "———————————————————————————————————"
 
