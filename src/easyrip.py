@@ -17,13 +17,14 @@ from easyrip_mlang import GlobalLangVal, get_system_language, gettext, Event as 
 import easyrip_web
 
 
+__all__ = ["init", "run_command", "log", "Ripper"]
+
+
 PROJECT_NAME = GlobalVal.PROJECT_NAME
 __version__ = PROJECT_VERSION = GlobalVal.PROJECT_VERSION
 PROJECT_TITLE = GlobalVal.PROJECT_TITLE
 PROJECT_URL = GlobalVal.PROJECT_URL
 
-
-MlangEvent.log = easyrip_web.http_server.Event.log = log
 
 
 def change_title(title):
@@ -32,9 +33,6 @@ def change_title(title):
     elif os.name == 'posix':
         sys.stdout.write(f'\x1b]2;{title}\x07')
         sys.stdout.flush()
-
-
-change_title(PROJECT_TITLE)
 
 
 def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
@@ -64,7 +62,9 @@ def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
     return False
 
 
-def log_new_ver(new_ver: str, old_ver: str, program_name: str, dl_url: str):
+def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: str):
+    if new_ver is None:
+        return
     try:
         if check_ver(new_ver, old_ver):
             print()
@@ -94,10 +94,14 @@ def check_evn():
         print()
         log.warning('{} not found, download it: {}', _name, f'(ver >= 1.5.0) {_url}')
         print(get_input_prompt(), end='')
+
+    elif check_ver('1.5.0', (old_ver_str:=subprocess.run('flac -v', capture_output=True, text=True).stdout.split()[1])):
+        log.error("flac ver ({}) must >= 1.5.0", old_ver_str)
+
     else:
         log_new_ver(
             easyrip_web.get_github_api_ver("https://api.github.com/repos/xiph/flac/releases/latest"),
-            subprocess.run('flac -v', capture_output=True, text=True).stdout.split()[1],
+            old_ver_str,
             _name, _url)
 
 
@@ -154,6 +158,8 @@ def check_evn():
         print()
         log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
         print(get_input_prompt(), end='')
+    elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
+        log.error("The MediaInfo must be CLI ver")
 
 
     log_new_ver(
@@ -162,10 +168,8 @@ def check_evn():
         GlobalVal.PROJECT_RELEASE_URL)
 
 
-if __name__ == "__main__":
-    GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言
-    log.html_log_file = gettext("encoding_log.html")
-    Thread(target=check_evn).start()
+def get_input_prompt():
+    return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
 
 
 if os.name == 'nt':
@@ -174,10 +178,6 @@ if os.name == 'nt':
     except:  # noqa: E722
         log.warning("Windows DPI Aware failed")
 
-
-def get_input_prompt():
-    return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
-get_input_prompt()
 
 def file_dialog():
     tkRoot = tk.Tk()
@@ -224,10 +224,10 @@ def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | No
 
 def run_command(command: list[str] | str) -> bool:
 
-    if type(command) is list:
+    if isinstance(command, list):
         cmd_list = command
 
-    elif type(command) is str:
+    elif isinstance(command, str):
         try:
             cmd_list = [cmd.strip('"').strip("'").replace('\\\\', '\\')
                         for cmd in shlex.split(command, posix=False)]
@@ -361,8 +361,11 @@ def run_command(command: list[str] | str) -> bool:
                     elif host.isdigit():
                         port = int(host)
                         host = None
+                    else:
+                        port = None
+                        host = None
                 else:
-                    host = "localhost"
+                    host, port = "localhost", 0
             else:
                 host, port = "localhost", 0
 
@@ -375,7 +378,7 @@ def run_command(command: list[str] | str) -> bool:
             output_basename = None
             output_dir = None
             preset_name = None
-            option_map = {}
+            option_map: dict[str, str] = {}
             is_run = False
             is_exit_when_runned = False
             shutdown_sec_str: str | None = None
@@ -391,6 +394,9 @@ def run_command(command: list[str] | str) -> bool:
 
                 if cmd_list[i] == '-i':
                     if cmd_list[i+1] == 'fd':
+                        if easyrip_web.http_server.Event.is_run_command:
+                            log.error("Disable the use of 'fd' on the web")
+                            return False
                         input_pathname_list += file_dialog()
                     else:
                         input_pathname_list.append(cmd_list[i+1])
@@ -439,7 +445,6 @@ def run_command(command: list[str] | str) -> bool:
                         log.warning('The file "{}" does not exist', input_pathname)
 
                     if sub_map := option_map.get('sub'):
-                        sub_map: str
                         sub_list: list[str]
                         
                         if sub_map == 'auto':
@@ -503,8 +508,20 @@ def run_command(command: list[str] | str) -> bool:
     return True
 
 
+def init():
+    new_path = os.getcwd()
+    if os.pathsep in (current_path := os.environ.get("PATH", "")):
+        if new_path not in current_path.split(os.pathsep):
+            updated_path = f"{new_path}{os.pathsep}{current_path}"
+            os.environ["PATH"] = updated_path
 
-if __name__ == "__main__":
+    change_title(PROJECT_TITLE)
+
+    log.html_log_file = gettext("encoding_log.html")
+    MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore
+
+    GlobalLangVal.gettext_target_lang = get_system_language()
+    Thread(target=check_evn).start()
 
     LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
 
@@ -516,9 +533,13 @@ if __name__ == "__main__":
     easyrip_web.http_server.Event.post_run_event = _post_run_event
 
 
+if __name__ == "__main__":
+
+    init()
+
     Ripper.ripper_list = []
 
-    if sys.argv[1:] != []:
+    if len(sys.argv) > 1:
         run_command(sys.argv[1:])
 
     while True:

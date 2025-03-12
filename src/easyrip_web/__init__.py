@@ -8,7 +8,7 @@ from . import http_server
 PROJECT_RELEASE_API = GlobalVal.PROJECT_RELEASE_API
 
 
-def get_sys_proxy(target_url: str) -> str | None:
+def get_sys_proxy(target_url: str) -> str:
     try:
         # PowerShell 命令：获取系统的代理设置
         result = subprocess.run(
@@ -21,16 +21,17 @@ def get_sys_proxy(target_url: str) -> str | None:
             text=True,
             check=True,
         )
+
+        url = ""
+        for line in result.stdout.split("\n"):
+            if line.startswith("AbsoluteUri"):
+                url = line.split(":", 1)[1].strip()
+                break
+
+        return url if url.rstrip("/") != target_url.rstrip("/") else ""
+
     except:  # noqa: E722
-        pass
-
-    url = None
-    for line in result.stdout.split("\n"):
-        if line.startswith("AbsoluteUri"):
-            url = line.split(":", 1)[1].strip()
-            break
-
-    return url if url.rstrip("/") != target_url.rstrip("/") else None
+        return ""
 
 
 def get_github_api_ver(github_api_url: str) -> str | None:

@@ -9,6 +9,7 @@ __all__ = ["Event", "print", "log"]
 
 
 class Event:
+    @staticmethod
     def append_http_server_log_queue(message: tuple[str, str, str]):
         pass
 
@@ -28,7 +29,7 @@ def print(
 
 
 class log:
-    html_log_file: str # 在调用前定义
+    html_log_file: str = "encoding_log.html" # 在调用前重定义
 
     hr = "———————————————————————————————————"
 
@@ -39,7 +40,7 @@ class log:
         http_send = enum.auto()
 
     @staticmethod
-    def output(log_level: LogLevel, message, *vals, **kwargs):
+    def _print_log(log_level: LogLevel, message: object, *vals, **kwargs):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         if kwargs.get("is_format", True):
             message = gettext(
@@ -91,20 +92,20 @@ class log:
                 )
 
     @staticmethod
-    def info(message, *vals, is_format: bool = True):
-        log.output(log.LogLevel.info, message, *vals, is_format=is_format)
+    def info(message: object, *vals, is_format: bool = True):
+        log._print_log(log.LogLevel.info, message, *vals, is_format=is_format)
 
     @staticmethod
-    def warning(message, *vals, is_format: bool = True):
-        log.output(log.LogLevel.warning, message, *vals, is_format=is_format)
+    def warning(message: object, *vals, is_format: bool = True):
+        log._print_log(log.LogLevel.warning, message, *vals, is_format=is_format)
 
     @staticmethod
-    def error(message, *vals, is_format: bool = True):
-        log.output(log.LogLevel.error, message, *vals, is_format=is_format)
+    def error(message: object, *vals, is_format: bool = True):
+        log._print_log(log.LogLevel.error, message, *vals, is_format=is_format)
 
     @staticmethod
-    def http_send(header: str, message, *vals, is_format: bool = True):
-        log.output(
+    def http_send(header: str, message: object, *vals, is_format: bool = True):
+        log._print_log(
             log.LogLevel.http_send,
             message,
             *vals,

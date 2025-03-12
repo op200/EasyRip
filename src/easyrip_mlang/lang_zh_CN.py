@@ -159,6 +159,8 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "      使用 yadif 滤镜反交错\n"
     ),
     "{} not found, download it: {}": "没找到 {}，在此下载: {}",
+    "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
+    "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
@@ -166,6 +168,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Your input command has error:\n{}": "输入的命令报错:\n{}",
     "Delete the {}th ripper success": "成功删除第 {} 个 ripper",
     "Can not start multiple services": "禁止重复启用服务",
+    "Disable the use of 'fd' on the web": "禁止在 web 使用 'fd'",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',
     'The directory "{}" does not exist': '目录 "{}" 不存在',
     "Missing -preset": "缺少 -preset",

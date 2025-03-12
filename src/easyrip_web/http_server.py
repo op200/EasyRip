@@ -20,7 +20,7 @@ class AES:
     def encrypt(plaintext: bytes, key: bytes) -> bytes:
         cipher = CryptoAES.new(key, CryptoAES.MODE_CBC)  # 使用 CBC 模式
         ciphertext = cipher.encrypt(pad(plaintext, CryptoAES.block_size))  # 加密并填充
-        return cipher.iv + ciphertext  # 返回 IV 和密文
+        return bytes(cipher.iv) + ciphertext  # 返回 IV 和密文
 
     @staticmethod
     def decrypt(ciphertext: bytes, key: bytes) -> bytes:
@@ -42,15 +42,15 @@ class Event:
 
     class log:
         @staticmethod
-        def info(message, *vals):
+        def info(message: object, *vals):
             print(message, *vals)
 
         @staticmethod
-        def warning(message, *vals):
+        def warning(message: object, *vals):
             print(message, *vals)
 
         @staticmethod
-        def error(message, *vals):
+        def error(message: object, *vals):
             print(message, *vals)
 
         @staticmethod
@@ -58,7 +58,7 @@ class Event:
             pass
 
     @staticmethod
-    def post_run_event(data: str):
+    def post_run_event(cmd: str):
         pass
 
 
@@ -123,11 +123,11 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             try:
                 data = json.loads(post_data)
             except json.JSONDecodeError:
-                data: dict[str] = {}
+                data: dict[str, str] = {}
 
             # 设置标志请求关闭服务
             if data.get("shutdown") == "shutdown":
-                self.server.shutdown_requested = True
+                self.server.shutdown_requested = True # type: ignore
 
             # 通过 token 判断一致性
             if (
@@ -148,7 +148,6 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 header = ("Content-type", "text/html")
 
             elif _cmd := data.get("run_command"):
-                _cmd: str
                 _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
 
                 Event.log.http_send(f"{os.getcwd()}>", _cmd)
