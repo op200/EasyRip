@@ -5,13 +5,13 @@ on:
     paths:
       - 'src/**'
       - 'resources/*.ico'
-      - '.github/workflows/blank.yml'
+      - '.github/workflows/*'
     branches: [ "main" ]
   pull_request:
     paths:
       - 'src/**'
       - 'resources/*.ico'
-      - '.github/workflows/blank.yml'
+      - '.github/workflows/*'
     branches: [ "main" ]
 
 permissions:
