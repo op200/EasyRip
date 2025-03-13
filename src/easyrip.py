@@ -215,7 +215,7 @@ def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | No
 
     if shutdown_sec:
         if os.name == 'nt':
-            os.system(f"shutdown -s -t {shutdown_sec} -c {gettext('{} run completed, shutdown in {}s', PROJECT_TITLE, shutdown_sec)}")
+            os.system(f'shutdown /s /t {shutdown_sec} /c "{gettext('{} run completed, shutdown in {}s', PROJECT_TITLE, shutdown_sec)}"')
         elif os.name == 'posix':
             os.system(f"shutdown -h +{shutdown_sec // 60}")
 
