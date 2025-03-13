@@ -15,8 +15,8 @@ ExtraTextIndex = GlobalLangVal.ExtraTextIndex
 class Event:
     class log:
         @staticmethod
-        def error(message, *vals):
-            print(message, *vals)
+        def error(message: object, *vals, is_format: bool = True):
+            pass
 
 
 def get_system_language():
@@ -67,7 +67,7 @@ def get_system_language():
     return (lang, sub_lang)
 
 
-def gettext(org_text: str | ExtraTextIndex, *vals):
+def gettext(org_text: str | ExtraTextIndex, *vals, is_format: bool = True):
     new_text: str | None = None
 
     if GlobalLangVal.gettext_target_lang[0] is Language.zh:
@@ -75,9 +75,10 @@ def gettext(org_text: str | ExtraTextIndex, *vals):
 
     new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 
-    try:
-        new_text = new_text.format(*vals)
-    except IndexError:
-        Event.log.error("IndexError in gettext when str.format")
+    if is_format:
+        try:
+            new_text = new_text.format(*vals)
+        except IndexError:
+            Event.log.error("IndexError in gettext when str.format")
 
     return new_text

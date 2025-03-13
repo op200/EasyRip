@@ -152,6 +152,33 @@ class Ripper:
 
     def preset_name_to_option(self, preset_name: PresetName) -> Option:
 
+        if (force_fps := self.option_map.get('r') or self.option_map.get('fps')) == "auto":
+            try:
+                media_info = subprocess.Popen(
+                    [
+                        "MediaInfo",
+                        "--Output=JSON",
+                        self.input_pathname,
+                    ],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                ).communicate()[0]
+                media_info = json.loads(media_info)
+
+                force_fps = float(media_info["media"]["track"][0]["FrameRate"])
+                if 23.975 < force_fps < 23.977:
+                    force_fps = "24000/1001"
+                elif 29.969 < force_fps < 29.971:
+                    force_fps = "30000/1001"
+                elif 47.951 < force_fps < 47.953:
+                    force_fps = "48000/1001"
+                elif 59.939 < force_fps < 59.941:
+                    force_fps = "60000/1001"
+
+            except Exception as e:
+                log.error("Ripper.preset_name_to_option: get mediainfo: {}", e)
+
         # Path
         input_suffix = os.path.splitext(self.input_pathname)[1]
         vpy_pathname = self.option_map.get('pipe')
@@ -173,7 +200,6 @@ class Ripper:
         # Muxer
         if muxer := self.option_map.get('muxer'):
             muxer = Ripper.Muxer.str_to_enum(muxer)
-            force_fps = self.option_map.get('r') or self.option_map.get('fps')
 
             match muxer:
                 case Ripper.Muxer.mp4:
@@ -799,7 +825,7 @@ class Ripper:
             output_filename = basename+suffix
             run_start_time = datetime.now()
             log.write_html_log(
-                f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 4px;">'
+                f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 1rem;">'
                 f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
                 f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
                 f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
@@ -812,25 +838,29 @@ class Ripper:
             if os.path.exists(FF_PROGRESS_LOG_FILE):
                 os.remove(FF_PROGRESS_LOG_FILE)
 
-            try:
-                media_info = subprocess.Popen(
-                    [
-                        "MediaInfo",
-                        "--Output=JSON",
-                        self.input_pathname,
-                    ],
-                    stdout=subprocess.PIPE,
-                    text=True,
-                    encoding="utf-8",
-                ).communicate()[0]
-                media_info = json.loads(media_info)
-                self._progress['frame_count'] = int(media_info["media"]["track"][0]["FrameCount"])
-                self._progress['duration'] = float(media_info["media"]["track"][0]["Duration"])
+            if self.input_pathname.endswith('.vpy'):
+                self._progress['frame_count'] = 0
+                self._progress['duration'] = 0
+            else:
+                try:
+                    media_info = subprocess.Popen(
+                        [
+                            "MediaInfo",
+                            "--Output=JSON",
+                            self.input_pathname,
+                        ],
+                        stdout=subprocess.PIPE,
+                        text=True,
+                        encoding="utf-8",
+                    ).communicate()[0]
+                    media_info = json.loads(media_info)
+                    self._progress['frame_count'] = int(media_info["media"]["track"][0]["FrameCount"])
+                    self._progress['duration'] = float(media_info["media"]["track"][0]["Duration"])
 
-                del media_info
+                    del media_info
 
-            except Exception as e:
-                log.error("Ripper.run: get mediainfo: {}", e)
+                except Exception as e:
+                    log.error("Ripper.run: get mediainfo: {}", e)
 
             Thread(target=self._flush_progress, args=(1,)).start()
 
@@ -841,13 +871,14 @@ class Ripper:
 
 
             # 获取 ffmpeg report 中的报错
-            with open(FF_REPORT_LOG_FILE, 'rt') as f:
-                for line in f.readlines()[2:]:
-                    log.error('FFmpeg report: {}', line)
+            if os.path.exists(FF_REPORT_LOG_FILE):
+                with open(FF_REPORT_LOG_FILE, 'rt', encoding='utf-8') as file:
+                    for line in file.readlines()[2:]:
+                        log.error('FFmpeg report: {}', line)
 
             # 获取体积
             temp_name_full = os.path.join(self.output_dir, temp_name)
-            file_size = round(os.path.getsize(temp_name_full) / (1024 * 1024), 2) # MB .2f
+            file_size = round(os.path.getsize(temp_name_full) / (1024 * 1024), 2) # MiB .2f
 
             # 将临时名重命名
             try:
@@ -859,21 +890,18 @@ class Ripper:
 
             # 读取编码速度
             speed: str = 'N/A'
-            try:
+            if os.path.exists(FF_PROGRESS_LOG_FILE):
                 with open(FF_PROGRESS_LOG_FILE, 'rt', encoding='utf-8') as file:
-                    progress = file.readlines()
-                for line in progress[::-1]:
-                    if res := re.search(r'speed=(.*)', line):
-                        speed = res.group(1)
-                        break
-            except Exception as e:
-                log.error(e)
+                    for line in file.readlines()[::-1]:
+                        if res := re.search(r'speed=(.*)', line):
+                            speed = res.group(1)
+                            break
 
             # 写入日志
             run_end_time = datetime.now()
             log.write_html_log(
-                f'<div style="background-color:#b4b4b4;padding:0 4px;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
-                f'File size=<span style="color:darkcyan;">{file_size}</span><br>'
+                f'<div style="background-color:#b4b4b4;padding:0 1rem;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
+                f'File size=<span style="color:darkcyan;">{file_size} MiB</span><br>'
                 f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
                 f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
                 f'</div><hr style="color:brown;margin:0 0 6px;">')
@@ -903,4 +931,10 @@ class Ripper:
         self._progress = {}
 
     def __str__(self):
-        return f'-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} {" ".join((f"-{key} {val}" for key, val in self.option_map.items()))}\n  option: ' + '{' + f'\n  {str(self.option).replace('\n', '\n  ')}' + '\n  }' + f'\n  option_map: {self.option_map}'
+        return (
+            f"-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
+             "  option:  {\n"
+            f"  {str(self.option).replace('\n', '\n  ')}\n"
+             "  }\n"
+            f"  option_map: {self.option_map}"
+        )

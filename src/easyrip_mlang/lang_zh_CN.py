@@ -12,10 +12,10 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "可用命令:\n"
         "\n"
-        "  h / help [exit]\n"
+        "  h / help\n"
         "    打印 help\n"
         "\n"
-        "  v / ver / version [exit]\n"
+        "  v / ver / version\n"
         "    打印版本信息\n"
         "\n"
         "  log [<日志级别>] <message>\n"
@@ -125,12 +125,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "      mp4\n"
         "      mkv\n"
         "\n"
-        "  -r / -fps <string>\n"
+        "  -r / -fps <string | 'auto'>\n"
         "    设置封装的帧率\n"
+        "    使用 auto 时，自动从输入的视频获取帧率，并吸附到最近的预设点位\n"
         "\n"
         "  -custom:format / -custom:template <string>\n"
         "    当 -preset custom 时，将运行这个选项\n"
         "    字符串转义: \\34/ -> \", \\39/ -> '\n"
+        '    e.g. -custom:format \'-i "{input}" -map {testmap123} "{output}" \' -custom:suffix mp4 -testmap123 0:v:0\n'
         "\n"
         "  -custom:suffix <string>\n"
         "    当 -preset custom 时，这个选项将作为输出文件的后缀\n"
@@ -158,12 +160,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    -deinterlacing <bool 0..1>\n"
         "      使用 yadif 滤镜反交错\n"
     ),
+    "Check env...": "检测环境中...",
     "{} not found, download it: {}": "没找到 {}，在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
     "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
+    "{} run completed, shutdown in {}s": "{} 执行完成，{}s 后关机",
     "Run completed": "执行完成",
     "Your input command has error:\n{}": "输入的命令报错:\n{}",
     "Delete the {}th ripper success": "成功删除第 {} 个 ripper",

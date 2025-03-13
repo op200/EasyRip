@@ -1,11 +1,11 @@
 import sys
-from typing import Literal
 import enum
 import datetime
 
 from easyrip_mlang import gettext, GlobalLangVal
+import easyrip_web
 
-__all__ = ["Event", "print", "log"]
+__all__ = ["Event", "log"]
 
 
 class Event:
@@ -14,22 +14,8 @@ class Event:
         pass
 
 
-_print = print
-
-
-def print(
-    *values: object,
-    sep: str | None = " ",
-    end: str | None = "\n",
-    # file: SupportsWrite[str] | None = sys.stderr,
-    file=sys.stderr,
-    flush: Literal[False] = False,
-):
-    _print(*values, sep=sep, end=end, file=file, flush=flush)
-
-
 class log:
-    html_log_file = "encoding_log.html" # 在调用前重定义
+    html_log_file = "encoding_log.html"  # 在调用前重定义
 
     hr = "———————————————————————————————————"
 
@@ -37,20 +23,16 @@ class log:
         info = enum.auto()
         warning = enum.auto()
         error = enum.auto()
-        http_send = enum.auto()
+        send = enum.auto()
 
     @staticmethod
     def _print_log(log_level: LogLevel, message: object, *vals, **kwargs):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
-        if kwargs.get("is_format", True):
-            message = gettext(
-                message
-                if type(message) is GlobalLangVal.ExtraTextIndex
-                else str(message),
-                *vals,
-            )
-        else:
-            message = str(message)
+        message = gettext(
+            message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
+            *vals,
+            is_format=kwargs.get("is_format", True),
+        )
 
         match log_level:
             case log.LogLevel.info:
@@ -63,7 +45,10 @@ class log:
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
             case log.LogLevel.warning:
-                print(f"\033[32m{time_now}\033[33m [WARNING] {message}\033[0m")
+                print(
+                    f"\033[32m{time_now}\033[33m [WARNING] {message}\033[0m",
+                    file=sys.stderr,
+                )
 
                 log.write_html_log(
                     f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
@@ -72,7 +57,10 @@ class log:
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
             case log.LogLevel.error:
-                print(f"\033[32m{time_now}\033[31m [ERROR] {message}\033[0m")
+                print(
+                    f"\033[32m{time_now}\033[31m [ERROR] {message}\033[0m",
+                    file=sys.stderr,
+                )
 
                 log.write_html_log(
                     f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
@@ -80,16 +68,23 @@ class log:
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
-            case log.LogLevel.http_send:
-                print(f"\033[32m{time_now}\033[35m [Send] {message}\033[0m")
+            case log.LogLevel.send:
+                if (
+                    kwargs.get("is_server", False)
+                    or easyrip_web.http_server.Event.is_run_command[-1]
+                ):
+                    http_send_header = kwargs.get("http_send_header", "")
+                    print(f"\033[32m{time_now}\033[35m [Send] {message}\033[0m")
 
-                log.write_html_log(
-                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:deeppink;">[Send] {message}</span></div>'
-                )
+                    log.write_html_log(
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
+                    )
 
-                Event.append_http_server_log_queue(
-                    (kwargs.get("http_send_header", ""), "Send", message)
-                )
+                    Event.append_http_server_log_queue(
+                        (http_send_header, "Send", message)
+                    )
+                else:
+                    print(f"\033[35m{message}\033[0m")
 
     @staticmethod
     def info(message: object, *vals, is_format: bool = True):
@@ -104,13 +99,20 @@ class log:
         log._print_log(log.LogLevel.error, message, *vals, is_format=is_format)
 
     @staticmethod
-    def http_send(header: str, message: object, *vals, is_format: bool = True):
+    def send(
+        header: str,
+        message: object,
+        *vals,
+        is_format: bool = True,
+        is_server: bool = False,
+    ):
         log._print_log(
-            log.LogLevel.http_send,
+            log.LogLevel.send,
             message,
             *vals,
             http_send_header=header,
             is_format=is_format,
+            is_server=is_server,
         )
 
     @staticmethod

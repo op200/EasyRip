@@ -11,7 +11,7 @@ from itertools import zip_longest
 import subprocess
 
 from global_val import GlobalVal
-from easyrip_log import log, print, Event as LogEvent
+from easyrip_log import log, Event as LogEvent
 from ripper import Ripper
 from easyrip_mlang import GlobalLangVal, get_system_language, gettext, Event as MlangEvent
 import easyrip_web
@@ -75,7 +75,8 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
         log.warning(e)
 
 
-def check_evn():
+def check_env():
+    change_title(gettext("Check env..."))
 
     _name, _url = 'FFmpeg', 'https://ffmpeg.org/download.html'
     if not shutil.which(_name):
@@ -168,6 +169,9 @@ def check_evn():
         GlobalVal.PROJECT_RELEASE_URL)
 
 
+    change_title(PROJECT_TITLE)
+
+
 def get_input_prompt():
     return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
 
@@ -211,7 +215,7 @@ def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | No
 
     if shutdown_sec:
         if os.name == 'nt':
-            os.system(f"shutdown -s -t {shutdown_sec}")
+            os.system(f"shutdown /s /t {shutdown_sec} /c {gettext('{} run completed, shutdown in {}s', PROJECT_TITLE, shutdown_sec)}")
         elif os.name == 'posix':
             os.system(f"shutdown -h +{shutdown_sec // 60}")
 
@@ -245,16 +249,11 @@ def run_command(command: list[str] | str) -> bool:
     match cmd_list[0]:
 
         case "h" | "help":
-            print(gettext(GlobalLangVal.ExtraTextIndex.HELP_DOC), file=sys.stdout)
-            if cmd_list[1] == 'exit':
-                sys.exit()
+            log.send('', GlobalLangVal.ExtraTextIndex.HELP_DOC, is_format=False)
 
 
         case "v" | "ver" | "version":
-            print(f'{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}', file=sys.stdout)
-
-            if cmd_list[1] == 'exit':
-                sys.exit()
+            log.send('', f'{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}')
 
 
         case "log":
@@ -292,7 +291,7 @@ def run_command(command: list[str] | str) -> bool:
             files = os.listdir(os.getcwd())
             for f in files:
                 print(f)
-            log.http_send('', ' | '.join(files))
+            log.send('', ' | '.join(files))
 
 
         case "mkdir" | "makedir":
@@ -323,7 +322,7 @@ def run_command(command: list[str] | str) -> bool:
                 msg = f'ripper list ({len(Ripper.ripper_list)}):'
                 if Ripper.ripper_list:
                     msg += '\n' + f'\n  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}' for i, ripper in enumerate(Ripper.ripper_list)])
-                log.http_send('', msg, is_format=False)
+                log.send('', msg, is_format=False)
 
 
         case "run":
@@ -392,44 +391,45 @@ def run_command(command: list[str] | str) -> bool:
 
                 _skip = True
 
-                if cmd_list[i] == '-i':
-                    if cmd_list[i+1] == 'fd':
-                        if easyrip_web.http_server.Event.is_run_command[-1]:
-                            log.error("Disable the use of 'fd' on the web")
+                match cmd_list[i]:
+                    case '-i':
+                        if cmd_list[i+1] == 'fd':
+                            if easyrip_web.http_server.Event.is_run_command[-1]:
+                                log.error("Disable the use of 'fd' on the web")
+                                return False
+                            input_pathname_list += file_dialog()
+                        else:
+                            input_pathname_list.append(cmd_list[i+1])
+
+                    case '-o':
+                        output_basename = cmd_list[i+1]
+                        if re.search(r'[<>:"/\\|?*]', output_basename):
+                            log.error('Illegal char in -o "{}"',output_basename)
                             return False
-                        input_pathname_list += file_dialog()
-                    else:
-                        input_pathname_list.append(cmd_list[i+1])
 
-                elif cmd_list[i] == '-o':
-                    output_basename = cmd_list[i+1]
-                    if re.search(r'[<>:"/\\|?*]', output_basename):
-                        log.error('Illegal char in -o "{}"',output_basename)
-                        return False
+                    case '-o:dir':
+                        output_dir = cmd_list[i+1]
+                        if not os.path.isdir(output_dir):
+                            log.error('The directory "{}" does not exist', output_dir)
+                            return False
 
-                elif cmd_list[i] == '-o:dir':
-                    output_dir = cmd_list[i+1]
-                    if not os.path.isdir(output_dir):
-                        log.error('The directory "{}" does not exist', output_dir)
-                        return False
+                    case '-preset':
+                        preset_name = cmd_list[i+1]
 
-                elif cmd_list[i] == '-preset':
-                    preset_name = cmd_list[i+1]
+                    case '-run':
+                        is_run = True
+                        if cmd_list[i+1] == 'exit':
+                            is_exit_when_runned = True
+                        elif cmd_list[i+1] == 'shutdown':
+                            shutdown_sec_str = cmd_list[i+2] or '60'
+                        else:
+                            _skip = False
 
-                elif cmd_list[i] == '-run':
-                    is_run = True
-                    if cmd_list[i+1] == 'exit':
-                        is_exit_when_runned = True
-                    elif cmd_list[i+1] == 'shutdown':
-                        shutdown_sec_str = cmd_list[i+2] or '60'
-                    else:
+                    case str() as s if match := re.search(r'^\-(.+)', cmd_list[i]):
+                        option_map[match.group(1)] = cmd_list[i+1]
+
+                    case _:
                         _skip = False
-
-                elif match := re.search(r'^\-(.+)', cmd_list[i]):
-                    option_map[match.group(1)] = cmd_list[i+1]
-
-                else:
-                    _skip = False
 
             if not preset_name:
                 log.error("Missing -preset")
@@ -517,9 +517,7 @@ def init():
             updated_path = f"{new_path}{os.pathsep}{current_path}"
             os.environ["PATH"] = updated_path
 
-    Thread(target=check_evn).start()
-
-    change_title(PROJECT_TITLE)
+    Thread(target=check_env).start()
 
     log.html_log_file = gettext("encoding_log.html")
     MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore
@@ -542,6 +540,7 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         run_command(sys.argv[1:])
+        sys.exit()
 
     while True:
         try:

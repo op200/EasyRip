@@ -43,18 +43,24 @@ class Event:
     class log:
         @staticmethod
         def info(message: object, *vals):
-            print(message, *vals)
+            pass
 
         @staticmethod
         def warning(message: object, *vals):
-            print(message, *vals)
+            pass
 
         @staticmethod
         def error(message: object, *vals):
-            print(message, *vals)
+            pass
 
         @staticmethod
-        def http_send(header: str, message, *vals):
+        def send(
+            header: str,
+            message: object,
+            *vals,
+            is_format: bool = True,
+            is_server: bool = False,
+        ):
             pass
 
     @staticmethod
@@ -127,7 +133,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # 设置标志请求关闭服务
             if data.get("shutdown") == "shutdown":
-                self.server.shutdown_requested = True # type: ignore
+                self.server.shutdown_requested = True  # type: ignore
 
             # 通过 token 判断一致性
             if (
@@ -150,7 +156,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             elif _cmd := data.get("run_command"):
                 _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
 
-                Event.log.http_send(f"{os.getcwd()}>", _cmd)
+                Event.log.send(f"{os.getcwd()}>", _cmd, is_server=True)
 
                 status_code = 200
                 response = json.dumps({"res": "success"})
@@ -170,7 +176,9 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                         # Event.progress.popleft()
 
                 elif Event.is_run_command[-1] is True:
-                    Event.log.warning("There is a running command, terminate this request")
+                    Event.log.warning(
+                        "There is a running command, terminate this request"
+                    )
 
                 elif Event.is_run_command[-1] is False:
                     if not MainHTTPRequestHandler.password and _cmd.startswith("$"):
