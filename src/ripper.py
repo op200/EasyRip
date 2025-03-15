@@ -23,89 +23,43 @@ class Ripper:
     ripper_list: list['Ripper'] = []
 
     class PresetName(enum.Enum):
-        custom = enum.auto()
-        copy = enum.auto()
-        flac = enum.auto()
-        x264slow = enum.auto()
-        x265fast2 = enum.auto()
-        x265fast = enum.auto()
-        x265slow = enum.auto()
-        x265full = enum.auto()
+        custom = 'custom'
+        copy = 'copy'
+        flac = 'flac'
+        x264slow = 'x264slow'
+        x265fast2 = 'x265fast2'
+        x265fast = 'x265fast'
+        x265slow = 'x265slow'
+        x265full = 'x265full'
 
-        @staticmethod
-        def str_to_enum(name: str):
-            try:
-                return {
-                    'custom': Ripper.PresetName.custom,
-                    'copy': Ripper.PresetName.copy,
-                    'flac': Ripper.PresetName.flac,
-                    'x264slow': Ripper.PresetName.x264slow,
-                    'x265fast2': Ripper.PresetName.x265fast2,
-                    'x265fast': Ripper.PresetName.x265fast,
-                    'x265slow': Ripper.PresetName.x265slow,
-                    'x265full': Ripper.PresetName.x265full}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.PresetName: str_to_enum: {e}")
-
-        @staticmethod
-        def enum_to_str(name: 'Ripper.PresetName'):
-            try:
-                return {
-                    Ripper.PresetName.custom: 'custom',
-                    Ripper.PresetName.copy: 'copy',
-                    Ripper.PresetName.flac: 'flac',
-                    Ripper.PresetName.x264slow: 'x264slow',
-                    Ripper.PresetName.x265fast2: 'x265fast2',
-                    Ripper.PresetName.x265fast: 'x265fast',
-                    Ripper.PresetName.x265slow: 'x265slow',
-                    Ripper.PresetName.x265full: 'x265full'}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.PresetName: enum_to_str: {e}")
+        @classmethod
+        def _missing_(cls, value: object):
+            default = cls.custom
+            log.error("'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
+                      value, cls.__name__, default, list(cls.__members__.keys()))
+            return default
 
     class AudioCodec(enum.Enum):
-        copy = enum.auto()
-        libopus = enum.auto()
+        copy = 'copy'
+        libopus = 'libopus'
 
-        @staticmethod
-        def str_to_enum(name: str):
-            try:
-                return {
-                    'libopus': Ripper.AudioCodec.libopus,
-                    'copy': Ripper.AudioCodec.copy}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.AudioCodec: str_to_enum: {e}")
-
-        @staticmethod
-        def enum_to_str(name: 'Ripper.AudioCodec'):
-            try:
-                return {
-                    Ripper.AudioCodec.libopus: 'libopus',
-                    Ripper.AudioCodec.copy: 'copy'}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.AudioCodec: enum_to_str: {e}")
+        @classmethod
+        def _missing_(cls, value: object):
+            default = cls.copy
+            log.error("'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
+                      value, cls.__name__, default, list(cls.__members__.keys()))
+            return default
 
     class Muxer(enum.Enum):
-        mp4 = enum.auto()
-        mkv = enum.auto()
+        mp4 = 'mp4'
+        mkv = 'mkv'
 
-        @staticmethod
-        def str_to_enum(name: str):
-            try:
-                return {
-                    'mp4': Ripper.Muxer.mp4,
-                    'mkv': Ripper.Muxer.mkv}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.Muxer: str_to_enum: {e}")
-
-        @staticmethod
-        def enum_to_str(name: 'Ripper.Muxer'):
-            try:
-                return {
-                    Ripper.Muxer.mp4: 'mp4',
-                    Ripper.Muxer.mkv: 'mkv'}[name]
-            except KeyError as e:
-                raise KeyError(f"Ripper.Muxer: enum_to_str: {e}")
-
+        @classmethod
+        def _missing_(cls, value: object):
+            default = cls.mkv
+            log.error("'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
+                      value, cls.__name__, default, list(cls.__members__.keys()))
+            return default
 
     class Option:
 
@@ -177,7 +131,7 @@ class Ripper:
                     force_fps = "60000/1001"
 
             except Exception as e:
-                log.error("Ripper.preset_name_to_option: get mediainfo: {}", e)
+                log.error(f"{repr(e)} {e}", deep_stack=True)
 
         # Path
         input_suffix = os.path.splitext(self.input_pathname)[1]
@@ -188,7 +142,7 @@ class Ripper:
         # Audio
         if audio_encoder := self.option_map.get('c:a'):
             _audio_encoder_str = audio_encoder
-            audio_encoder = Ripper.AudioCodec.str_to_enum(audio_encoder)
+            audio_encoder = Ripper.AudioCodec(audio_encoder)
             if input_suffix == '.vpy' or vpy_pathname:
                 audio_option = r' -i "{input}" ' + f'-map 1:a -c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
             else:
@@ -199,7 +153,7 @@ class Ripper:
 
         # Muxer
         if muxer := self.option_map.get('muxer'):
-            muxer = Ripper.Muxer.str_to_enum(muxer)
+            muxer = Ripper.Muxer(muxer)
 
             match muxer:
                 case Ripper.Muxer.mp4:
@@ -838,10 +792,9 @@ class Ripper:
             if os.path.exists(FF_PROGRESS_LOG_FILE):
                 os.remove(FF_PROGRESS_LOG_FILE)
 
-            if self.input_pathname.endswith('.vpy'):
-                self._progress['frame_count'] = 0
-                self._progress['duration'] = 0
-            else:
+            self._progress['frame_count'] = 0
+            self._progress['duration'] = 0
+            if not self.input_pathname.endswith('.vpy'):
                 try:
                     media_info = subprocess.Popen(
                         [
@@ -859,8 +812,10 @@ class Ripper:
 
                     del media_info
 
+                except KeyError:
+                    pass
                 except Exception as e:
-                    log.error("Ripper.run: get mediainfo: {}", e)
+                    log.error(f"{repr(e)} {e}", deep_stack=True)
 
             Thread(target=self._flush_progress, args=(1,)).start()
 
@@ -922,7 +877,7 @@ class Ripper:
         self.option_map = option_map.copy()
 
         if isinstance(option, str):
-            self.preset_name = Ripper.PresetName.str_to_enum(option)
+            self.preset_name = Ripper.PresetName(option)
             self.option = self.preset_name_to_option(self.preset_name)
         else:
             self.preset_name = Ripper.PresetName.custom

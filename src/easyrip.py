@@ -85,7 +85,7 @@ def check_env():
         print(get_input_prompt(), end='')
     else:
         log_new_ver(
-            '7.1',
+            '7.1.1',
             subprocess.run('ffmpeg -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0],
             _name, _url)
 
@@ -270,7 +270,7 @@ def run_command(command: list[str] | str) -> bool:
                     log.info(f"{cmd_list[1]} {msg}")
 
 
-        case str() as s if len(s) > 0 and s[0] == '$':
+        case str() as s if len(s) > 0 and s.startswith('$'):
             try:
                 exec(' '.join(cmd_list)[1:].lstrip().replace(r"\N","\n"))
             except Exception as e:
@@ -426,8 +426,8 @@ def run_command(command: list[str] | str) -> bool:
                         else:
                             _skip = False
 
-                    case str() as s if match := re.search(r'^\-(.+)', cmd_list[i]):
-                        option_map[match.group(1)] = cmd_list[i+1]
+                    case str() as s if len(s) > 1 and s.startswith('-'):
+                        option_map[s[1:]] = cmd_list[i+1]
 
                     case _:
                         _skip = False
@@ -541,7 +541,8 @@ if __name__ == "__main__":
 
     if len(sys.argv) > 1:
         run_command(sys.argv[1:])
-        sys.exit()
+        if len(Ripper.ripper_list) == 0:
+            sys.exit()
 
     while True:
         try:
