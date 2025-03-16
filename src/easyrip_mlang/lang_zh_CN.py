@@ -175,7 +175,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Disable the use of 'fd' on the web": "禁止在 web 使用 'fd'",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',
     'The directory "{}" does not exist': '目录 "{}" 不存在',
-    "Missing -preset": "缺少 -preset",
+    "Missing '-preset' option, set to default value 'custom'": "缺少 '-preset' 选项，自动设为默认值 'custom'",
     "Input file number == 0": "输入的文件数量为 0",
     'The file "{}" does not exist': '文件 "{}" 不存在',
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",

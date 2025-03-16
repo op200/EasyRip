@@ -76,7 +76,7 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
 
 
 def check_env():
-    change_title(gettext("Check env..."))
+    change_title(f'{gettext("Check env...")} {PROJECT_TITLE}')
 
     _name, _url = 'FFmpeg', 'https://ffmpeg.org/download.html'
     if not shutil.which(_name):
@@ -311,20 +311,45 @@ def run_command(command: list[str] | str) -> bool:
 
 
         case "list":
-            if cmd_list[1] in {'clear', 'clean'}:
-                Ripper.ripper_list = []
-            elif cmd_list[1] in {'del', 'pop'}:
-                try:
-                    del Ripper.ripper_list[int(cmd_list[2])-1]
-                except Exception as e:
-                    log.error(e)
-                else:
-                    log.info('Delete the {}th ripper success', cmd_list[2])
-            else:
-                msg = f'ripper list ({len(Ripper.ripper_list)}):'
-                if Ripper.ripper_list:
-                    msg += '\n' + f'\n  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}' for i, ripper in enumerate(Ripper.ripper_list)])
-                log.send('', msg, is_format=False)
+            match cmd_list[1]:
+                case 'clear' | 'clean':
+                    Ripper.ripper_list = []
+                case 'del' | 'pop':
+                    try:
+                        del Ripper.ripper_list[int(cmd_list[2])-1]
+                    except Exception as e:
+                        log.error(e)
+                    else:
+                        log.info('Delete the {}th ripper success', cmd_list[2])
+                case 'sort':
+                    reverse = "r" in cmd_list[2]
+                    if "n" in cmd_list[2]:
+                        Ripper.ripper_list.sort(
+                            key=lambda ripper: [
+                                int(text) if text.isdigit() else text.lower()
+                                for text in re.split(r"(\d+)", ripper.input_pathname)
+                            ],
+                            reverse=reverse,
+                        )
+                    else:
+                        Ripper.ripper_list.sort(
+                            key=lambda ripper: ripper.input_pathname, reverse=reverse
+                        )
+                case '':
+                    msg = f'ripper list ({len(Ripper.ripper_list)}):'
+                    if Ripper.ripper_list:
+                        msg += '\n' + f'\n  {log.hr}\n'.join([f'  {i+1}.\n  {ripper}' for i, ripper in enumerate(Ripper.ripper_list)])
+                    log.send('', msg, is_format=False)
+                case _:
+                    try:
+                        i1, i2 = int(cmd_list[1]), int(cmd_list[2])
+                        if i1 > 0:
+                            i1 -= 1
+                        if i2 > 0:
+                            i2 -= 1
+                        Ripper.ripper_list[i1], Ripper.ripper_list[i2] = Ripper.ripper_list[i2], Ripper.ripper_list[i1]
+                    except Exception as e:
+                        log.error(f"{repr(e)} {e}", deep_stack=True)
 
 
         case "run":
@@ -434,8 +459,8 @@ def run_command(command: list[str] | str) -> bool:
                         _skip = False
 
             if not preset_name:
-                log.error("Missing -preset")
-                return False
+                log.warning("Missing '-preset' option, set to default value 'custom'")
+                preset_name = 'custom'
 
             try:
                 if len(input_pathname_list) == 0:
