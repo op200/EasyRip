@@ -56,6 +56,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    del / pop <index>:\n"
         "      删除 ripper list 中指定的一个 ripper\n"
         "\n"
+        "    sort [n][r]:\n"
+        "      排序 list\n"
+        "      'n': 自然排序\n"
+        "      'r': 倒序\n"
+        "\n"
+        "    <int> <int>:\n"
+        "      交换指定索引\n"
+        "\n"
         "  run [<run option>]\n"
         "    执行 ripper list 中的 ripper\n"
         "\n"
@@ -81,11 +89,13 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "Easy Rip options:\n"
         "\n"
-        "  -i <string | 'fd'>\n"
+        "  -i <string[:string...] | 'fd'>\n"
         "    输入文件的路径名或输入'fd'以使用文件对话框\n"
         "\n"
         "  -o <string>\n"
         "    输出文件的文件名前缀\n"
+        "    多个输入时允许有迭代器和时间格式化:\n"
+        '      e.g. "name--?{start=6,padding=4,increment=2}--?{time:%Y.%m.%S}"\n'
         "\n"
         "  -o:dir <string>\n"
         "    输出文件的目标目录\n"
@@ -156,9 +166,6 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "    -hwaccel <string>\n"
         "      使用 FFmpeg 的硬件加速 (详见 'ffmpeg -hwaccels')\n"
-        "\n"
-        "    -deinterlacing <bool 0..1>\n"
-        "      使用 yadif 滤镜反交错\n"
     ),
     "Check env...": "检测环境中...",
     "{} not found, download it: {}": "没找到 {}，在此下载: {}",
@@ -167,10 +174,12 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
+    "Execute shutdown in {}s": "{}s 后执行关机",
     "{} run completed, shutdown in {}s": "{} 执行完成，{}s 后关机",
     "Run completed": "执行完成",
     "Your input command has error:\n{}": "输入的命令报错:\n{}",
     "Delete the {}th ripper success": "成功删除第 {} 个 ripper",
+    "Will shutdown in {}s after run finished": "将在执行结束后的{}秒后关机",
     "Can not start multiple services": "禁止重复启用服务",
     "Disable the use of 'fd' on the web": "禁止在 web 使用 'fd'",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',

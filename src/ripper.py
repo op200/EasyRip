@@ -136,17 +136,34 @@ class Ripper:
         # Path
         input_suffix = os.path.splitext(self.input_pathname)[1]
         vpy_pathname = self.option_map.get('pipe')
+
+        if vpy_pathname and not os.path.exists(vpy_pathname):
+            log.error('The file "{}" does not exist', vpy_pathname)
+
+        ff_input_option: list[str]
+        if input_suffix == '.vpy':
+            ff_input_option = ["-"]
+        else:
+            ff_input_option = ['"{input}"']
+        ff_stream_option: list[str] = ["0:v"]
+        ff_filter_option: list[str] = []
+
         if sub_pathname := self.option_map.get('sub'):
             sub_pathname = f"'{sub_pathname.replace('\\', '/').replace(':', '\\:')}'"
+            ff_filter_option.append(f"ass={sub_pathname}")
+
 
         # Audio
         if audio_encoder := self.option_map.get('c:a'):
             _audio_encoder_str = audio_encoder
             audio_encoder = Ripper.AudioCodec(audio_encoder)
             if input_suffix == '.vpy' or vpy_pathname:
-                audio_option = r' -i "{input}" ' + f'-map 1:a -c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
+                ff_input_option.append('"{input}"')
+                ff_stream_option.append("1:a")
+                audio_option = f'-c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
             else:
-                audio_option = f' -map 0:a -c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
+                ff_stream_option.append("0:a")
+                audio_option = f'-c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
         else:
             audio_encoder = None
             audio_option = ''
@@ -183,7 +200,7 @@ class Ripper:
 
 
             case Ripper.PresetName.copy:
-                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + audio_option + r' -map 0:v -c:v copy "{output}"'
+                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + audio_option if audio_option else '-c:a copy' + r' -c:v copy "{output}"'
 
 
             case Ripper.PresetName.flac:
@@ -229,388 +246,152 @@ class Ripper:
 
                 _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
 
-                _threads = self.option_map.get('threads', '16')
-                if _threads != '16':
+                if _threads := self.option_map.get('threads'):
                     _param += f':threads={_threads}'
 
+                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
 
-                if hwaccel := self.option_map.get('hwaccel'):
-                    hwaccel = f"-hwaccel {hwaccel}"
-                else:
-                    hwaccel = ""
-
-
-                if self.option_map.get('deinterlacing') not in ('0', None):
-                    custom_vf = "-vf yadif"
-                else:
-                    custom_vf = ""
-
-
-                if input_suffix == '.vpy':
-                    encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
-
+                vspipe_input: str = ""
+                if input_suffix == ".vpy":
+                    vspipe_input = 'vspipe -c y4m "{input}" - | '
                 elif vpy_pathname:
-                    encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx264 -x264-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif sub_pathname:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
-
-                else:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx264 -pix_fmt yuv420p -x264-params ' + f'"{_param}" {custom_vf} ' + r' "{output}"'
-
-
-            case Ripper.PresetName.x265fast2:
-
-                _option_map = {
-                    # Select
-                    'crf' : self.option_map.get('crf', '18'),
-                    'psy-rd' : self.option_map.get('psy-rd', '2'),
-                    'rdoq-level' : self.option_map.get('rdoq-level', '2'),
-                    'psy-rdoq' : self.option_map.get('psy-rdoq', '0'),
-                    'qcomp' : self.option_map.get('qcomp', '0.68'),
-                    'keyint' : self.option_map.get('keyint', '250'),
-                    'deblock' : self.option_map.get('deblock', '-1,-1'),
-
-                    # Default
-                    'qpmin' : self.option_map.get('qpmin', '12'),
-                    'qpmax' : self.option_map.get('qpmax', '28'),
-
-                    'me' : self.option_map.get('me', 'hex'),
-                    'merange' : self.option_map.get('merange', '57'),
-                    'hme' : self.option_map.get('hme', '1'),
-                    'hme-search' : self.option_map.get('hme-search', 'hex,hex,hex'),
-                    'hme-range' : self.option_map.get('hme-range', '16,57,92'),
-
-                    'aq-mode' : self.option_map.get('aq-mode', '3'),
-                    'aq-strength' : self.option_map.get('aq-strength', '1'),
-
-                    'tu-intra-depth' : self.option_map.get('tu-intra-depth', '3'),
-                    'tu-inter-depth' : self.option_map.get('tu-inter-depth', '2'),
-                    'limit-tu' : self.option_map.get('limit-tu', '4'),
-
-                    'bframes' : self.option_map.get('bframes', '16'),
-                    'ref' : self.option_map.get('ref', '6'),
-
-                    'rd' : self.option_map.get('rd', '3'),
-                    'subme' : self.option_map.get('subme', '5'),
-                    'open-gop' : self.option_map.get('open-gop', '0'),
-                    'gop-lookahead' : self.option_map.get('gop-lookahead', '0'),
-                    'rc-lookahead' : self.option_map.get('rc-lookahead', '192'),
-
-                    'rect' : self.option_map.get('rect', '0'),
-                    'amp' : self.option_map.get('amp', '0'),
-
-                    'min-keyint' : self.option_map.get('min-keyint', '2'),
-                    'cbqpoffs' : self.option_map.get('cbqpoffs', '-1'),
-                    'crqpoffs' : self.option_map.get('crqpoffs', '-1'),
-                    'ipratio' : self.option_map.get('ipratio', '1.4'),
-                    'pbratio' : self.option_map.get('pbratio', '1.25'),
-                    'early-skip' : self.option_map.get('early-skip', '1'),
-
-                    'ctu' : self.option_map.get('ctu', '64'),
-                    'min-cu-size' : self.option_map.get('min-cu-size', '8'),
-                    'max-tu-size' : self.option_map.get('max-tu-size', '32'),
-
-                    'level-idc' : self.option_map.get('level-idc', '0'),
-
-                    # No change
-                    'sao' : self.option_map.get('sao', '0'),
-                    'weightb' : '1',
-                    'info' : '1',
-
-                    **{
-                        k: v
-                        for k, v in [
-                            s.split('=')
-                            for s in str(self.option_map.get('x265-params', '')).split(':')
-                            if s != ""
-                        ]
-                    }
-                }
-
-                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-                if hwaccel := self.option_map.get('hwaccel'):
-                    hwaccel = f"-hwaccel {hwaccel}"
-                else:
-                    hwaccel = ""
-
-
-                if self.option_map.get('deinterlacing') not in ('0', None):
-                    custom_vf = "-vf yadif"
-                else:
-                    custom_vf = ""
-
-
-                if input_suffix == '.vpy':
-                    encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif vpy_pathname:
-                    encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif sub_pathname:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
-
-                else:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
-
-
-            case Ripper.PresetName.x265fast:
-
-                _option_map = {
-                    # Select
-                    'crf' : self.option_map.get('crf', '19'),
-                    'psy-rd' : self.option_map.get('psy-rd', '1.8'),
-                    'rdoq-level' : self.option_map.get('rdoq-level', '2'),
-                    'psy-rdoq' : self.option_map.get('psy-rdoq', '0.4'),
-                    'qcomp' : self.option_map.get('qcomp', '0.66'),
-                    'keyint' : self.option_map.get('keyint', '312'),
-                    'deblock' : self.option_map.get('deblock', '-1,-1'),
-
-                    # Default
-                    'qpmin' : self.option_map.get('qpmin', '12'),
-                    'qpmax' : self.option_map.get('qpmax', '28'),
-
-                    'me' : self.option_map.get('me', 'umh'),
-                    'merange' : self.option_map.get('merange', '57'),
-                    'hme' : self.option_map.get('hme', '1'),
-                    'hme-search' : self.option_map.get('hme-search', 'umh,hex,hex'),
-                    'hme-range' : self.option_map.get('hme-range', '16,57,92'),
-
-                    'aq-mode' : self.option_map.get('aq-mode', '4'),
-                    'aq-strength' : self.option_map.get('aq-strength', '1'),
-
-                    'tu-intra-depth' : self.option_map.get('tu-intra-depth', '4'),
-                    'tu-inter-depth' : self.option_map.get('tu-inter-depth', '3'),
-                    'limit-tu' : self.option_map.get('limit-tu', '4'),
-
-                    'bframes' : self.option_map.get('bframes', '16'),
-                    'ref' : self.option_map.get('ref', '8'),
-
-                    'rd' : self.option_map.get('rd', '3'),
-                    'subme' : self.option_map.get('subme', '5'),
-                    'open-gop' : self.option_map.get('open-gop', '1'),
-                    'gop-lookahead' : self.option_map.get('gop-lookahead', '8'),
-                    'rc-lookahead' : self.option_map.get('rc-lookahead', '216'),
-
-                    'rect' : self.option_map.get('rect', '0'),
-                    'amp' : self.option_map.get('amp', '0'),
-
-                    'min-keyint' : self.option_map.get('min-keyint', '2'),
-                    'cbqpoffs' : self.option_map.get('cbqpoffs', '-2'),
-                    'crqpoffs' : self.option_map.get('crqpoffs', '-2'),
-                    'ipratio' : self.option_map.get('ipratio', '1.4'),
-                    'pbratio' : self.option_map.get('pbratio', '1.2'),
-                    'early-skip' : self.option_map.get('early-skip', '1'),
-
-                    'ctu' : self.option_map.get('ctu', '64'),
-                    'min-cu-size' : self.option_map.get('min-cu-size', '8'),
-                    'max-tu-size' : self.option_map.get('max-tu-size', '32'),
-
-                    'level-idc' : self.option_map.get('level-idc', '0'),
-
-                    # No change
-                    'sao' : self.option_map.get('sao', '0'),
-                    'weightb' : '1',
-                    'info' : '1',
-
-                    **{
-                        k: v
-                        for k, v in [
-                            s.split('=')
-                            for s in str(self.option_map.get('x265-params', '')).split(':')
-                            if s != ""
-                        ]
-                    }
-                }
-
-                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-                if hwaccel := self.option_map.get('hwaccel'):
-                    hwaccel = f"-hwaccel {hwaccel}"
-                else:
-                    hwaccel = ""
-
-
-                if self.option_map.get('deinterlacing') not in ('0', None):
-                    custom_vf = "-vf yadif"
-                else:
-                    custom_vf = ""
-
-
-                if input_suffix == '.vpy':
-                    encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif vpy_pathname:
-                    encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif sub_pathname:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
-
-                else:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
-
-
-            case Ripper.PresetName.x265slow:
-
-                _option_map = {
-                    # Select
-                    'crf' : self.option_map.get('crf', '19'),
-                    'psy-rd' : self.option_map.get('psy-rd', '1.8'),
-                    'rdoq-level' : self.option_map.get('rdoq-level', '2'),
-                    'psy-rdoq' : self.option_map.get('psy-rdoq', '0.4'),
-                    'qcomp' : self.option_map.get('qcomp', '0.66'),
-                    'keyint' : self.option_map.get('keyint', '312'),
-                    'deblock' : self.option_map.get('deblock', '-1,-1'),
-
-                    # Default
-                    'qpmin' : self.option_map.get('qpmin', '12'),
-                    'qpmax' : self.option_map.get('qpmax', '28'),
-
-                    'me' : self.option_map.get('me', 'umh'),
-                    'merange' : self.option_map.get('merange', '57'),
-                    'hme' : self.option_map.get('hme', '1'),
-                    'hme-search' : self.option_map.get('hme-search', 'umh,hex,hex'),
-                    'hme-range' : self.option_map.get('hme-range', '16,57,184'),    
-
-                    'aq-mode' : self.option_map.get('aq-mode', '4'),
-                    'aq-strength' : self.option_map.get('aq-strength', '1'),
-
-                    'tu-intra-depth' : self.option_map.get('tu-intra-depth', '4'),
-                    'tu-inter-depth' : self.option_map.get('tu-inter-depth', '3'),
-                    'limit-tu' : self.option_map.get('limit-tu', '2'),
-
-                    'bframes' : self.option_map.get('bframes', '16'),
-                    'ref' : self.option_map.get('ref', '8'),
-
-                    'rd' : self.option_map.get('rd', '5'),
-                    'subme' : self.option_map.get('subme', '7'),
-                    'open-gop' : self.option_map.get('open-gop', '1'),
-                    'gop-lookahead' : self.option_map.get('gop-lookahead', '14'),
-                    'rc-lookahead' : self.option_map.get('rc-lookahead', '250'),
-
-                    'rect' : self.option_map.get('rect', '0'),
-                    'amp' : self.option_map.get('amp', '0'),
-
-                    'min-keyint' : self.option_map.get('min-keyint', '2'),
-                    'cbqpoffs' : self.option_map.get('cbqpoffs', '-2'),
-                    'crqpoffs' : self.option_map.get('crqpoffs', '-2'),
-                    'ipratio' : self.option_map.get('ipratio', '1.4'),
-                    'pbratio' : self.option_map.get('pbratio', '1.2'),
-                    'early-skip' : self.option_map.get('early-skip', '0'),
-
-                    'ctu' : self.option_map.get('ctu', '64'),
-                    'min-cu-size' : self.option_map.get('min-cu-size', '8'),
-                    'max-tu-size' : self.option_map.get('max-tu-size', '32'),
-
-                    'level-idc' : self.option_map.get('level-idc', '0'),
-
-                    # No change
-                    'sao' : self.option_map.get('sao', '0'),
-                    'weightb' : '1',
-                    'info' : '1',
-
-                    **{
-                        k: v
-                        for k, v in [
-                            s.split('=')
-                            for s in str(self.option_map.get('x265-params', '')).split(':')
-                            if s != ""
-                        ]
-                    }
-                }
-
-                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-                if hwaccel := self.option_map.get('hwaccel'):
-                    hwaccel = f"-hwaccel {hwaccel}"
-                else:
-                    hwaccel = ""
-
-
-                if self.option_map.get('deinterlacing') not in ('0', None):
-                    custom_vf = "-vf yadif"
-                else:
-                    custom_vf = ""
-
-
-                if input_suffix == '.vpy':
-                    encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif vpy_pathname:
-                    encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
-
-                elif sub_pathname:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}"' + f' -vf "ass={sub_pathname}"' + r' "{output}"'
-                else:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
-
-
-            case Ripper.PresetName.x265full:
-
-                _option_map = {
-                    # Select
-                    'crf' : self.option_map.get('crf', '17'),
-
-                    # Default
-                    'qpmin' : self.option_map.get('qpmin', '3'),
-                    'qpmax' : self.option_map.get('qpmax', '20'),
-
-                    'psy-rd' : self.option_map.get('psy-rd', '2.2'),
-
-                    'rd' : self.option_map.get('rd', '5'),
-                    'rdoq-level' : self.option_map.get('rdoq-level', '2'),
-                    'psy-rdoq' : self.option_map.get('psy-rdoq', '1.6'),
-
-                    'qcomp' : self.option_map.get('qcomp', '0.72'),
-
-                    'keyint' : self.option_map.get('keyint', '266'),
-                    'min-keyint' : self.option_map.get('min-keyint', '2'),
-
-                    'deblock' : self.option_map.get('deblock', '-1,-1'),
+                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
+
+                is_pipe_input = bool(input_suffix == ".vpy" or vpy_pathname)
+
+                encoder_format_str = (
+                    (vspipe_input if vspipe_input else "")
+                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
+                    + f' "{_param}" '
+                    + (
+                        f" -vf {','.join(ff_filter_option)} "
+                        if len(ff_filter_option)
+                        else ""
+                    )
+                    + ' "{output}"'
+                )
+
+
+            case Ripper.PresetName.x265fast2 | Ripper.PresetName.x265fast | Ripper.PresetName.x265slow | Ripper.PresetName.x265full:
+                _default_option_map = {
+                    'crf' : '20',
+                    'qpmin' : '6',
+                    'qpmax' : '32',
+
+                    'psy-rd' : '2',
+
+                    'rd' : '3',
+                    'rdoq-level' : '0',
+                    'psy-rdoq' : '0',
+
+                    'qcomp' : '0.68',
+
+                    'keyint' : '250',
+                    'min-keyint' : '2',
+
+                    'deblock' : '0,0',
                     
-                    'me' : self.option_map.get('me', 'umh'),
-                    'merange' : self.option_map.get('merange', '160'),
-                    'hme' : self.option_map.get('hme', '1'),
-                    'hme-search' : self.option_map.get('hme-search', 'full,umh,hex'),
-                    'hme-range' : self.option_map.get('hme-range', '16,92,320'),
+                    'me' : 'umh',
+                    'merange' : '57',
+                    'hme' : '1',
+                    'hme-search' : 'hex,hex,hex',
+                    'hme-range' : '16,57,92',
 
-                    'aq-mode' : self.option_map.get('aq-mode', '4'),
-                    'aq-strength' : self.option_map.get('aq-strength', '1.2'),
+                    'aq-mode' : '2',
+                    'aq-strength' : '1',
 
-                    'tu-intra-depth' : self.option_map.get('tu-intra-depth', '4'),
-                    'tu-inter-depth' : self.option_map.get('tu-inter-depth', '4'),
-                    'limit-tu' : self.option_map.get('limit-tu', '0'),
+                    'tu-intra-depth' : '1',
+                    'tu-inter-depth' : '1',
+                    'limit-tu' : '0',
 
-                    'bframes' : self.option_map.get('bframes', '16'),
-                    'ref' : self.option_map.get('ref', '8'),
+                    'bframes' : '16',
+                    'ref' : '8',
 
-                    'subme' : self.option_map.get('subme', '7'),
+                    'subme' : '2',
 
-                    'open-gop' : self.option_map.get('open-gop', '1'),
-                    'gop-lookahead' : self.option_map.get('gop-lookahead', '14'),
-                    'rc-lookahead' : self.option_map.get('rc-lookahead', '250'),
+                    'open-gop' : '1',
+                    'gop-lookahead' : '0',
+                    'rc-lookahead' : '20',
 
-                    'rect' : self.option_map.get('rect', '1'),
-                    'amp' : self.option_map.get('amp', '1'),
+                    'rect' : '0',
+                    'amp' : '0',
 
-                    'cbqpoffs' : self.option_map.get('cbqpoffs', '-3'),
-                    'crqpoffs' : self.option_map.get('crqpoffs', '-3'),
-                    'ipratio' : self.option_map.get('ipratio', '1.43'),
-                    'pbratio' : self.option_map.get('pbratio', '1.2'),
+                    'cbqpoffs' : '0',
+                    'crqpoffs' : '0',
+                    'ipratio' : '1.4',
+                    'pbratio' : '1.3',
 
-                    'early-skip' : self.option_map.get('early-skip', '0'),
+                    'early-skip' : '1',
 
-                    'ctu' : self.option_map.get('ctu', '64'),
-                    'min-cu-size' : self.option_map.get('min-cu-size', '8'),
-                    'max-tu-size' : self.option_map.get('max-tu-size', '32'),
+                    'ctu' : '64',
+                    'min-cu-size' : '8',
+                    'max-tu-size' : '32',
 
-                    'level-idc' : self.option_map.get('level-idc', '0'),
+                    'level-idc' : '0',
 
-                    # No change
-                    'sao' : self.option_map.get('sao', '0'),
+                    'sao' : '0',
                     'weightb' : '1',
                     'info' : '1',
+                }
+                _custom_option_map = {
+                    'crf' : self.option_map.get('crf'),
+                    'qpmin' : self.option_map.get('qpmin'),
+                    'qpmax' : self.option_map.get('qpmax'),
+
+                    'psy-rd' : self.option_map.get('psy-rd'),
+
+                    'rd' : self.option_map.get('rd'),
+                    'rdoq-level' : self.option_map.get('rdoq-level'),
+                    'psy-rdoq' : self.option_map.get('psy-rdoq'),
+
+                    'qcomp' : self.option_map.get('qcomp'),
+
+                    'keyint' : self.option_map.get('keyint'),
+                    'min-keyint' : self.option_map.get('min-keyint'),
+
+                    'deblock' : self.option_map.get('deblock'),
+                    
+                    'me' : self.option_map.get('me'),
+                    'merange' : self.option_map.get('merange'),
+                    'hme' : self.option_map.get('hme'),
+                    'hme-search' : self.option_map.get('hme-search'),
+                    'hme-range' : self.option_map.get('hme-range'),
+
+                    'aq-mode' : self.option_map.get('aq-mode'),
+                    'aq-strength' : self.option_map.get('aq-strength'),
+
+                    'tu-intra-depth' : self.option_map.get('tu-intra-depth'),
+                    'tu-inter-depth' : self.option_map.get('tu-inter-depth'),
+                    'limit-tu' : self.option_map.get('limit-tu'),
+
+                    'bframes' : self.option_map.get('bframes'),
+                    'ref' : self.option_map.get('ref'),
+
+                    'subme' : self.option_map.get('subme'),
+
+                    'open-gop' : self.option_map.get('open-gop'),
+                    'gop-lookahead' : self.option_map.get('gop-lookahead'),
+                    'rc-lookahead' : self.option_map.get('rc-lookahead'),
+
+                    'rect' : self.option_map.get('rect'),
+                    'amp' : self.option_map.get('amp'),
+
+                    'cbqpoffs' : self.option_map.get('cbqpoffs'),
+                    'crqpoffs' : self.option_map.get('crqpoffs'),
+                    'ipratio' : self.option_map.get('ipratio'),
+                    'pbratio' : self.option_map.get('pbratio'),
+
+                    'early-skip' : self.option_map.get('early-skip'),
+
+                    'ctu' : self.option_map.get('ctu'),
+                    'min-cu-size' : self.option_map.get('min-cu-size'),
+                    'max-tu-size' : self.option_map.get('max-tu-size'),
+
+                    'level-idc' : self.option_map.get('level-idc'),
+
+                    'sao' : self.option_map.get('sao'),
 
                     **{
                         k: v
@@ -621,29 +402,192 @@ class Ripper:
                         ]
                     }
                 }
+                _custom_option_map = {k: v for k, v in _custom_option_map.items() if v is not None}
 
-                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
+                match preset_name:
+                    case Ripper.PresetName.x265fast2:
+                        _option_map = {
+                            'crf' : '18',
+                            'rdoq-level' : '2',
+                            'qcomp' : '0.66',
+                            'deblock' : '-1,-1',
 
-                if hwaccel := self.option_map.get('hwaccel'):
-                    hwaccel = f"-hwaccel {hwaccel}"
-                else:
-                    hwaccel = ""
+                            'qpmin' : '12',
+                            'qpmax' : '28',
 
+                            'me' : 'hex',
+                            'merange' : '57',
+                            'hme-search' : 'hex,hex,hex',
+                            'hme-range' : '16,57,92',
 
-                if self.option_map.get('deinterlacing') not in ('0', None):
-                    custom_vf = "-vf yadif"
-                else:
-                    custom_vf = ""
+                            'aq-mode' : '3',
+                            'aq-strength' : '1',
 
+                            'tu-intra-depth' : '3',
+                            'tu-inter-depth' : '2',
+                            'limit-tu' : '4',
 
-                if input_suffix == '.vpy':
-                    encoder_format_str = r'vspipe -c y4m "{input}" - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                            'ref' : '6',
 
+                            'subme' : '5',
+                            'open-gop' : '0',
+                            'gop-lookahead' : '0',
+                            'rc-lookahead' : '192',
+
+                            'cbqpoffs' : '-1',
+                            'crqpoffs' : '-1',
+                            'pbratio' : '1.25',
+                        }
+                    case Ripper.PresetName.x265fast:
+                        _option_map = {
+                            'crf' : '19',
+                            'psy-rd' : '1.8',
+                            'rdoq-level' : '2',
+                            'psy-rdoq' : '0.4',
+                            'keyint' : '312',
+                            'deblock' : '-1,-1',
+
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
+                            'me' : 'umh',
+                            'merange' : '57',
+                            'hme-search' : 'umh,hex,hex',
+                            'hme-range' : '16,57,92',
+
+                            'aq-mode' : '4',
+
+                            'tu-intra-depth' : '4',
+                            'tu-inter-depth' : '3',
+                            'limit-tu' : '4',
+
+                            'subme' : '5',
+                            'gop-lookahead' : '8',
+                            'rc-lookahead' : '216',
+
+                            'cbqpoffs' : '-2',
+                            'crqpoffs' : '-2',
+                            'pbratio' : '1.2',
+                        }
+                    case Ripper.PresetName.x265slow:
+                        _option_map = {
+                            'crf' : '19',
+                            'psy-rd' : '1.8',
+                            'rdoq-level' : '2',
+                            'psy-rdoq' : '0.4',
+                            'keyint' : '312',
+                            'deblock' : '-1,-1',
+
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
+                            'me' : 'umh',
+                            'merange' : '57',
+                            'hme-search' : 'umh,hex,hex',
+                            'hme-range' : '16,57,184',    
+
+                            'aq-mode' : '4',
+                            'aq-strength' : '1',
+
+                            'tu-intra-depth' : '4',
+                            'tu-inter-depth' : '3',
+                            'limit-tu' : '2',
+
+                            'rd' : '5',
+                            'subme' : '7',
+                            'gop-lookahead' : '14',
+                            'rc-lookahead' : '250',
+
+                            'min-keyint' : '2',
+                            'cbqpoffs' : '-2',
+                            'crqpoffs' : '-2',
+                            'pbratio' : '1.2',
+                            'early-skip' : '0',
+                        }
+                    case Ripper.PresetName.x265full:
+                        _option_map = {
+                            'crf' : '17',
+
+                            'qpmin' : '3',
+                            'qpmax' : '20',
+
+                            'psy-rd' : '2.2',
+
+                            'rd' : '5',
+                            'rdoq-level' : '2',
+                            'psy-rdoq' : '1.6',
+
+                            'qcomp' : '0.72',
+
+                            'keyint' : '266',
+                            'min-keyint' : '2',
+
+                            'deblock' : '-1,-1',
+                            
+                            'me' : 'umh',
+                            'merange' : '160',
+                            'hme-search' : 'full,umh,hex',
+                            'hme-range' : '16,92,320',
+
+                            'aq-mode' : '4',
+                            'aq-strength' : '1.2',
+
+                            'tu-intra-depth' : '4',
+                            'tu-inter-depth' : '4',
+                            'limit-tu' : '2',
+
+                            'bframes' : '16',
+                            'ref' : '8',
+
+                            'subme' : '7',
+
+                            'open-gop' : '1',
+                            'gop-lookahead' : '14',
+                            'rc-lookahead' : '250',
+
+                            'rect' : '1',
+                            'amp' : '1',
+
+                            'cbqpoffs' : '-3',
+                            'crqpoffs' : '-3',
+                            'ipratio' : '1.43',
+                            'pbratio' : '1.2',
+
+                            'early-skip' : '0',
+                        }
+
+                _param = ":".join(
+                    f"{key}={val}"
+                    for key, val in {
+                        **_default_option_map,
+                        **_option_map,
+                        **_custom_option_map,
+                    }.items()
+                )
+
+                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
+
+                vspipe_input: str = ""
+                if input_suffix == ".vpy":
+                    vspipe_input = 'vspipe -c y4m "{input}" - | '
                 elif vpy_pathname:
-                    encoder_format_str = r'vspipe -c y4m -a "input={input}" ' + f'"{vpy_pathname}"' + r' - | ' + f'{FFMPEG_HEADER} -i - ' + audio_option + r' -map 0:v -c:v libx265 -x265-params ' + f'"{_param}"' + r' "{output}"'
+                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
 
-                else:
-                    encoder_format_str = f'{FFMPEG_HEADER} {hwaccel} ' + r'-i "{input}" ' + audio_option + r' -map 0:v -c:v libx265 -pix_fmt yuv420p10le -x265-params ' + f'"{_param}" {custom_vf} ' + r'"{output}"'
+                is_pipe_input = bool(input_suffix == ".vpy" or vpy_pathname)
+
+                encoder_format_str = (
+                    (vspipe_input if vspipe_input else "")
+                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
+                    + f' "{_param}" '
+                    + (
+                        f" -vf {','.join(ff_filter_option)} "
+                        if len(ff_filter_option)
+                        else ""
+                    )
+                    + ' "{output}"'
+                )
 
 
         return Ripper.Option(preset_name, encoder_format_str, audio_encoder, muxer, muxer_format_str)

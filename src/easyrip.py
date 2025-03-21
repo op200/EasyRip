@@ -1,3 +1,5 @@
+from datetime import datetime
+from time import sleep
 import tkinter as tk
 from tkinter import filedialog
 import ctypes
@@ -84,10 +86,13 @@ def check_env():
         log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
         print(get_input_prompt(), end='')
     else:
-        log_new_ver(
-            '7.1.1',
-            subprocess.run('ffmpeg -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0],
-            _name, _url)
+        _new_ver = subprocess.run('ffmpeg -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0]
+        
+        if "." in _new_ver:
+            log_new_ver("7.1.1", _new_ver.split("-")[0], _name, _url)
+        else:
+            log_new_ver("2025.03.03", ".".join(_new_ver.split("-")[:3]), _name, _url)
+
 
 
     _name, _url = 'flac', 'https://github.com/xiph/flac/releases'
@@ -191,7 +196,7 @@ def file_dialog():
     return file_paths
 
 
-def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | None = None):
+def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: str | None = None):
 
     shutdown_sec: int | None = None
     if shutdow_sec_str is not None:
@@ -211,9 +216,11 @@ def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | No
         except Exception as e:
             log.error(e)
             log.warning("Stop run ripper")
+        sleep(1)
     Ripper.ripper_list = []
 
     if shutdown_sec:
+        log.info("Execute shutdown in {}s", shutdown_sec)
         if os.name == 'nt':
             _cmd = (f'shutdown /s /t {shutdown_sec} /c "{gettext('{} run completed, shutdown in {}s', PROJECT_TITLE, shutdown_sec)}"',)
             # 防 Windows Defender
@@ -221,7 +228,7 @@ def run_ripper_list(is_exit_when_runned: bool = False, shutdow_sec_str: str | No
         elif os.name == 'posix':
             os.system(f"shutdown -h +{shutdown_sec // 60}")
 
-    if is_exit_when_runned:
+    if is_exit_when_run_finished:
         sys.exit()
 
     change_title(f'End - {PROJECT_TITLE}')
@@ -353,7 +360,9 @@ def run_command(command: list[str] | str) -> bool:
 
 
         case "run":
-            run_ripper_list(cmd_list[1] == 'exit', cmd_list[2] or '60' if cmd_list[1] == 'shutdown' else None)
+            if _shutdown_sec_str := cmd_list[2] or '60' if cmd_list[1] == 'shutdown' else None:
+                log.info("Will shutdown in {}s after run finished", _shutdown_sec_str)
+            run_ripper_list(cmd_list[1] == 'exit', )
 
 
         case "server":
@@ -406,7 +415,7 @@ def run_command(command: list[str] | str) -> bool:
             preset_name = None
             option_map: dict[str, str] = {}
             is_run = False
-            is_exit_when_runned = False
+            is_exit_when_run_finished = False
             shutdown_sec_str: str | None = None
 
             _skip:bool = False
@@ -426,12 +435,13 @@ def run_command(command: list[str] | str) -> bool:
                                 return False
                             input_pathname_list += file_dialog()
                         else:
-                            input_pathname_list.append(cmd_list[i+1])
+                            input_pathname_list += cmd_list[i+1].split(':')
 
                     case '-o':
                         output_basename = cmd_list[i+1]
-                        if re.search(r'[<>:"/\\|?*]', output_basename):
-                            log.error('Illegal char in -o "{}"',output_basename)
+                        _output_basename = re.sub(r"\?\{[^}]*\}", "", output_basename)
+                        if re.search(r'[<>:"/\\|?*]', _output_basename):
+                            log.error('Illegal char in -o "{}"', _output_basename)
                             return False
 
                     case '-o:dir':
@@ -446,7 +456,7 @@ def run_command(command: list[str] | str) -> bool:
                     case '-run':
                         is_run = True
                         if cmd_list[i+1] == 'exit':
-                            is_exit_when_runned = True
+                            is_exit_when_run_finished = True
                         elif cmd_list[i+1] == 'shutdown':
                             shutdown_sec_str = cmd_list[i+2] or '60'
                         else:
@@ -467,7 +477,32 @@ def run_command(command: list[str] | str) -> bool:
                     log.warning("Input file number == 0")
                     return False
 
-                for input_pathname in input_pathname_list:
+                for i, input_pathname in enumerate(input_pathname_list):
+                    if output_basename is None:
+                        _output_basename = None
+                    else:
+                        _time = datetime.now()
+                        def _output_basename_re_sub_replace(match):
+                            s = match.group(1)
+                            match s:
+                                case str() as s if s.startswith('time:'):
+                                    try:
+                                        return _time.strftime(s[5:])
+                                    except Exception as e:
+                                        log.error(f"{repr(e)} {e}", deep_stack=True)
+                                        return ""
+                                case _:
+                                    try:
+                                        d = {k: v for s1 in s.split(",") for k, v in [s1.split("=")]}
+                                        start = int(d.get('start', 0))
+                                        padding = int(d.get('padding', 0))
+                                        increment = int(d.get('increment', 1))
+                                        return str(start + i * increment).zfill(padding)
+                                    except Exception as e:
+                                        log.error(f"{repr(e)} {e}", deep_stack=True)
+                                        return ""
+                        _output_basename = re.sub(r"\?\{([^}]*)\}", _output_basename_re_sub_replace, output_basename)
+
                     if not os.path.exists(input_pathname):
                         log.warning('The file "{}" does not exist', input_pathname)
 
@@ -496,9 +531,11 @@ def run_command(command: list[str] | str) -> bool:
                                 _new_option_map = option_map.copy()
                                 _new_option_map['sub'] = sub_path
 
+                                _output_base_suffix_name = os.path.splitext(os.path.splitext(os.path.basename(sub_path))[0])
+                                _output_base_suffix_name = _output_base_suffix_name[1] or _output_base_suffix_name[0]
                                 Ripper.ripper_list.append(Ripper(
                                     input_pathname,
-                                    f'{output_basename}.{os.path.splitext(os.path.basename(sub_path))[0]}',
+                                    f'{_output_basename}.{_output_base_suffix_name}',
                                     output_dir,
                                     preset_name,
                                     _new_option_map))
@@ -511,15 +548,15 @@ def run_command(command: list[str] | str) -> bool:
                             _new_option_map['sub'] = sub_list[0]
                             Ripper.ripper_list.append(Ripper(
                                 input_pathname,
-                                output_basename,
+                                _output_basename,
                                 output_dir,
                                 preset_name,
                                 _new_option_map))
 
                     else:
-                        Ripper.ripper_list.append(Ripper(
+                            Ripper.ripper_list.append(Ripper(
                             input_pathname,
-                            output_basename,
+                            _output_basename,
                             output_dir,
                             preset_name,
                             option_map))
@@ -530,7 +567,7 @@ def run_command(command: list[str] | str) -> bool:
 
 
             if is_run:
-                run_ripper_list(is_exit_when_runned, shutdown_sec_str)
+                run_ripper_list(is_exit_when_run_finished, shutdown_sec_str)
 
     return True
 
