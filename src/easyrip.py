@@ -435,7 +435,7 @@ def run_command(command: list[str] | str) -> bool:
                                 return False
                             input_pathname_list += file_dialog()
                         else:
-                            input_pathname_list += cmd_list[i+1].split(':')
+                            input_pathname_list += [s.strip() for s in cmd_list[i+1].split('::')]
 
                     case '-o':
                         output_basename = cmd_list[i+1]
@@ -523,7 +523,7 @@ def run_command(command: list[str] | str) -> bool:
                                     sub_list.append(os.path.join(_dir, _file_basename))
 
                         else:
-                            sub_list = sub_map.split('::')
+                            sub_list = [s.strip() for s in sub_map.split('::')]
 
                         sub_list_len = len(sub_list)
                         if sub_list_len > 1:

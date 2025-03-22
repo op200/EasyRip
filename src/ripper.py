@@ -140,13 +140,15 @@ class Ripper:
         if vpy_pathname and not os.path.exists(vpy_pathname):
             log.error('The file "{}" does not exist', vpy_pathname)
 
+        is_pipe_input = bool(input_suffix == ".vpy" or vpy_pathname)
+
         ff_input_option: list[str]
-        if input_suffix == '.vpy':
+        if is_pipe_input:
             ff_input_option = ["-"]
         else:
             ff_input_option = ['"{input}"']
         ff_stream_option: list[str] = ["0:v"]
-        ff_filter_option: list[str] = []
+        ff_filter_option: list[str] = s.split(',') if (s := self.option_map.get('vf')) else []
 
         if sub_pathname := self.option_map.get('sub'):
             sub_pathname = f"'{sub_pathname.replace('\\', '/').replace(':', '\\:')}'"
@@ -157,7 +159,7 @@ class Ripper:
         if audio_encoder := self.option_map.get('c:a'):
             _audio_encoder_str = audio_encoder
             audio_encoder = Ripper.AudioCodec(audio_encoder)
-            if input_suffix == '.vpy' or vpy_pathname:
+            if is_pipe_input:
                 ff_input_option.append('"{input}"')
                 ff_stream_option.append("1:a")
                 audio_option = f'-c:a {_audio_encoder_str} -b:a {self.option_map.get('b:a') or '160k'} '
@@ -256,8 +258,6 @@ class Ripper:
                     vspipe_input = 'vspipe -c y4m "{input}" - | '
                 elif vpy_pathname:
                     vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
-                is_pipe_input = bool(input_suffix == ".vpy" or vpy_pathname)
 
                 encoder_format_str = (
                     (vspipe_input if vspipe_input else "")
@@ -572,8 +572,6 @@ class Ripper:
                     vspipe_input = 'vspipe -c y4m "{input}" - | '
                 elif vpy_pathname:
                     vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
-                is_pipe_input = bool(input_suffix == ".vpy" or vpy_pathname)
 
                 encoder_format_str = (
                     (vspipe_input if vspipe_input else "")
