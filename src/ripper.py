@@ -27,6 +27,8 @@ class Ripper:
         copy = 'copy'
         flac = 'flac'
         x264slow = 'x264slow'
+        x265fast4 = 'x265fast4'
+        x265fast3 = 'x265fast3'
         x265fast2 = 'x265fast2'
         x265fast = 'x265fast'
         x265slow = 'x265slow'
@@ -274,15 +276,14 @@ class Ripper:
                 )
 
 
-            case Ripper.PresetName.x265fast2 | Ripper.PresetName.x265fast | Ripper.PresetName.x265slow | Ripper.PresetName.x265full:
+            case Ripper.PresetName.x265fast4 | Ripper.PresetName.x265fast3 | Ripper.PresetName.x265fast2 | Ripper.PresetName.x265fast | Ripper.PresetName.x265slow | Ripper.PresetName.x265full:
                 _default_option_map = {
                     'crf' : '20',
                     'qpmin' : '6',
                     'qpmax' : '32',
 
-                    'psy-rd' : '2',
-
                     'rd' : '3',
+                    'psy-rd' : '2',
                     'rdoq-level' : '0',
                     'psy-rdoq' : '0',
 
@@ -405,15 +406,78 @@ class Ripper:
                 _custom_option_map = {k: v for k, v in _custom_option_map.items() if v is not None}
 
                 match preset_name:
+                    case Ripper.PresetName.x265fast4:
+                        _option_map = {
+                            'crf' : '18',
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
+                            'rd' : '2',
+                            'rdoq-level' : '1',
+
+                            'me' : 'hex',
+                            'merange' : '57',
+                            'hme-search' : 'hex,hex,hex',
+                            'hme-range' : '16,32,48',
+
+                            'aq-mode' : '1',
+
+                            'tu-intra-depth' : '1',
+                            'tu-inter-depth' : '1',
+                            'limit-tu' : '4',
+
+                            'bframes' : '8',
+                            'ref' : '6',
+
+                            'subme' : '3',
+                            'open-gop' : '0',
+                            'gop-lookahead' : '0',
+                            'rc-lookahead' : '48',
+
+                            'cbqpoffs' : '-1',
+                            'crqpoffs' : '-1',
+                            'pbratio' : '1.28',
+                        }
+                    case Ripper.PresetName.x265fast3:
+                        _option_map = {
+                            'crf' : '18',
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
+                            'rdoq-level' : '1',
+                            'deblock' : '-0.5,-0.5',
+
+                            'me' : 'hex',
+                            'merange' : '57',
+                            'hme-search' : 'hex,hex,hex',
+                            'hme-range' : '16,32,57',
+
+                            'aq-mode' : '3',
+
+                            'tu-intra-depth' : '2',
+                            'tu-inter-depth' : '2',
+                            'limit-tu' : '4',
+
+                            'bframes' : '12',
+                            'ref' : '6',
+
+                            'subme' : '3',
+                            'open-gop' : '0',
+                            'gop-lookahead' : '0',
+                            'rc-lookahead' : '120',
+
+                            'cbqpoffs' : '-1',
+                            'crqpoffs' : '-1',
+                            'pbratio' : '1.27',
+                        }
                     case Ripper.PresetName.x265fast2:
                         _option_map = {
                             'crf' : '18',
-                            'rdoq-level' : '2',
-                            'qcomp' : '0.66',
-                            'deblock' : '-1,-1',
-
                             'qpmin' : '12',
                             'qpmax' : '28',
+
+                            'rdoq-level' : '2',
+                            'deblock' : '-1,-1',
 
                             'me' : 'hex',
                             'merange' : '57',
@@ -421,7 +485,6 @@ class Ripper:
                             'hme-range' : '16,57,92',
 
                             'aq-mode' : '3',
-                            'aq-strength' : '1',
 
                             'tu-intra-depth' : '3',
                             'tu-inter-depth' : '2',
@@ -429,7 +492,7 @@ class Ripper:
 
                             'ref' : '6',
 
-                            'subme' : '5',
+                            'subme' : '4',
                             'open-gop' : '0',
                             'gop-lookahead' : '0',
                             'rc-lookahead' : '192',
@@ -441,14 +504,14 @@ class Ripper:
                     case Ripper.PresetName.x265fast:
                         _option_map = {
                             'crf' : '19',
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
                             'psy-rd' : '1.8',
                             'rdoq-level' : '2',
                             'psy-rdoq' : '0.4',
                             'keyint' : '312',
                             'deblock' : '-1,-1',
-
-                            'qpmin' : '12',
-                            'qpmax' : '28',
 
                             'me' : 'umh',
                             'merange' : '57',
@@ -472,14 +535,19 @@ class Ripper:
                     case Ripper.PresetName.x265slow:
                         _option_map = {
                             'crf' : '19',
+                            'qpmin' : '12',
+                            'qpmax' : '28',
+
+                            'rd' : '5',
                             'psy-rd' : '1.8',
                             'rdoq-level' : '2',
                             'psy-rdoq' : '0.4',
-                            'keyint' : '312',
-                            'deblock' : '-1,-1',
 
-                            'qpmin' : '12',
-                            'qpmax' : '28',
+                            'qcomp' : '0.7',
+
+                            'keyint' : '312',
+
+                            'deblock' : '-1,-1',
 
                             'me' : 'umh',
                             'merange' : '57',
@@ -493,10 +561,12 @@ class Ripper:
                             'tu-inter-depth' : '3',
                             'limit-tu' : '2',
 
-                            'rd' : '5',
-                            'subme' : '7',
+                            'subme' : '6',
+
                             'gop-lookahead' : '14',
                             'rc-lookahead' : '250',
+
+                            'rect' : '1',
 
                             'min-keyint' : '2',
                             'cbqpoffs' : '-2',
@@ -556,13 +626,19 @@ class Ripper:
                             'early-skip' : '0',
                         }
 
+                _option_map = {
+                    **_default_option_map,
+                    **_option_map,
+                    **_custom_option_map,
+                }
+
+                if _option_map.get('hme', '0') == '0':
+                    _option_map.pop('hme-search')
+                    _option_map.pop('hme-range')
+
                 _param = ":".join(
                     f"{key}={val}"
-                    for key, val in {
-                        **_default_option_map,
-                        **_option_map,
-                        **_custom_option_map,
-                    }.items()
+                    for key, val in _option_map.items()
                 )
 
                 hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
