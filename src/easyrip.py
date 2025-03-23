@@ -167,6 +167,9 @@ def check_env():
     elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
         log.error("The MediaInfo must be CLI ver")
 
+    sys.stdout.flush()
+    sys.stderr.flush()
+
 
     log_new_ver(
         easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
@@ -274,6 +277,8 @@ def run_command(command: list[str] | str) -> bool:
                     log.warning(msg)
                 case "error" | "err":
                     log.error(msg)
+                case "send":
+                    log.send('', msg)
                 case _:
                     log.info(f"{cmd_list[1]} {msg}")
 
@@ -610,6 +615,8 @@ if __name__ == "__main__":
     while True:
         try:
             command = input(get_input_prompt())
+            sys.stdout.flush()
+            sys.stderr.flush()
         except:  # noqa: E722
             log.info("Manually force exit")
             sys.exit()

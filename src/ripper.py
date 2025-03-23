@@ -214,6 +214,7 @@ class Ripper:
             case Ripper.PresetName.x264slow:
 
                 _option_map = {
+                    'threads': self.option_map.get('threads', 'auto'),
                     # Select
                     'crf': self.option_map.get('crf', '21'),
                     'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
@@ -249,9 +250,6 @@ class Ripper:
                 }
 
                 _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-                if _threads := self.option_map.get('threads'):
-                    _param += f':threads={_threads}'
 
                 hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
 
