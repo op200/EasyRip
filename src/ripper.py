@@ -189,8 +189,17 @@ class Ripper:
 
 
 
+        ffparams_ff = self.option_map.get('ff-params:ff') or self.option_map.get('ff-params', '')
+        ffparams_in = self.option_map.get('ff-params:in', '')
+        ffparams_out = self.option_map.get('ff-params:out', '')
+        if _ss := self.option_map.get('ss'):
+            ffparams_in += f' -ss {_ss}'
+        if _t := self.option_map.get('t'):
+            ffparams_out += f' -t {_t}'
+        if _preset := self.option_map.get('v:preset'):
+            ffparams_out += f' -preset {_preset}'
 
-        FFMPEG_HEADER = f'ffmpeg -progress {FF_PROGRESS_LOG_FILE} -report'
+        FFMPEG_HEADER = f'ffmpeg -progress {FF_PROGRESS_LOG_FILE} -report {ffparams_ff} {ffparams_in}'
 
 
         match preset_name:
@@ -204,7 +213,7 @@ class Ripper:
 
 
             case Ripper.PresetName.copy:
-                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + audio_option if audio_option else '-c:a copy' + r' -c:v copy "{output}"'
+                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + (audio_option if audio_option else '-c:a copy') + r' -c:v copy "{output}"'
 
 
             case Ripper.PresetName.flac:
@@ -264,7 +273,7 @@ class Ripper:
                     + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
-                    + f' "{_param}" '
+                    + f' "{_param}" {ffparams_out} '
                     + (
                         f" -vf {','.join(ff_filter_option)} "
                         if len(ff_filter_option)
@@ -652,7 +661,7 @@ class Ripper:
                     + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
-                    + f' "{_param}" '
+                    + f' "{_param}" {ffparams_out} '
                     + (
                         f" -vf {','.join(ff_filter_option)} "
                         if len(ff_filter_option)
@@ -903,7 +912,7 @@ class Ripper:
 
     def __str__(self):
         return (
-            f"-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
+            f"-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} -preset {self.option.preset_name.value} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
              "  option:  {\n"
             f"  {str(self.option).replace('\n', '\n  ')}\n"
              "  }\n"
