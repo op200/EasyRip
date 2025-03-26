@@ -26,13 +26,24 @@ class Ripper:
         custom = 'custom'
         copy = 'copy'
         flac = 'flac'
+
+        x264fast = 'x264fast'
         x264slow = 'x264slow'
+
         x265fast4 = 'x265fast4'
         x265fast3 = 'x265fast3'
         x265fast2 = 'x265fast2'
         x265fast = 'x265fast'
         x265slow = 'x265slow'
         x265full = 'x265full'
+
+        h264_amf = 'h264_amf'
+        h264_nvenc = 'h264_nvenc'
+        h264_qsv = 'h264_qsv'
+
+        hevc_amf = 'hevc_amf'
+        hevc_nvenc = 'hevc_nvenc'
+        hevc_qsv = 'hevc_qsv'
 
         @classmethod
         def _missing_(cls, value: object):
@@ -218,6 +229,69 @@ class Ripper:
 
             case Ripper.PresetName.flac:
                 encoder_format_str = FFMPEG_HEADER + r' -i "{input}" -map 0:a:0 -f wav - | flac -j 32 -8 -e -p -l {maxlpc} -o "{output}" -'
+
+
+            case Ripper.PresetName.x264fast:
+
+                _option_map = {
+                    'threads': self.option_map.get('threads', 'auto'),
+                    # Select
+                    'crf': self.option_map.get('crf', '20'),
+                    'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
+                    'qcomp': self.option_map.get('qcomp', '0.66'),
+                    'keyint': self.option_map.get('keyint', '250'),
+                    'deblock': self.option_map.get('deblock', '0,0'),
+
+                    # Default
+                    'qpmin': self.option_map.get('qpmin', '8'),
+                    'qpmax': self.option_map.get('qpmax', '32'),
+                    'bframes': self.option_map.get('bframes', '8'),
+                    'ref': self.option_map.get('ref', '4'),
+                    'subme': self.option_map.get('subme', '5'),
+                    'me': self.option_map.get('me', 'hex'),
+                    'merange': self.option_map.get('merange', '16'),
+                    'aq-mode': self.option_map.get('aq-mode', '1'),
+                    'rc-lookahead': self.option_map.get('rc-lookahead', '60'),
+                    'min-keyint': self.option_map.get('min-keyint', '2'),
+                    'trellis': self.option_map.get('trellis', '1'),
+                    'fast-pskip': self.option_map.get('fast-pskip', '1'),
+
+                    # No change
+                    'weightb' : '1',
+
+                    **{
+                        k: v
+                        for k, v in [
+                            s.split('=')
+                            for s in str(self.option_map.get('x264-params', '')).split(':')
+                            if s != ""
+                        ]
+                    }
+                }
+
+                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
+
+                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
+
+                vspipe_input: str = ""
+                if input_suffix == ".vpy":
+                    vspipe_input = 'vspipe -c y4m "{input}" - | '
+                elif vpy_pathname:
+                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
+
+                encoder_format_str = (
+                    (vspipe_input if vspipe_input else "")
+                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
+                    + f' "{_param}" {ffparams_out} '
+                    + (
+                        f" -vf {','.join(ff_filter_option)} "
+                        if len(ff_filter_option)
+                        else ""
+                    )
+                    + ' "{output}"'
+                )
 
 
             case Ripper.PresetName.x264slow:
@@ -662,6 +736,39 @@ class Ripper:
                     + audio_option
                     + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
                     + f' "{_param}" {ffparams_out} '
+                    + (
+                        f" -vf {','.join(ff_filter_option)} "
+                        if len(ff_filter_option)
+                        else ""
+                    )
+                    + ' "{output}"'
+                )
+
+
+            case Ripper.PresetName.h264_amf | Ripper.PresetName.h264_nvenc | Ripper.PresetName.h264_qsv | Ripper.PresetName.hevc_amf | Ripper.PresetName.hevc_nvenc | Ripper.PresetName.hevc_qsv:
+
+                _option_map = {
+                    'q:v': self.option_map.get('q:v'),
+                    'pix_fmt' : self.option_map.get('pix_fmt'),
+                    'preset:v' : self.option_map.get('preset:v'),
+                }
+
+                _param = ' '.join((f"-{key} {val}" for key, val in _option_map.items() if val))
+
+                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
+
+                vspipe_input: str = ""
+                if input_suffix == ".vpy":
+                    vspipe_input = 'vspipe -c y4m "{input}" - | '
+                elif vpy_pathname:
+                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
+
+                encoder_format_str = (
+                    (vspipe_input if vspipe_input else "")
+                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + f" -c:v {preset_name.value} "
+                    + f" {_param} {ffparams_out} "
                     + (
                         f" -vf {','.join(ff_filter_option)} "
                         if len(ff_filter_option)
