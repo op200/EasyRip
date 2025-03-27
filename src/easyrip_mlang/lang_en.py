@@ -145,7 +145,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "  -custom:format / -custom:template <string>\n"
         "    When -preset custom, this option will run\n"
-        "    String escape: \\34/ -> \", \\39/ -> '\n"
+        "    String escape: \\34/ -> \", \\39/ -> ', '' -> \"\n"
         '    e.g. -custom:format \'-i "{input}" -map {testmap123} "{output}" \' -custom:suffix mp4 -testmap123 0:v:0\n'
         "\n"
         "  -custom:suffix <string>\n"

@@ -145,7 +145,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "  -custom:format / -custom:template <string>\n"
         "    当 -preset custom 时，将运行这个选项\n"
-        "    字符串转义: \\34/ -> \", \\39/ -> '\n"
+        "    字符串转义: \\34/ -> \", \\39/ -> ', '' -> \"\n"
         '    e.g. -custom:format \'-i "{input}" -map {testmap123} "{output}" \' -custom:suffix mp4 -testmap123 0:v:0\n'
         "\n"
         "  -custom:suffix <string>\n"

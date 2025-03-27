@@ -220,7 +220,7 @@ class Ripper:
                     encoder_format_str = ''
 
                 else:
-                    encoder_format_str = encoder_format_str.replace('\\34/', '"').replace('\\39/', "'").format_map(self.option_map | {'input': r'{input}', 'output': r'{output}'})
+                    encoder_format_str = encoder_format_str.replace("''", '"').replace('\\34/', '"').replace('\\39/', "'").format_map(self.option_map | {'input': r'{input}', 'output': r'{output}'})
 
 
             case Ripper.PresetName.copy:
@@ -949,10 +949,11 @@ class Ripper:
                 except Exception as e:
                     log.error(f"{repr(e)} {e}", deep_stack=True)
 
-            Thread(target=self._flush_progress, args=(1,)).start()
+            Thread(target=self._flush_progress, args=(1,), daemon=True).start()
 
             log.info(cmd)
-            os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
+            if self.preset_name is not Ripper.PresetName.custom:
+                os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
             if os.system(cmd):
                 log.error('There have error in running')
 

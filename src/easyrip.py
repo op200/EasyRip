@@ -586,7 +586,7 @@ def init():
             updated_path = f"{new_path}{os.pathsep}{current_path}"
             os.environ["PATH"] = updated_path
 
-    Thread(target=check_env).start()
+    Thread(target=check_env, daemon=True).start()
 
     log.html_log_file = gettext("encoding_log.html")
     MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore

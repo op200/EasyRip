@@ -185,8 +185,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                         _cmd = "$log.error('Prohibited from use $ <code> in web service when no password')"
 
                     post_run = Thread(
-                        target=Event.post_run_event,
-                        args=(_cmd,),
+                        target=Event.post_run_event, args=(_cmd,), daemon=True
                     )
                     Event.is_run_command.append(True)
                     Event.is_run_command.popleft()
