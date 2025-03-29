@@ -80,19 +80,19 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
 def check_env():
     change_title(f'{gettext("Check env...")} {PROJECT_TITLE}')
 
-    _name, _url = 'FFmpeg', 'https://ffmpeg.org/download.html'
-    if not shutil.which(_name):
-        print()
-        log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
-        print(get_input_prompt(), end='')
-    else:
-        _new_ver = subprocess.run('ffmpeg -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0]
-        
-        if "." in _new_ver:
-            log_new_ver("7.1.1", _new_ver.split("-")[0], _name, _url)
+    _url = 'https://ffmpeg.org/download.html'
+    for _name in {'FFmpeg', 'FFprobe'}:
+        if not shutil.which(_name):
+            print()
+            log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
+            print(get_input_prompt(), end='')
         else:
-            log_new_ver("2025.03.03", ".".join(_new_ver.split("-")[:3]), _name, _url)
-
+            _new_ver = subprocess.run(f'{_name} -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0]
+            
+            if "." in _new_ver:
+                log_new_ver("7.1.1", _new_ver.split("-")[0], _name, _url)
+            else:
+                log_new_ver("2025.03.03", ".".join(_new_ver.split("-")[:3]), _name, _url)
 
 
     _name, _url = 'flac', 'https://github.com/xiph/flac/releases'
@@ -135,37 +135,26 @@ def check_env():
             _name, _url)
 
 
-    _name, _url = 'mkvpropedit', 'https://mkvtoolnix.download/downloads.html'
-    if not shutil.which(_name):
-        print()
-        log.warning('{} not found, download it: {}', _name, _url)
-        print(get_input_prompt(), end='')
-    else:
-        log_new_ver(
-            '90',
-            subprocess.run('mkvpropedit --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
-            _name, _url)
+    _url = 'https://mkvtoolnix.download/downloads.html'
+    for _name in {'mkvpropedit', 'mkvmerge'}:
+        if not shutil.which(_name):
+            print()
+            log.warning('{} not found, download it: {}', _name, _url)
+            print(get_input_prompt(), end='')
+        else:
+            log_new_ver(
+                '91',
+                subprocess.run(f'{_name} --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
+                _name, _url)
 
 
-    _name = 'mkvmerge'
-    if not shutil.which(_name):
-        print()
-        log.warning('{} not found, download it: {}', _name, _url)
-        print(get_input_prompt(), end='')
-    else:
-        log_new_ver(
-            '90',
-            subprocess.run('mkvmerge --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
-            _name, _url)
-
-
-    _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
-    if not shutil.which(_name):
-        print()
-        log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
-        print(get_input_prompt(), end='')
-    elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
-        log.error("The MediaInfo must be CLI ver")
+    # _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
+    # if not shutil.which(_name):
+    #     print()
+    #     log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
+    #     print(get_input_prompt(), end='')
+    # elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
+    #     log.error("The MediaInfo must be CLI ver")
 
     sys.stdout.flush()
     sys.stderr.flush()
@@ -187,7 +176,7 @@ def get_input_prompt():
 if os.name == 'nt':
     try:
         ctypes.windll.user32.SetProcessDPIAware()
-    except:  # noqa: E722
+    except Exception:
         log.warning("Windows DPI Aware failed")
 
 
@@ -361,7 +350,7 @@ def run_command(command: list[str] | str) -> bool:
                             i2 -= 1
                         Ripper.ripper_list[i1], Ripper.ripper_list[i2] = Ripper.ripper_list[i2], Ripper.ripper_list[i1]
                     except Exception as e:
-                        log.error(f"{repr(e)} {e}", deep_stack=True)
+                        log.error(f"{repr(e)} {e}", deep=True)
 
 
         case "run":
@@ -494,7 +483,7 @@ def run_command(command: list[str] | str) -> bool:
                                     try:
                                         return _time.strftime(s[5:])
                                     except Exception as e:
-                                        log.error(f"{repr(e)} {e}", deep_stack=True)
+                                        log.error(f"{repr(e)} {e}", deep=True)
                                         return ""
                                 case _:
                                     try:
@@ -504,7 +493,7 @@ def run_command(command: list[str] | str) -> bool:
                                         increment = int(d.get('increment', 1))
                                         return str(start + i * increment).zfill(padding)
                                     except Exception as e:
-                                        log.error(f"{repr(e)} {e}", deep_stack=True)
+                                        log.error(f"{repr(e)} {e}", deep=True)
                                         return ""
                         _output_basename = re.sub(r"\?\{([^}]*)\}", _output_basename_re_sub_replace, output_basename)
 
@@ -617,7 +606,7 @@ if __name__ == "__main__":
             command = input(get_input_prompt())
             sys.stdout.flush()
             sys.stderr.flush()
-        except:  # noqa: E722
+        except Exception:
             log.info("Manually force exit")
             sys.exit()
 

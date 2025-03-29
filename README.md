@@ -30,9 +30,9 @@ pip install -U pycryptodome
 ```
 
 CLI
-* [ffmpeg](https://ffmpeg.org/)
+* [ffmpeg & ffprobe](https://ffmpeg.org/)
 * [flac](https://xiph.org/flac/)
 * [mp4box](https://gpac.io/)
 * [mp4fpsmod](https://github.com/nu774/mp4fpsmod)
 * [mkvpropedit & mkvmerge](https://mkvtoolnix.download/)
-* [MediaInfo](https://mediaarea.net/en/MediaInfo)
+<!-- * [MediaInfo](https://mediaarea.net/en/MediaInfo) -->

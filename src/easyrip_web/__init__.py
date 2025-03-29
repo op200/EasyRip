@@ -30,7 +30,7 @@ def get_sys_proxy(target_url: str) -> str:
 
         return url if url.rstrip("/") != target_url.rstrip("/") else ""
 
-    except:  # noqa: E722
+    except Exception:
         return ""
 
 
@@ -49,7 +49,7 @@ def get_github_api_ver(github_api_url: str) -> str | None:
         )
         data: dict = json.loads(response.stdout.decode("utf-8"))
         version = data.get("tag_name")
-    except:  # noqa: E722
+    except Exception:
         pass
 
     return version

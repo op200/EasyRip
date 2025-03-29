@@ -1,7 +1,7 @@
 import sys
 import enum
 import datetime
-import inspect
+import traceback
 
 from easyrip_mlang import gettext, GlobalLangVal
 import easyrip_web
@@ -34,11 +34,8 @@ class log:
             *vals,
             is_format=kwargs.get("is_format", True),
         )
-        if kwargs.get("deep_stack"):
-            stack = inspect.stack()
-            message = (
-                f"{' -> '.join(frame.function for frame in stack[-1:1:-1])}: {message}"
-            )
+        if kwargs.get("deep"):
+            message = f"{traceback.format_exc()}\n{message}"
 
         match log_level:
             case log.LogLevel.info:
@@ -93,35 +90,35 @@ class log:
                     print(f"\033[35m{message}\033[0m")
 
     @staticmethod
-    def info(message: object, *vals, is_format: bool = True, deep_stack: bool = False):
+    def info(message: object, *vals, is_format: bool = True, deep: bool = False):
         log._print_log(
             log.LogLevel.info,
             message,
             *vals,
             is_format=is_format,
-            deep_stack=deep_stack,
+            deep_stack=deep,
         )
 
     @staticmethod
     def warning(
-        message: object, *vals, is_format: bool = True, deep_stack: bool = False
+        message: object, *vals, is_format: bool = True, deep: bool = False
     ):
         log._print_log(
             log.LogLevel.warning,
             message,
             *vals,
             is_format=is_format,
-            deep_stack=deep_stack,
+            deep=deep,
         )
 
     @staticmethod
-    def error(message: object, *vals, is_format: bool = True, deep_stack: bool = False):
+    def error(message: object, *vals, is_format: bool = True, deep: bool = False):
         log._print_log(
             log.LogLevel.error,
             message,
             *vals,
             is_format=is_format,
-            deep_stack=deep_stack,
+            deep=deep,
         )
 
     @staticmethod
@@ -139,7 +136,7 @@ class log:
             http_send_header=header,
             is_format=is_format,
             is_server=is_server,
-            deep_stack=False,
+            deep=False,
         )
 
     @staticmethod

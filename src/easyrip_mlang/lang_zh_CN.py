@@ -150,7 +150,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "  -custom:suffix <string>\n"
         "    当 -preset custom 时，这个选项将作为输出文件的后缀\n"
-        "    默认: mkv\n"
+        "    默认: ''\n"
         "\n"
         "  -run [<string>]\n"
         "    执行 ripper list 中的 ripper\n"
@@ -194,7 +194,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Check env...": "检测环境中...",
     "{} not found, download it: {}": "没找到 {}，在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
-    "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
+    # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",

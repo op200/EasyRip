@@ -82,10 +82,14 @@ class Ripper:
         muxer: 'Ripper.Muxer | None'
         muxer_format_str: str
 
-        def __init__(self,
-                     preset_name: 'Ripper.PresetName', format_str: str,
-                     audio_encoder: 'Ripper.AudioCodec | None',
-                     muxer: 'Ripper.Muxer | None', muxer_format_str: str):
+        def __init__(
+            self,
+            preset_name: "Ripper.PresetName",
+            format_str: str,
+            audio_encoder: "Ripper.AudioCodec | None",
+            muxer: "Ripper.Muxer | None",
+            muxer_format_str: str,
+        ):
             self.preset_name = preset_name
             self.encoder_format_str = format_str
             self.audio_encoder = audio_encoder
@@ -96,6 +100,34 @@ class Ripper:
             return f'  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str}'
 
 
+    class Info:
+        '''
+        nb_frames 封装帧数(f)
+
+        r_frame_rate 基本帧率(fps分数)
+
+        duration 时长(s)
+
+        sample_fmt
+        '''
+        nb_frames: int
+        r_frame_rate: tuple[int, int]
+        duration: float
+        sample_fmt: str
+        sample_rate: int
+        bits_per_sample: int
+        bits_per_raw_sample: int
+
+        def __init__(self):
+            self.nb_frames = 0
+            self.r_frame_rate = (0,1)
+            self.duration = 0
+            self.sample_fmt = ""
+            self.sample_rate = 0
+            self.bits_per_sample = 0
+            self.bits_per_raw_sample = 0
+
+
     input_pathname: str
     output_prefix: str
     output_dir: str
@@ -103,6 +135,8 @@ class Ripper:
     option_map: dict[str, str]
 
     preset_name: PresetName
+
+    info: Info
 
     _progress: dict
     '''
@@ -121,19 +155,7 @@ class Ripper:
 
         if (force_fps := self.option_map.get('r') or self.option_map.get('fps')) == "auto":
             try:
-                media_info = subprocess.Popen(
-                    [
-                        "MediaInfo",
-                        "--Output=JSON",
-                        self.input_pathname,
-                    ],
-                    stdout=subprocess.PIPE,
-                    text=True,
-                    encoding="utf-8",
-                ).communicate()[0]
-                media_info = json.loads(media_info)
-
-                force_fps = float(media_info["media"]["track"][0]["FrameRate"])
+                force_fps = self.info.r_frame_rate[0] / self.info.r_frame_rate[1]
                 if 23.975 < force_fps < 23.977:
                     force_fps = "24000/1001"
                 elif 29.969 < force_fps < 29.971:
@@ -142,9 +164,8 @@ class Ripper:
                     force_fps = "48000/1001"
                 elif 59.939 < force_fps < 59.941:
                     force_fps = "60000/1001"
-
             except Exception as e:
-                log.error(f"{repr(e)} {e}", deep_stack=True)
+                log.error(f"{repr(e)} {e}", deep=True)
 
         # Path
         input_suffix = os.path.splitext(self.input_pathname)[1]
@@ -215,7 +236,14 @@ class Ripper:
 
         match preset_name:
             case Ripper.PresetName.custom:
-                if not (encoder_format_str := self.option_map.get('custom:format') or self.option_map.get('custom:template')):
+                if not (
+                    encoder_format_str := self.option_map.get(
+                        "custom:format",
+                        self.option_map.get(
+                            "custom:template", self.option_map.get("custom")
+                        ),
+                    )
+                ):
                     log.warning("The preset custom must have custom:format or custom:template")
                     encoder_format_str = ''
 
@@ -228,7 +256,32 @@ class Ripper:
 
 
             case Ripper.PresetName.flac:
-                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" -map 0:a:0 -f wav - | flac -j 32 -8 -e -p -l {maxlpc} -o "{output}" -'
+                _encoder = {
+                    "u8" : "pcm_u8",
+                    "s16" : "pcm_s16le",
+                    "s32" : "pcm_s32le",
+                    "flt" : "pcm_s32le",
+                    "dbl" : "pcm_s32le",
+
+                    "u8p" : "pcm_u8",
+                    "s16p" : "pcm_s16le",
+                    "s32p" : "pcm_s32le",
+                    "fltp" : "pcm_s32le",
+                    "dblp" : "pcm_s32le",
+
+                    "s64" : "pcm_s32le",
+                    "s64p" : "pcm_s32le",
+                }.get(self.info.sample_fmt, "pcm_s32le")
+                if self.info.bits_per_raw_sample == 24 or self.info.bits_per_sample == 24:
+                    _encoder = "pcm_s24le"
+
+                encoder_format_str = (
+                    FFMPEG_HEADER + ' -i "{input}" -map 0:a:0 -c:a '
+                    f"{_encoder} {ffparams_out} "
+                    '"{output}.temp.wav" && '
+                    f" flac -j 32 -8 -e -p -l {'19' if self.info.sample_rate > 48000 else '12'} "
+                    '-o "{output}" "{output}.temp.wav" && del /Q "{output}.temp.wav"'
+                )
 
 
             case Ripper.PresetName.x264fast:
@@ -855,31 +908,16 @@ class Ripper:
             # 根据格式判断
             if self.option.preset_name == Ripper.PresetName.custom:
 
-                suffix = f".{self.option_map.get('custom:suffix') or 'mkv'}"
+                suffix = f".{_suffix}" if (_suffix := self.option_map.get('custom:suffix')) else ''
                 temp_name = temp_name+suffix
                 cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname,  'output': os.path.join(self.output_dir, temp_name)})
 
 
             elif self.option.preset_name == Ripper.PresetName.flac:
 
-                # 获取 maxlpc
-                process_get_maxlpc = subprocess.Popen([
-                    'ffmpeg',
-                    '-i', self.input_pathname
-                ],stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, encoding='utf-8', errors='replace')
-
-                maxlpc = '12'
-                for line in process_get_maxlpc.communicate()[0].splitlines():
-                    if match := re.search(r'Stream ?#0:.*Audio:.*, *(\d+) *Hz', line):
-                        if int(match.group(1)) > 48000:
-                            maxlpc = '19'
-                        else:
-                            maxlpc = '12'
-                        break
-
                 suffix = '.flac'
                 temp_name = temp_name+suffix
-                cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname, 'maxlpc': maxlpc, 'output': os.path.join(self.output_dir, temp_name)})
+                cmd = self.option.encoder_format_str.format_map({'input': self.input_pathname, 'output': os.path.join(self.output_dir, temp_name)})
 
 
             else:
@@ -927,27 +965,8 @@ class Ripper:
             self._progress['frame_count'] = 0
             self._progress['duration'] = 0
             if not self.input_pathname.endswith('.vpy'):
-                try:
-                    media_info = subprocess.Popen(
-                        [
-                            "MediaInfo",
-                            "--Output=JSON",
-                            self.input_pathname,
-                        ],
-                        stdout=subprocess.PIPE,
-                        text=True,
-                        encoding="utf-8",
-                    ).communicate()[0]
-                    media_info = json.loads(media_info)
-                    self._progress['frame_count'] = int(media_info["media"]["track"][0]["FrameCount"])
-                    self._progress['duration'] = float(media_info["media"]["track"][0]["Duration"])
-
-                    del media_info
-
-                except KeyError:
-                    pass
-                except Exception as e:
-                    log.error(f"{repr(e)} {e}", deep_stack=True)
+                self._progress['frame_count'] = self.info.nb_frames
+                self._progress['duration'] = self.info.duration
 
             Thread(target=self._flush_progress, args=(1,), daemon=True).start()
 
@@ -1005,6 +1024,62 @@ class Ripper:
     def __init__(self, input_pathname: str, output_prefix: str | None, output_dir: str | None, option: Option | str, option_map: dict):
 
         self.input_pathname = input_pathname
+
+        self.info = Ripper.Info()
+        try:
+            _info: dict = json.loads(
+                subprocess.Popen(
+                    [
+                        "ffprobe",
+                        "-v", "0",
+                        "-select_streams", "v:0",
+                        "-show_streams",
+                        "-print_format", "json",
+                        self.input_pathname,
+                    ],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                ).communicate()[0]
+            )
+            _info_list: list = _info.get("streams", [])
+
+            _video_info_dict: dict = _info_list[0] if _info_list else dict()
+
+            _fps_str: str = _video_info_dict.get("r_frame_rate", "0") + "/1"
+            _fps = [int(s) for s in _fps_str.split("/")]
+            self.info.r_frame_rate = (_fps[0], _fps[1])
+
+            self.info.nb_frames = int(_video_info_dict.get("nb_frames", 0))
+            self.info.duration = float(_video_info_dict.get("duration", 0))
+
+            _info: dict = json.loads(
+                subprocess.Popen(
+                    [
+                        "ffprobe",
+                        "-v", "0",
+                        "-select_streams", "a:0",
+                        "-show_streams",
+                        "-print_format", "json",
+                        self.input_pathname,
+                    ],
+                    stdout=subprocess.PIPE,
+                    text=True,
+                    encoding="utf-8",
+                ).communicate()[0]
+            )
+            _info_list: list = _info.get("streams", [])
+
+            _audio_info_dict: dict = _info_list[0] if _info_list else dict()
+    
+            self.info.sample_fmt = str(_audio_info_dict.get("sample_fmt", ""))
+            self.info.sample_rate = int(_audio_info_dict.get("sample_rate", 0))
+            self.info.bits_per_sample = int(_audio_info_dict.get("bits_per_sample", 0))
+            self.info.bits_per_raw_sample = int(_audio_info_dict.get("bits_per_raw_sample", 0))
+
+        except Exception as e:
+            log.error(f"{repr(e)} {e}", deep=True, is_format=False)
+
         self.output_prefix = output_prefix if output_prefix else os.path.splitext(os.path.basename(input_pathname))[0]
         self.output_dir = output_dir or os.getcwd()
         self.option_map = option_map.copy()
@@ -1018,11 +1093,12 @@ class Ripper:
 
         self._progress = {}
 
+
     def __str__(self):
         return (
             f"-i {self.input_pathname} -o {self.output_prefix} -o:dir {self.output_dir} -preset {self.option.preset_name.value} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
-             "  option:  {\n"
+            "  option:  {\n"
             f"  {str(self.option).replace('\n', '\n  ')}\n"
-             "  }\n"
+            "  }\n"
             f"  option_map: {self.option_map}"
         )

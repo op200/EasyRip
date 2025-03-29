@@ -150,7 +150,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "  -custom:suffix <string>\n"
         "    When -preset custom, this option will be used as a suffix for the output file\n"
-        "    Default: mkv\n"
+        "    Default: ''\n"
         "\n"
         "  -run [<string>]\n"
         "    Run the ripper in the ripper list\n"
