@@ -143,7 +143,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    设置封装的帧率\n"
         "    使用 auto 时，自动从输入的视频获取帧率，并吸附到最近的预设点位\n"
         "\n"
-        "  -custom:format / -custom:template <string>\n"
+        "  -custom / -custom:format / -custom:template <string>\n"
         "    当 -preset custom 时，将运行这个选项\n"
         "    字符串转义: \\34/ -> \", \\39/ -> ', '' -> \"\n"
         '    e.g. -custom:format \'-i "{input}" -map {testmap123} "{output}" \' -custom:suffix mp4 -testmap123 0:v:0\n'

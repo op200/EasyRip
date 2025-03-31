@@ -143,7 +143,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    Setting FPS when muxing\n"
         "    When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point\n"
         "\n"
-        "  -custom:format / -custom:template <string>\n"
+        "  -custom / -custom:format / -custom:template <string>\n"
         "    When -preset custom, this option will run\n"
         "    String escape: \\34/ -> \", \\39/ -> ', '' -> \"\n"
         '    e.g. -custom:format \'-i "{input}" -map {testmap123} "{output}" \' -custom:suffix mp4 -testmap123 0:v:0\n'
