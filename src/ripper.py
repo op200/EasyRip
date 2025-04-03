@@ -9,7 +9,6 @@ from threading import Thread
 
 import easyrip_web
 from easyrip_log import log
-print = None
 
 __all__ = ['Ripper']
 
@@ -182,11 +181,11 @@ class Ripper:
         else:
             ff_input_option = ['"{input}"']
         ff_stream_option: list[str] = ["0:v"]
-        ff_filter_option: list[str] = s.split(',') if (s := self.option_map.get('vf')) else []
+        ff_vf_option: list[str] = s.split(',') if (s := self.option_map.get('vf')) else []
 
         if sub_pathname := self.option_map.get('sub'):
             sub_pathname = f"'{sub_pathname.replace('\\', '/').replace(':', '\\:')}'"
-            ff_filter_option.append(f"ass={sub_pathname}")
+            ff_vf_option.append(f"ass={sub_pathname}")
 
 
         # Audio
@@ -252,7 +251,16 @@ class Ripper:
 
 
             case Ripper.PresetName.copy:
-                encoder_format_str = FFMPEG_HEADER + r' -i "{input}" ' + (audio_option if audio_option else '-c:a copy') + r' -c:v copy "{output}"'
+
+                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
+
+                encoder_format_str = (
+                    f"{FFMPEG_HEADER} {hwaccel} "
+                    + '-i "{input}" -c copy '
+                    + f"{' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + f"{audio_option} {ffparams_out} "
+                    + '"{output}"'
+                )
 
 
             case Ripper.PresetName.flac:
@@ -335,14 +343,9 @@ class Ripper:
                 encoder_format_str = (
                     (vspipe_input if vspipe_input else "")
                     + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
-                    + f' "{_param}" {ffparams_out} '
-                    + (
-                        f" -vf {','.join(ff_filter_option)} "
-                        if len(ff_filter_option)
-                        else ""
-                    )
+                    + f" {audio_option} -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
+                    + f'"{_param}" {ffparams_out} '
+                    + (f" -vf {','.join(ff_vf_option)} " if len(ff_vf_option) else "")
                     + ' "{output}"'
                 )
 
@@ -402,8 +405,8 @@ class Ripper:
                     + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
                     + f' "{_param}" {ffparams_out} '
                     + (
-                        f" -vf {','.join(ff_filter_option)} "
-                        if len(ff_filter_option)
+                        f" -vf {','.join(ff_vf_option)} "
+                        if len(ff_vf_option)
                         else ""
                     )
                     + ' "{output}"'
@@ -790,8 +793,8 @@ class Ripper:
                     + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
                     + f' "{_param}" {ffparams_out} '
                     + (
-                        f" -vf {','.join(ff_filter_option)} "
-                        if len(ff_filter_option)
+                        f" -vf {','.join(ff_vf_option)} "
+                        if len(ff_vf_option)
                         else ""
                     )
                     + ' "{output}"'
@@ -823,8 +826,8 @@ class Ripper:
                     + f" -c:v {preset_name.value} "
                     + f" {_param} {ffparams_out} "
                     + (
-                        f" -vf {','.join(ff_filter_option)} "
-                        if len(ff_filter_option)
+                        f" -vf {','.join(ff_vf_option)} "
+                        if len(ff_vf_option)
                         else ""
                     )
                     + ' "{output}"'
@@ -1081,7 +1084,7 @@ class Ripper:
             log.error(f"{repr(e)} {e}", deep=True, is_format=False)
 
         self.output_prefix = output_prefix if output_prefix else os.path.splitext(os.path.basename(input_pathname))[0]
-        self.output_dir = output_dir or os.getcwd()
+        self.output_dir = output_dir or os.path.realpath(os.getcwd())
         self.option_map = option_map.copy()
 
         if isinstance(option, str):

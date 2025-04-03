@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 from time import sleep
 import tkinter as tk
 from tkinter import filedialog
@@ -11,6 +12,7 @@ import re
 from threading import Thread
 from itertools import zip_longest
 import subprocess
+from multiprocessing import shared_memory
 
 from global_val import GlobalVal
 from easyrip_log import log, Event as LogEvent
@@ -170,7 +172,7 @@ def check_env():
 
 
 def get_input_prompt():
-    return f'{os.getcwd()}> {gettext("Easy Rip command")}>'
+    return f'{os.path.realpath(os.getcwd())}> {gettext("Easy Rip command")}>'
 
 
 if os.name == 'nt':
@@ -198,6 +200,31 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
             log.warning('Wrong sec in -shutdown, change to default 60s')
             shutdown_sec = 60
 
+    _name = ("EasyRip:dir:" + os.path.realpath(os.getcwd())).encode().hex()
+    _size = 16384
+    try:
+        path_lock_shm = shared_memory.SharedMemory(
+            name=_name,
+            create=True,
+            size=_size,
+        )
+    except FileExistsError:
+        _shm = shared_memory.SharedMemory(name=_name)
+        _res: dict = json.loads(
+            bytes(_shm.buf[: len(_shm.buf)]).decode("utf-8").rstrip("\0")
+        )
+        _shm.unlink()
+        log.error("Current work directory has an other Easy Rip is running: {}", f'version: {_res.get("project_version")}, start_time: {_res.get("start_time")}')
+        return
+    else:
+        _data = json.dumps({
+            "size": _size,
+            "project_name": PROJECT_NAME,
+            "project_version": PROJECT_VERSION,
+            "start_time": datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
+        }).encode("utf-8")
+        path_lock_shm.buf[:len(_data)] = _data
+
     total = len(Ripper.ripper_list)
     for i, ripper in enumerate(Ripper.ripper_list):
         progress = f'{i+1} / {total} - {PROJECT_TITLE}'
@@ -210,6 +237,7 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
             log.warning("Stop run ripper")
         sleep(1)
     Ripper.ripper_list = []
+    path_lock_shm.close()
 
     if shutdown_sec:
         log.info("Execute shutdown in {}s", shutdown_sec)
@@ -511,7 +539,7 @@ def run_command(command: list[str] | str) -> bool:
                                 _input_basename = os.path.splitext(_input_basename[0])
                             _input_prefix: str = _input_basename[0]
 
-                            _dir = output_dir or os.getcwd()
+                            _dir = output_dir or os.path.realpath(os.getcwd())
                             for _file_basename in os.listdir(_dir):
                                 if os.path.splitext(_file_basename)[1] in {'.ass', '.ssa'} and _file_basename.startswith(f'{_input_prefix}.'):
                                     sub_list.append(os.path.join(_dir, _file_basename))
@@ -535,7 +563,7 @@ def run_command(command: list[str] | str) -> bool:
                                     _new_option_map))
 
                         elif sub_list_len == 0:
-                            log.warning("No subtitle file exist as -sub auto when -i {} -o:dir {}", input_pathname, output_dir or os.getcwd())
+                            log.warning("No subtitle file exist as -sub auto when -i {} -o:dir {}", input_pathname, output_dir or os.path.realpath(os.getcwd()))
 
                         else:
                             _new_option_map = option_map.copy()
@@ -569,7 +597,7 @@ def run_command(command: list[str] | str) -> bool:
 def init():
     GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言必须优先级最高
 
-    new_path = os.getcwd()
+    new_path = os.path.realpath(os.getcwd())
     if os.pathsep in (current_path := os.environ.get("PATH", "")):
         if new_path not in current_path.split(os.pathsep):
             updated_path = f"{new_path}{os.pathsep}{current_path}"

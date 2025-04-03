@@ -215,6 +215,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Unsupported option: {}": "不支持的选项: {}",
     "Manually force exit": "手动强制退出",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误，改为默认值 60s",
+    "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
     "Stop run command": "命令执行终止",
     # log
     "encoding_log.html": "编码日志.html",

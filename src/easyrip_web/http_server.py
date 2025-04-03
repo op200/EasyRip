@@ -156,7 +156,9 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             elif _cmd := data.get("run_command"):
                 _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
 
-                Event.log.send(f"{os.getcwd()}>", _cmd, is_server=True)
+                Event.log.send(
+                    f"{os.path.realpath(os.getcwd())}>", _cmd, is_server=True
+                )
 
                 status_code = 200
                 response = json.dumps({"res": "success"})
@@ -223,7 +225,9 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             json.dumps(
                 {
                     "token": MainHTTPRequestHandler.token,
-                    "cwd": MainHTTPRequestHandler.str_to_aes(json.dumps(os.getcwd())),
+                    "cwd": MainHTTPRequestHandler.str_to_aes(
+                        json.dumps(os.path.realpath(os.getcwd()))
+                    ),
                     "log_queue": MainHTTPRequestHandler.str_to_aes(
                         json.dumps(list(Event.log_queue))
                     ),
