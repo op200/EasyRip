@@ -16,7 +16,9 @@ class Event:
 
 
 class log:
-    html_log_file = "encoding_log.html"  # 在调用前重定义
+    html_log_file: str = "encoding_log.html"  # 在调用前重定义
+    default_foreground_color: int = 39
+    default_background_color: int = 49
 
     hr = "———————————————————————————————————"
 
@@ -37,9 +39,18 @@ class log:
         if kwargs.get("deep"):
             message = f"{traceback.format_exc()}\n{message}"
 
+        time_str = f"\033[32m{time_now}"
+        default_color_str: str = (
+            f"\033[{log.default_foreground_color};{log.default_background_color}m"
+            if log.default_foreground_color != 39 and log.default_background_color != 49
+            else "\033[0m"
+        )
+
         match log_level:
             case log.LogLevel.info:
-                print(f"\033[32m{time_now}\033[34m [INFO] {message}\033[0m")
+                print(
+                    f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}{default_color_str}"
+                )
 
                 log.write_html_log(
                     f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
@@ -49,7 +60,7 @@ class log:
 
             case log.LogLevel.warning:
                 print(
-                    f"\033[32m{time_now}\033[33m [WARNING] {message}\033[0m",
+                    f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}{default_color_str}",
                     file=sys.stderr,
                 )
 
@@ -61,7 +72,7 @@ class log:
 
             case log.LogLevel.error:
                 print(
-                    f"\033[32m{time_now}\033[31m [ERROR] {message}\033[0m",
+                    f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}{default_color_str}",
                     file=sys.stderr,
                 )
 
@@ -77,7 +88,9 @@ class log:
                     or easyrip_web.http_server.Event.is_run_command[-1]
                 ):
                     http_send_header = kwargs.get("http_send_header", "")
-                    print(f"\033[32m{time_now}\033[35m [Send] {message}\033[0m")
+                    print(
+                        f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}{default_color_str}"
+                    )
 
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
@@ -100,9 +113,7 @@ class log:
         )
 
     @staticmethod
-    def warning(
-        message: object, *vals, is_format: bool = True, deep: bool = False
-    ):
+    def warning(message: object, *vals, is_format: bool = True, deep: bool = False):
         log._print_log(
             log.LogLevel.warning,
             message,
