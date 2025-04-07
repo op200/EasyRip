@@ -39,17 +39,12 @@ class log:
         if kwargs.get("deep"):
             message = f"{traceback.format_exc()}\n{message}"
 
-        time_str = f"\033[32m{time_now}"
-        default_color_str: str = (
-            f"\033[{log.default_foreground_color};{log.default_background_color}m"
-            if log.default_foreground_color != 39 and log.default_background_color != 49
-            else "\033[0m"
-        )
+        time_str = f"\033[{92 if log.default_background_color == 42 else 32}m{time_now}"
 
         match log_level:
             case log.LogLevel.info:
                 print(
-                    f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}{default_color_str}"
+                    f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
                 )
 
                 log.write_html_log(
@@ -60,7 +55,7 @@ class log:
 
             case log.LogLevel.warning:
                 print(
-                    f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}{default_color_str}",
+                    f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
                     file=sys.stderr,
                 )
 
@@ -72,7 +67,7 @@ class log:
 
             case log.LogLevel.error:
                 print(
-                    f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}{default_color_str}",
+                    f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
                     file=sys.stderr,
                 )
 
@@ -89,7 +84,7 @@ class log:
                 ):
                     http_send_header = kwargs.get("http_send_header", "")
                     print(
-                        f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}{default_color_str}"
+                        f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}\033[{log.default_foreground_color}m"
                     )
 
                     log.write_html_log(
@@ -100,7 +95,9 @@ class log:
                         (http_send_header, "Send", message)
                     )
                 else:
-                    print(f"\033[35m{message}\033[0m")
+                    print(
+                        f"\033[{95 if log.default_background_color == 45 else 35}m{message}\033[{log.default_foreground_color}m"
+                    )
 
     @staticmethod
     def info(message: object, *vals, is_format: bool = True, deep: bool = False):
