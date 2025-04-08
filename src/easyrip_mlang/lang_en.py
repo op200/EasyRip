@@ -117,10 +117,11 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    Customize FFmpeg's -vf\n"
         "    Using it together with -sub is undefined behavior\n"
         "\n"
-        "  -sub <string | 'auto'>\n"
+        "  -sub <string | 'auto' | 'auto:...'>\n"
         "    It use libass to make hard subtitle, input a subtitle pathname when you need hard subtitle\n"
         '    It can add multiple subtitles by "::", e.g. 01.zh-Hans.ass::01.zh-Hant.ass::01.en.ass\n'
         "    If use 'auto', the subtitle files with the same prefix will be used\n"
+        "    'auto:...' can only select which match infix，e.g. 'auto:zh-Hans:zh-Hant'\n"
         "\n"
         "  -c:a <string>\n"
         "    Setting audio encoder\n"

@@ -220,6 +220,14 @@ class Ripper:
 
 
 
+        vspipe_input: str = ""
+        if input_suffix == ".vpy":
+            vspipe_input = f'vspipe -c y4m {f'-a "subtitle={sub_pathname}"' if sub_pathname else ""} "{{input}}" - | '
+        elif vpy_pathname:
+            vspipe_input = f'vspipe -c y4m {f'-a "subtitle={sub_pathname}"' if sub_pathname else ""} -a "input={{input}}" "{vpy_pathname}" - | '
+
+        hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
+
         ffparams_ff = self.option_map.get('ff-params:ff') or self.option_map.get('ff-params', '')
         ffparams_in = self.option_map.get('ff-params:in', '')
         ffparams_out = self.option_map.get('ff-params:out', '')
@@ -292,118 +300,87 @@ class Ripper:
                 )
 
 
-            case Ripper.PresetName.x264fast:
+            case Ripper.PresetName.x264fast | Ripper.PresetName.x264slow:
+                match preset_name:
+                    case Ripper.PresetName.x264fast:
+                        _option_map = {
+                            'threads': self.option_map.get('threads', 'auto'),
+                            # Select
+                            'crf': self.option_map.get('crf', '20'),
+                            'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
+                            'qcomp': self.option_map.get('qcomp', '0.66'),
+                            'keyint': self.option_map.get('keyint', '250'),
+                            'deblock': self.option_map.get('deblock', '0,0'),
 
-                _option_map = {
-                    'threads': self.option_map.get('threads', 'auto'),
-                    # Select
-                    'crf': self.option_map.get('crf', '20'),
-                    'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
-                    'qcomp': self.option_map.get('qcomp', '0.66'),
-                    'keyint': self.option_map.get('keyint', '250'),
-                    'deblock': self.option_map.get('deblock', '0,0'),
+                            # Default
+                            'qpmin': self.option_map.get('qpmin', '8'),
+                            'qpmax': self.option_map.get('qpmax', '32'),
+                            'bframes': self.option_map.get('bframes', '8'),
+                            'ref': self.option_map.get('ref', '4'),
+                            'subme': self.option_map.get('subme', '5'),
+                            'me': self.option_map.get('me', 'hex'),
+                            'merange': self.option_map.get('merange', '16'),
+                            'aq-mode': self.option_map.get('aq-mode', '1'),
+                            'rc-lookahead': self.option_map.get('rc-lookahead', '60'),
+                            'min-keyint': self.option_map.get('min-keyint', '2'),
+                            'trellis': self.option_map.get('trellis', '1'),
+                            'fast-pskip': self.option_map.get('fast-pskip', '1'),
 
-                    # Default
-                    'qpmin': self.option_map.get('qpmin', '8'),
-                    'qpmax': self.option_map.get('qpmax', '32'),
-                    'bframes': self.option_map.get('bframes', '8'),
-                    'ref': self.option_map.get('ref', '4'),
-                    'subme': self.option_map.get('subme', '5'),
-                    'me': self.option_map.get('me', 'hex'),
-                    'merange': self.option_map.get('merange', '16'),
-                    'aq-mode': self.option_map.get('aq-mode', '1'),
-                    'rc-lookahead': self.option_map.get('rc-lookahead', '60'),
-                    'min-keyint': self.option_map.get('min-keyint', '2'),
-                    'trellis': self.option_map.get('trellis', '1'),
-                    'fast-pskip': self.option_map.get('fast-pskip', '1'),
+                            # No change
+                            'weightb' : '1',
 
-                    # No change
-                    'weightb' : '1',
+                            **{
+                                k: v
+                                for k, v in [
+                                    s.split('=')
+                                    for s in str(self.option_map.get('x264-params', '')).split(':')
+                                    if s != ""
+                                ]
+                            }
+                        }
+                    case Ripper.PresetName.x264slow:
+                        _option_map = {
+                            'threads': self.option_map.get('threads', 'auto'),
+                            # Select
+                            'crf': self.option_map.get('crf', '21'),
+                            'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
+                            'qcomp': self.option_map.get('qcomp', '0.66'),
+                            'keyint': self.option_map.get('keyint', '250'),
+                            'deblock': self.option_map.get('deblock', '-1,-1'),
 
-                    **{
-                        k: v
-                        for k, v in [
-                            s.split('=')
-                            for s in str(self.option_map.get('x264-params', '')).split(':')
-                            if s != ""
-                        ]
-                    }
-                }
+                            # Default
+                            'qpmin': self.option_map.get('qpmin', '8'),
+                            'qpmax': self.option_map.get('qpmax', '32'),
+                            'bframes': self.option_map.get('bframes', '16'),
+                            'ref': self.option_map.get('ref', '8'),
+                            'subme': self.option_map.get('subme', '7'),
+                            'me': self.option_map.get('me', 'umh'),
+                            'merange': self.option_map.get('merange', '24'),
+                            'aq-mode': self.option_map.get('aq-mode', '3'),
+                            'rc-lookahead': self.option_map.get('rc-lookahead', '120'),
+                            'min-keyint': self.option_map.get('min-keyint', '2'),
+                            'trellis': self.option_map.get('trellis', '2'),
+                            'fast-pskip': self.option_map.get('fast-pskip', '0'),
+
+                            # No change
+                            'weightb' : '1',
+
+                            **{
+                                k: v
+                                for k, v in [
+                                    s.split('=')
+                                    for s in str(self.option_map.get('x264-params', '')).split(':')
+                                    if s != ""
+                                ]
+                            }
+                        }
 
                 _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
 
-                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
-
-                vspipe_input: str = ""
-                if input_suffix == ".vpy":
-                    vspipe_input = 'vspipe -c y4m "{input}" - | '
-                elif vpy_pathname:
-                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
                 encoder_format_str = (
-                    (vspipe_input if vspipe_input else "")
-                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + f" {audio_option} -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
+                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + f"{audio_option} -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
                     + f'"{_param}" {ffparams_out} '
-                    + (f" -vf {','.join(ff_vf_option)} " if len(ff_vf_option) else "")
-                    + ' "{output}"'
-                )
-
-
-            case Ripper.PresetName.x264slow:
-
-                _option_map = {
-                    'threads': self.option_map.get('threads', 'auto'),
-                    # Select
-                    'crf': self.option_map.get('crf', '21'),
-                    'psy-rd': self.option_map.get('psy-rd', '0.6,0.15'),
-                    'qcomp': self.option_map.get('qcomp', '0.66'),
-                    'keyint': self.option_map.get('keyint', '250'),
-                    'deblock': self.option_map.get('deblock', '-1,-1'),
-
-                    # Default
-                    'qpmin': self.option_map.get('qpmin', '8'),
-                    'qpmax': self.option_map.get('qpmax', '32'),
-                    'bframes': self.option_map.get('bframes', '16'),
-                    'ref': self.option_map.get('ref', '8'),
-                    'subme': self.option_map.get('subme', '7'),
-                    'me': self.option_map.get('me', 'umh'),
-                    'merange': self.option_map.get('merange', '24'),
-                    'aq-mode': self.option_map.get('aq-mode', '3'),
-                    'rc-lookahead': self.option_map.get('rc-lookahead', '120'),
-                    'min-keyint': self.option_map.get('min-keyint', '2'),
-                    'trellis': self.option_map.get('trellis', '2'),
-                    'fast-pskip': self.option_map.get('fast-pskip', '0'),
-
-                    # No change
-                    'weightb' : '1',
-
-                    **{
-                        k: v
-                        for k, v in [
-                            s.split('=')
-                            for s in str(self.option_map.get('x264-params', '')).split(':')
-                            if s != ""
-                        ]
-                    }
-                }
-
-                _param = ':'.join((f"{key}={val}" for key, val in _option_map.items()))
-
-                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
-
-                vspipe_input: str = ""
-                if input_suffix == ".vpy":
-                    vspipe_input = 'vspipe -c y4m "{input}" - | '
-                elif vpy_pathname:
-                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
-                encoder_format_str = (
-                    (vspipe_input if vspipe_input else "")
-                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + f" -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
-                    + f' "{_param}" {ffparams_out} '
                     + (
                         f" -vf {','.join(ff_vf_option)} "
                         if len(ff_vf_option)
@@ -778,17 +755,8 @@ class Ripper:
                     for key, val in _option_map.items()
                 )
 
-                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
-
-                vspipe_input: str = ""
-                if input_suffix == ".vpy":
-                    vspipe_input = 'vspipe -c y4m "{input}" - | '
-                elif vpy_pathname:
-                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
                 encoder_format_str = (
-                    (vspipe_input if vspipe_input else "")
-                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
                     + f' "{_param}" {ffparams_out} '
@@ -811,17 +779,8 @@ class Ripper:
 
                 _param = ' '.join((f"-{key} {val}" for key, val in _option_map.items() if val))
 
-                hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
-
-                vspipe_input: str = ""
-                if input_suffix == ".vpy":
-                    vspipe_input = 'vspipe -c y4m "{input}" - | '
-                elif vpy_pathname:
-                    vspipe_input = 'vspipe -c y4m -a "input={input}" '+ f' "{vpy_pathname}" - | '
-
                 encoder_format_str = (
-                    (vspipe_input if vspipe_input else "")
-                    + f"{FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + f" -c:v {preset_name.value} "
                     + f" {_param} {ffparams_out} "

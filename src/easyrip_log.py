@@ -20,6 +20,11 @@ class log:
     default_foreground_color: int = 39
     default_background_color: int = 49
 
+    info_num: int = 0
+    warning_num: int = 0
+    error_num: int = 0
+    send_num: int = 0
+
     hr = "———————————————————————————————————"
 
     class LogLevel(enum.Enum):
@@ -43,6 +48,8 @@ class log:
 
         match log_level:
             case log.LogLevel.info:
+                log.info_num += 1
+
                 print(
                     f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
                 )
@@ -54,6 +61,8 @@ class log:
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
             case log.LogLevel.warning:
+                log.warning_num += 1
+
                 print(
                     f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
                     file=sys.stderr,
@@ -66,6 +75,8 @@ class log:
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
             case log.LogLevel.error:
+                log.error_num += 1
+
                 print(
                     f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
                     file=sys.stderr,
@@ -78,6 +89,8 @@ class log:
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
             case log.LogLevel.send:
+                log.send_num += 1
+
                 if (
                     kwargs.get("is_server", False)
                     or easyrip_web.http_server.Event.is_run_command[-1]

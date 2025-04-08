@@ -227,6 +227,8 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
         path_lock_shm.buf[:len(_data)] = _data
 
     total = len(Ripper.ripper_list)
+    warning_num = log.warning_num
+    error_num = log.error_num
     for i, ripper in enumerate(Ripper.ripper_list):
         progress = f'{i+1} / {total} - {PROJECT_TITLE}'
         log.info(progress)
@@ -237,6 +239,10 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
             log.error(e)
             log.warning("Stop run ripper")
         sleep(1)
+    if log.warning_num > warning_num:
+        log.warning("There are {} {} during run", log.warning_num - warning_num, "warning")
+    if log.error_num > error_num:
+        log.error("There are {} {} during run", log.error_num - error_num, "error")
     Ripper.ripper_list = []
     path_lock_shm.close()
 
@@ -432,7 +438,7 @@ def run_command(command: list[str] | str) -> bool:
 
         case _:
 
-            input_pathname_list = []
+            input_pathname_list: list[str] = []
             output_basename = None
             output_dir = None
             preset_name = None
@@ -531,8 +537,9 @@ def run_command(command: list[str] | str) -> bool:
 
                     if sub_map := option_map.get('sub'):
                         sub_list: list[str]
-                        
-                        if sub_map == 'auto':
+                        sub_map_list: list[str] = sub_map.split(":")
+
+                        if sub_map_list[0] == 'auto':
                             sub_list = []
 
                             _input_basename = os.path.splitext(os.path.basename(input_pathname))
@@ -542,7 +549,12 @@ def run_command(command: list[str] | str) -> bool:
 
                             _dir = output_dir or os.path.realpath(os.getcwd())
                             for _file_basename in os.listdir(_dir):
-                                if os.path.splitext(_file_basename)[1] in {'.ass', '.ssa'} and _file_basename.startswith(f'{_input_prefix}.'):
+                                _file_basename_list = os.path.splitext(_file_basename)
+                                if (
+                                    _file_basename_list[1] in {".ass", ".ssa"}
+                                    and _file_basename_list[0].startswith(_input_prefix)
+                                    and (len(sub_map_list) == 1 or os.path.splitext(_file_basename_list[0])[1] in sub_map_list[1:])
+                                ):
                                     sub_list.append(os.path.join(_dir, _file_basename))
 
                         else:

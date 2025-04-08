@@ -117,10 +117,11 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    自定义 FFmpeg 的 -vf\n"
         "    与 -sub 同时使用为未定义行为\n"
         "\n"
-        "  -sub <string | 'auto'>\n"
+        "  -sub <string | 'auto' | 'auto:...'>\n"
         "    它使用 libass 制作硬字幕，需要硬字幕时请输入字幕路径名\n"
         '    使用"::"以输入多个字幕，例如: 01.zh-Hans.ass::01.zh-Hant.ass::01.en.ass\n'
         "    如果使用'auto'，相同前缀的字幕文件将作为输入\n"
+        "    'auto:...'可以只选择指定中缀，例如'auto:zh-Hans:zh-Hant'\n"
         "\n"
         "  -c:a <string>\n"
         "    设置音频编码器\n"
@@ -198,6 +199,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
+    "There are {} {} during run": "执行期间有 {} 个 {}",
     "Execute shutdown in {}s": "{}s 后执行关机",
     "{} run completed, shutdown in {}s": "{} 执行完成，{}s 后关机",
     "Run completed": "执行完成",
