@@ -82,6 +82,16 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         '      Default: server "" 0\n'
         "      Client send command 'kill' can exit ripper's run, note that FFmpeg needs to accept multiple ^C signals to forcibly terminate, and a single ^C signal will wait for the file output to be complete before terminating\n"
         "\n"
+        "    config <config option>:\n"
+        '      regenerate | clear | clean | reset\n'
+        "        Regenerate config file\n"
+        '      open\n'
+        "        Open the directory where the config file is located\n"
+        '      list\n'
+        "        Show all config adjustable options\n"
+        '      set <key> <val>\n'
+        "        Set config, e.g. config set language zh\n"
+        "\n"
         "  <Option>\n"
         "    -i <input> -o <output> [-o:dir <dir>] -preset <preset name> [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio encoder> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]]\n"
         "      Add a new ripper to the ripper list, you can set the values of the options in preset individually, you can run ripper list when use -run\n"

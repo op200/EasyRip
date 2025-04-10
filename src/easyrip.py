@@ -18,8 +18,9 @@ from multiprocessing import shared_memory
 from global_val import GlobalVal
 from easyrip_log import log, Event as LogEvent
 from ripper import Ripper
-from easyrip_mlang import GlobalLangVal, get_system_language, gettext, Event as MlangEvent
+from easyrip_mlang import GlobalLangVal, Language, Region, get_system_language, gettext, Event as MlangEvent
 import easyrip_web
+from easyrip_config import config
 
 
 __all__ = ["init", "run_command", "log", "Ripper"]
@@ -162,11 +163,11 @@ def check_env():
     sys.stdout.flush()
     sys.stderr.flush()
 
-
-    log_new_ver(
-        easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
-        PROJECT_VERSION, PROJECT_NAME,
-        GlobalVal.PROJECT_RELEASE_URL)
+    if config.get_user_profile('check_update'):
+        log_new_ver(
+            easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
+            PROJECT_VERSION, PROJECT_NAME,
+            GlobalVal.PROJECT_RELEASE_URL)
 
 
     change_title(PROJECT_TITLE)
@@ -260,6 +261,20 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
 
     change_title(f'End - {PROJECT_TITLE}')
     log.info("Run completed")
+
+
+
+def set_lang():
+    _sys_lang = get_system_language()
+    GlobalLangVal.gettext_target_lang = _sys_lang
+    if (_lang_config := config.get_user_profile('language')) not in {'auto', None}:
+        _lang = str(_lang_config).split("-")
+        if len(_lang) == 1:
+            _lang.append('')
+        GlobalLangVal.gettext_target_lang = (
+            getattr(Language, _lang[0], Language.Unknow),
+            getattr(Region, _lang[1], Region.Unknow),
+        )
 
 
 def run_command(command: list[str] | str) -> bool:
@@ -434,6 +449,35 @@ def run_command(command: list[str] | str) -> bool:
                 host, port = "localhost", 0
 
             easyrip_web.run_server(host=host or "",port=port or 0, password=password)
+
+
+        case "config":
+            match cmd_list[1]:
+                case "clear" | "clean" | "reset" | "regenerate":
+                    config.regenerate_config()
+                case "open":
+                    config.open_config_dir()
+                case "set":
+                    _val = cmd_list[3]
+                    try:
+                        _val = int(_val)
+                    except ValueError:
+                        pass
+                    try:
+                        _val = float(_val)
+                    except ValueError:
+                        pass
+                    match _val:
+                        case "true" | "True":
+                            _val = True
+                        case "false" | "False":
+                            _val = False
+                    config.set_user_profile(cmd_list[2], _val)
+                    match cmd_list[2]:
+                        case "language":
+                            set_lang()
+                case "list":
+                    config.show_config_list()
 
 
         case _:
@@ -643,7 +687,8 @@ def init():
         if log.default_background_color == 40:
             log.default_background_color = 49
 
-    GlobalLangVal.gettext_target_lang = get_system_language() # 获取系统语言必须优先级最高
+    # 设置语言必须优先级最高
+    set_lang()
 
     new_path = os.path.realpath(os.getcwd())
     if os.pathsep in (current_path := os.environ.get("PATH", "")):

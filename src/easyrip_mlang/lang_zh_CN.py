@@ -82,6 +82,16 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         '      默认: server "" 0\n'
         "      客户端发送命令 'kill' 可以退出 ripper 的运行，注意，FFmpeg需要接受多次^C信号才能强制终止，单次^C会等待文件输出完才会终止\n"
         "\n"
+        "    config <config 选项>:\n"
+        '      regenerate | clear | clean | reset\n'
+        "        重新生成 config 文件\n"
+        '      open\n'
+        "        打开 config 文件所在目录\n"
+        '      list\n'
+        "        展示所有 config 可调选项\n"
+        '      set <key> <val>\n'
+        "        设置 config，例如 config set language en\n"
+        "\n"
         "  <Option>\n"
         "    -i <输入> -o <输出> [-o:dir <目录>] -preset <预设名> [-pipe <vpy 路径名> -crf <值> -psy-rd <值> ...] [-sub <字幕文件路径名>] [-c:a <音频编码器> -b:a <音频码率>] [-muxer <复用器> [-r <帧率>]] [-run [<run 选项>]]\n"
         "      往 ripper list 中添加一个 ripper，你可以单独设置预设中每个选项的值，使用 -run 执行 ripper\n"
@@ -230,4 +240,12 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
     "There is a running command, terminate this request": "存在正在运行的命令，终止此次请求",
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
+    # config
+    "The config version is not match, use '{}' to regenerate config file": "配置文件版本不匹配，使用 '{}' 重新生成配置文件",
+    "Config file is not found": "配置文件不存在",
+    "Config data is not found": "配置文件数据不存在",
+    "User profile is not found, regenerate config": "用户配置文件不存在，重新生成配置",
+    "User profile is not a valid dictionary": "用户配置文件不是有效的字典",
+    "User profile is not found": "用户配置文件不存在",
+    "Key {} is not found in user profile": "用户配置文件中不存在 {}",
 }
