@@ -8,22 +8,22 @@ from easyrip_mlang import gettext
 
 
 PROJECT_NAME = GlobalVal.PROJECT_NAME
-CONFIG_VERSION = "2.9"
+CONFIG_VERSION = "2.9.1"
 
 
 class config:
-    config_dir: str = ""
-    config_pathname: str = ""
+    _config_dir: str = ""
+    _config_pathname: str = ""
     _config: dict | None = None
 
     @staticmethod
     def init():
         if sys.platform == "win32":
             # Windows: C:\Users\<用户名>\AppData\Roaming\<app_name>
-            config.config_dir = os.getenv("APPDATA", "")
+            config._config_dir = os.getenv("APPDATA", "")
         elif sys.platform == "darwin":
             # macOS: ~/Library/Application Support/<app_name>
-            config.config_dir = (
+            config._config_dir = (
                 os.path.expanduser("~"),
                 "Library",
                 "Application Support",
@@ -31,19 +31,20 @@ class config:
             )
         else:
             # Linux: ~/.config/<app_name>
-            config.config_dir = os.path.expanduser("~"), ".config"
-        config.config_dir = os.path.join(config.config_dir, PROJECT_NAME)
-        config.config_pathname = os.path.join(config.config_dir, "config.json")
+            config._config_dir = os.path.expanduser("~"), ".config"
+        config._config_dir = os.path.join(config._config_dir, PROJECT_NAME)
+        config._config_pathname = os.path.join(config._config_dir, "config.json")
 
-        if not os.path.exists(config.config_pathname):
-            os.makedirs(config.config_dir, exist_ok=True)
-            with open(config.config_pathname, "w", encoding="utf-8") as f:
+        if not os.path.exists(config._config_pathname):
+            os.makedirs(config._config_dir, exist_ok=True)
+            with open(config._config_pathname, "w", encoding="utf-8") as f:
                 json.dump(
                     {
                         "version": CONFIG_VERSION,
                         "user_profile": {
                             "language": "auto",
                             "check_update": True,
+                            "check_dependent": True,
                         },
                     },
                     f,
@@ -51,7 +52,7 @@ class config:
                     indent=3,
                 )
         else:
-            with open(config.config_pathname, "r", encoding="utf-8") as f:
+            with open(config._config_pathname, "r", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                     if data.get("version") != CONFIG_VERSION:
@@ -63,21 +64,24 @@ class config:
 
     @staticmethod
     def open_config_dir():
-        if not os.path.exists(config.config_dir):
+        if not os.path.exists(config._config_dir):
             config.init()
-        os.startfile(config.config_dir)
+        os.startfile(config._config_dir)
 
     @staticmethod
     def regenerate_config():
-        if os.path.exists(config.config_dir):
-            os.remove(config.config_pathname)
+        if os.path.exists(config._config_pathname):
+            try:
+                os.remove(config._config_pathname)
+            except Exception as e:
+                log.error(f"{repr(e)} {e}", deep=True)
         config.init()
 
     @staticmethod
     def _read_config() -> bool:
-        if not os.path.exists(config.config_dir):
+        if not os.path.exists(config._config_dir):
             config.init()
-        with open(config.config_pathname, "r", encoding="utf-8") as f:
+        with open(config._config_pathname, "r", encoding="utf-8") as f:
             try:
                 config._config = json.load(f)
                 return True
@@ -87,13 +91,13 @@ class config:
 
     @staticmethod
     def _write_config(new_config: dict | None = None) -> bool:
-        if not os.path.exists(config.config_dir):
+        if not os.path.exists(config._config_dir):
             config.init()
         if new_config is not None:
             config._config = new_config
         del new_config
 
-        with open(config.config_pathname, "w", encoding="utf-8") as f:
+        with open(config._config_pathname, "w", encoding="utf-8") as f:
             try:
                 json.dump(config._config, f, ensure_ascii=False, indent=3)
                 return True
@@ -135,7 +139,7 @@ class config:
             log.error("Key {} is not found in user profile", key)
             return None
         return config._config["user_profile"][key]
-    
+
     @staticmethod
     def show_config_list():
         if config._config is None:
@@ -145,6 +149,18 @@ class config:
             return
 
         user_profile: dict = config._config["user_profile"]
-        length = max(len(k) for k in user_profile.keys())
+        length_key = max(len(k) for k in user_profile.keys())
+        length_val = max(len(str(v)) for v in user_profile.values())
         for k, v in user_profile.items():
-            log.send('', f"{gettext(k):>{length}} = {v}")
+            log.send(
+                "",
+                f"{k:>{length_key}} = {str(v):<{length_val}} - {config._get_config_about(k)}",
+            )
+
+    @staticmethod
+    def _get_config_about(key: str) -> str:
+        return {
+            "language": gettext("Easy Rip's language, support: {}", "en, zh"),
+            "check_update": gettext("Auto check the update of Easy Rip"),
+            "check_dependent": gettext("Auto check the versions of all dependent programs"),
+        }.get(key, "None about")

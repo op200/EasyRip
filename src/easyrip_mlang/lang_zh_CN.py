@@ -83,13 +83,13 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "      客户端发送命令 'kill' 可以退出 ripper 的运行，注意，FFmpeg需要接受多次^C信号才能强制终止，单次^C会等待文件输出完才会终止\n"
         "\n"
         "    config <config 选项>:\n"
-        '      regenerate | clear | clean | reset\n'
+        "      regenerate | clear | clean | reset\n"
         "        重新生成 config 文件\n"
-        '      open\n'
+        "      open\n"
         "        打开 config 文件所在目录\n"
-        '      list\n'
+        "      list\n"
         "        展示所有 config 可调选项\n"
-        '      set <key> <val>\n'
+        "      set <key> <val>\n"
         "        设置 config，例如 config set language en\n"
         "\n"
         "  <Option>\n"
@@ -219,7 +219,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Can not start multiple services": "禁止重复启用服务",
     "Disable the use of 'fd' on the web": "禁止在 web 使用 'fd'",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',
-    'The directory "{}" does not exist': '目录 "{}" 不存在',
+    'The directory "{}" did not exist and was created': '目录 "{}" 不存在，自动创建',
     "Missing '-preset' option, set to default value 'custom'": "缺少 '-preset' 选项，自动设为默认值 'custom'",
     "Input file number == 0": "输入的文件数量为 0",
     'The file "{}" does not exist': '文件 "{}" 不存在',
@@ -248,4 +248,8 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "User profile is not a valid dictionary": "用户配置文件不是有效的字典",
     "User profile is not found": "用户配置文件不存在",
     "Key {} is not found in user profile": "用户配置文件中不存在 {}",
+    # config about
+    "Easy Rip's language, support: {}": "Easy Rip 的语言，支持: {}",
+    "Auto check the update of Easy Rip": "自动检测 Easy Rip 更新",
+    "Auto check the versions of all dependent programs": "自动检测所有依赖的程序的版本",
 }
