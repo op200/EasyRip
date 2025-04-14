@@ -255,7 +255,11 @@ class Ripper:
                     encoder_format_str = ''
 
                 else:
-                    encoder_format_str = encoder_format_str.replace("''", '"').replace('\\34/', '"').replace('\\39/', "'").format_map(self.option_map | {'input': r'{input}', 'output': r'{output}'})
+                    if encoder_format_str.startswith("''''"):
+                        encoder_format_str = encoder_format_str[4:]
+                    else:
+                        encoder_format_str = encoder_format_str.replace("''", '"')
+                    encoder_format_str = encoder_format_str.replace('\\34/', '"').replace('\\39/', "'").format_map(self.option_map | {'input': r'{input}', 'output': r'{output}'})
 
 
             case Ripper.PresetName.copy:
@@ -740,11 +744,7 @@ class Ripper:
                             'early-skip' : '0',
                         }
 
-                _option_map = {
-                    **_default_option_map,
-                    **_option_map,
-                    **_custom_option_map,
-                }
+                _option_map = _default_option_map | _option_map | _custom_option_map
 
                 if _option_map.get('hme', '0') == '0':
                     _option_map.pop('hme-search')

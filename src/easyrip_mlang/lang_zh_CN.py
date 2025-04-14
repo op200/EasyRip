@@ -112,12 +112,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "  -preset <string>\n"
         "    设置预设\n"
-        "\n"
         "    预设名:\n"
         "      custom\n"
+        "      copy\n"
         "      flac\n"
-        "      x264slow\n"
-        "      x265fast2 x265fast x265slow x265full\n"
+        "      x264fast x264slow\n"
+        "      x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
+        "      h264_amf h264_nvenc h264_qsv\n"
+        "      hevc_amf hevc_nvenc hevc_qsv\n"
         "\n"
         "  -pipe <string>\n"
         "    选择一个 vpy 文件作为管道的输入，这个 vpy 必须有 input 全局变量\n"
@@ -242,6 +244,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
     # config
     "The config version is not match, use '{}' to regenerate config file": "配置文件版本不匹配，使用 '{}' 重新生成配置文件",
+    "Regenerate config file": "重新生成 config 文件",
     "Config file is not found": "配置文件不存在",
     "Config data is not found": "配置文件数据不存在",
     "User profile is not found, regenerate config": "用户配置文件不存在，重新生成配置",

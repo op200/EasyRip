@@ -76,6 +76,7 @@ class config:
             except Exception as e:
                 log.error(f"{repr(e)} {e}", deep=True)
         config.init()
+        log.info("Regenerate config file")
 
     @staticmethod
     def _read_config() -> bool:
