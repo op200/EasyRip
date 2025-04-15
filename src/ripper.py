@@ -386,7 +386,7 @@ class Ripper:
                     + f"{audio_option} -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
                     + f'"{_param}" {ffparams_out} '
                     + (
-                        f" -vf {','.join(ff_vf_option)} "
+                        f' -vf "{','.join(ff_vf_option)}" '
                         if len(ff_vf_option)
                         else ""
                     )
@@ -761,7 +761,7 @@ class Ripper:
                     + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
                     + f' "{_param}" {ffparams_out} '
                     + (
-                        f" -vf {','.join(ff_vf_option)} "
+                        f' -vf "{','.join(ff_vf_option)}" '
                         if len(ff_vf_option)
                         else ""
                     )
@@ -785,7 +785,7 @@ class Ripper:
                     + f" -c:v {preset_name.value} "
                     + f" {_param} {ffparams_out} "
                     + (
-                        f" -vf {','.join(ff_vf_option)} "
+                        f' -vf "{','.join(ff_vf_option)}" '
                         if len(ff_vf_option)
                         else ""
                     )
