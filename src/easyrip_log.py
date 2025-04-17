@@ -16,7 +16,17 @@ class Event:
 
 
 class log:
+    class LogLevel(enum.Enum):
+        send = enum.auto()
+        info = enum.auto()
+        warning = enum.auto()
+        error = enum.auto()
+        none = enum.auto()
+
     html_log_file: str = "encoding_log.html"  # 在调用前重定义
+    log_print_level: LogLevel = LogLevel.send
+    log_write_level: LogLevel = LogLevel.send
+
     default_foreground_color: int = 39
     default_background_color: int = 49
 
@@ -27,14 +37,8 @@ class log:
 
     hr = "———————————————————————————————————"
 
-    class LogLevel(enum.Enum):
-        info = enum.auto()
-        warning = enum.auto()
-        error = enum.auto()
-        send = enum.auto()
-
     @staticmethod
-    def _print_log(log_level: LogLevel, message: object, *vals, **kwargs):
+    def _do_log(log_level: LogLevel, message: object, *vals, **kwargs):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
             message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
@@ -50,41 +54,47 @@ class log:
             case log.LogLevel.info:
                 log.info_num += 1
 
-                print(
-                    f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
-                )
+                if log.log_print_level.value <= log.LogLevel.info.value:
+                    print(
+                        f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
+                    )
 
-                log.write_html_log(
-                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
-                )
+                if log.log_write_level.value <= log.LogLevel.info.value:
+                    log.write_html_log(
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
+                    )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
             case log.LogLevel.warning:
                 log.warning_num += 1
 
-                print(
-                    f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
-                    file=sys.stderr,
-                )
+                if log.log_print_level.value <= log.LogLevel.warning.value:
+                    print(
+                        f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
+                        file=sys.stderr,
+                    )
 
-                log.write_html_log(
-                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
-                )
+                if log.log_write_level.value <= log.LogLevel.warning.value:
+                    log.write_html_log(
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
+                    )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
             case log.LogLevel.error:
                 log.error_num += 1
 
-                print(
-                    f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
-                    file=sys.stderr,
-                )
+                if log.log_print_level.value <= log.LogLevel.error.value:
+                    print(
+                        f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
+                        file=sys.stderr,
+                    )
 
-                log.write_html_log(
-                    f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
-                )
+                if log.log_write_level.value <= log.LogLevel.error.value:
+                    log.write_html_log(
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
+                    )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
@@ -96,25 +106,28 @@ class log:
                     or easyrip_web.http_server.Event.is_run_command[-1]
                 ):
                     http_send_header = kwargs.get("http_send_header", "")
-                    print(
-                        f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}\033[{log.default_foreground_color}m"
-                    )
 
-                    log.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
-                    )
+                    if log.log_print_level.value <= log.LogLevel.send.value:
+                        print(
+                            f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}\033[{log.default_foreground_color}m"
+                        )
+
+                    if log.log_write_level.value <= log.LogLevel.send.value:
+                        log.write_html_log(
+                            f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
+                        )
 
                     Event.append_http_server_log_queue(
                         (http_send_header, "Send", message)
                     )
-                else:
+                elif log.log_print_level.value <= log.LogLevel.send.value:
                     print(
                         f"\033[{95 if log.default_background_color == 45 else 35}m{message}\033[{log.default_foreground_color}m"
                     )
 
     @staticmethod
     def info(message: object, *vals, is_format: bool = True, deep: bool = False):
-        log._print_log(
+        log._do_log(
             log.LogLevel.info,
             message,
             *vals,
@@ -124,7 +137,7 @@ class log:
 
     @staticmethod
     def warning(message: object, *vals, is_format: bool = True, deep: bool = False):
-        log._print_log(
+        log._do_log(
             log.LogLevel.warning,
             message,
             *vals,
@@ -134,7 +147,7 @@ class log:
 
     @staticmethod
     def error(message: object, *vals, is_format: bool = True, deep: bool = False):
-        log._print_log(
+        log._do_log(
             log.LogLevel.error,
             message,
             *vals,
@@ -150,7 +163,7 @@ class log:
         is_format: bool = True,
         is_server: bool = False,
     ):
-        log._print_log(
+        log._do_log(
             log.LogLevel.send,
             message,
             *vals,
@@ -162,5 +175,11 @@ class log:
 
     @staticmethod
     def write_html_log(message: str):
-        with open(log.html_log_file, "at", encoding="utf-8") as f:
-            f.write(message)
+        try:
+            with open(log.html_log_file, "at", encoding="utf-8") as f:
+                f.write(message)
+        except Exception as e:
+            _level = log.log_write_level
+            log.log_write_level = log.LogLevel.none
+            log.error(f"{repr(e)} {e}", deep=True)
+            log.log_write_level = _level

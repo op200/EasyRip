@@ -255,4 +255,9 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Easy Rip's language, support: {}": "Easy Rip 的语言，支持: {}",
     "Auto check the update of Easy Rip": "自动检测 Easy Rip 更新",
     "Auto check the versions of all dependent programs": "自动检测所有依赖的程序的版本",
+    "Program startup directory, when the value is empty, starts in the working directory": "程序启动目录，值为空时在工作目录启动",
+    "Force change of log file path, when the value is empty, it is the working directory": "强制更改日志文件所在路径，值为空时为工作目录",
+    "Do not write to log file": "不写入日志文件",
+    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}": "高于此等级的日志会被打印到控制台，若值为 'none' 则不打印，支持: {}",
+    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "高于此等级的日志会被写入，若值为 'none' 则不写入，支持: {}",
 }

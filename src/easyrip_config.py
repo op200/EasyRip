@@ -8,7 +8,7 @@ from easyrip_mlang import gettext
 
 
 PROJECT_NAME = GlobalVal.PROJECT_NAME
-CONFIG_VERSION = "2.9.1"
+CONFIG_VERSION = "2.9.4"
 
 
 class config:
@@ -45,6 +45,10 @@ class config:
                             "language": "auto",
                             "check_update": True,
                             "check_dependent": True,
+                            "startup_directory": "",
+                            "force_log_file_path": "",
+                            "log_print_level": "send",
+                            "log_write_level": "send",
                         },
                     },
                     f,
@@ -56,7 +60,10 @@ class config:
                 try:
                     data = json.load(f)
                     if data.get("version") != CONFIG_VERSION:
-                        log.warning("The config version is not match, use '{}' to regenerate config file", "config clear")
+                        log.warning(
+                            "The config version is not match, use '{}' to regenerate config file",
+                            "config clear",
+                        )
                 except json.JSONDecodeError as e:
                     log.error(f"{repr(e)} {e}", deep=True)
 
@@ -160,8 +167,27 @@ class config:
 
     @staticmethod
     def _get_config_about(key: str) -> str:
-        return {
-            "language": gettext("Easy Rip's language, support: {}", "en, zh"),
-            "check_update": gettext("Auto check the update of Easy Rip"),
-            "check_dependent": gettext("Auto check the versions of all dependent programs"),
-        }.get(key, "None about")
+        return (
+            {
+                "language": gettext("Easy Rip's language, support: {}", "en, zh"),
+                "check_update": gettext("Auto check the update of Easy Rip"),
+                "check_dependent": gettext(
+                    "Auto check the versions of all dependent programs"
+                ),
+                "startup_directory": gettext(
+                    "Program startup directory, when the value is empty, starts in the working directory"
+                ),
+                "force_log_file_path": gettext(
+                    "Force change of log file path, when the value is empty, it is the working directory"
+                ),
+                "log_print_level": gettext(
+                    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}",
+                    "none error warning info send",
+                ),
+                "log_write_level": gettext(
+                    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}",
+                    "none error warning info send",
+                ),
+            }
+            | (config._config or dict())
+        ).get(key, "None about")

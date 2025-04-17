@@ -406,9 +406,14 @@ def run_command(command: list[str] | str) -> bool:
 
 
         case "run":
-            if _shutdown_sec_str := cmd_list[2] or '60' if cmd_list[1] == 'shutdown' else None:
-                log.info("Will shutdown in {}s after run finished", _shutdown_sec_str)
-            run_ripper_list(cmd_list[1] == 'exit', )
+            is_run_exit = False
+            match cmd_list[1]:
+                case 'exit':
+                    is_run_exit = True
+                case 'shutdown':
+                    if _shutdown_sec_str := cmd_list[2] or '60':
+                        log.info("Will shutdown in {}s after run finished", _shutdown_sec_str)
+            run_ripper_list(is_run_exit)
 
 
         case "server":
@@ -457,6 +462,7 @@ def run_command(command: list[str] | str) -> bool:
             match cmd_list[1]:
                 case "clear" | "clean" | "reset" | "regenerate":
                     config.regenerate_config()
+                    init()
                 case "open":
                     config.open_config_dir()
                 case "set":
@@ -478,6 +484,7 @@ def run_command(command: list[str] | str) -> bool:
                     match cmd_list[2]:
                         case "language":
                             set_lang()
+                    init()
                 case "list":
                     config.show_config_list()
 
@@ -534,12 +541,13 @@ def run_command(command: list[str] | str) -> bool:
 
                     case '-run':
                         is_run = True
-                        if cmd_list[i+1] == 'exit':
-                            is_exit_when_run_finished = True
-                        elif cmd_list[i+1] == 'shutdown':
-                            shutdown_sec_str = cmd_list[i+2] or '60'
-                        else:
-                            _skip = False
+                        match cmd_list[i+1]:
+                            case 'exit':
+                                is_exit_when_run_finished = True
+                            case 'shutdown':
+                                shutdown_sec_str = cmd_list[i+2] or '60'
+                            case _:
+                                _skip = False
 
                     case str() as s if len(s) > 1 and s.startswith('-'):
                         option_map[s[1:]] = cmd_list[i+1]
@@ -657,7 +665,35 @@ def run_command(command: list[str] | str) -> bool:
     return True
 
 
-def init():
+def init(is_first_run: bool = False):
+    if is_first_run:
+        # 当前路径添加到环境变量
+        new_path = os.path.realpath(os.getcwd())
+        if os.pathsep in (current_path := os.environ.get("PATH", "")):
+            if new_path not in current_path.split(os.pathsep):
+                updated_path = f"{new_path}{os.pathsep}{current_path}"
+                os.environ["PATH"] = updated_path
+
+    # 设置日志文件路径名
+    log.html_log_file = gettext("encoding_log.html")
+    if _path := str(config.get_user_profile('force_log_file_path')):
+        log.html_log_file = os.path.join(_path, log.html_log_file)
+
+    # 设置日志级别
+    try:
+        log.log_print_level = getattr(log.LogLevel,str(config.get_user_profile('log_print_level')))
+        log.log_write_level = getattr(log.LogLevel,str(config.get_user_profile('log_write_level')))
+    except Exception as e:
+        log.error(f"{repr(e)} {e}", deep=True)
+
+    if is_first_run:
+        # 设置启动目录
+        try:
+            if _path := str(config.get_user_profile('startup_directory')):
+                os.chdir(_path)
+        except Exception as e:
+            log.error(f"{repr(e)} {e}", deep=True)
+
     # 获取终端颜色
     if os.name == 'nt':
         class CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
@@ -693,33 +729,28 @@ def init():
         if log.default_background_color == 40:
             log.default_background_color = 49
 
-    # 设置语言必须优先级最高
+    # 设置语言
     set_lang()
 
-    new_path = os.path.realpath(os.getcwd())
-    if os.pathsep in (current_path := os.environ.get("PATH", "")):
-        if new_path not in current_path.split(os.pathsep):
-            updated_path = f"{new_path}{os.pathsep}{current_path}"
-            os.environ["PATH"] = updated_path
+    if is_first_run:
+        # 检测环境
+        Thread(target=check_env, daemon=True).start()
 
-    Thread(target=check_env, daemon=True).start()
+        MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore
 
-    log.html_log_file = gettext("encoding_log.html")
-    MlangEvent.log = easyrip_web.http_server.Event.log = log # type: ignore
+        LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
 
-    LogEvent.append_http_server_log_queue = lambda message: easyrip_web.http_server.Event.log_queue.append(message)
+        def _post_run_event(cmd: str):
+            run_command(cmd)
+            easyrip_web.http_server.Event.is_run_command.append(False)
+            easyrip_web.http_server.Event.is_run_command.popleft()
 
-    def _post_run_event(cmd: str):
-        run_command(cmd)
-        easyrip_web.http_server.Event.is_run_command.append(False)
-        easyrip_web.http_server.Event.is_run_command.popleft()
-
-    easyrip_web.http_server.Event.post_run_event = _post_run_event
+        easyrip_web.http_server.Event.post_run_event = _post_run_event
 
 
 if __name__ == "__main__":
 
-    init()
+    init(True)
 
     Ripper.ripper_list = []
 

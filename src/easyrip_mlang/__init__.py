@@ -15,7 +15,7 @@ ExtraTextIndex = GlobalLangVal.ExtraTextIndex
 class Event:
     class log:
         @staticmethod
-        def error(message: object, *vals, is_format: bool = True):
+        def error(message: object, *vals, is_format: bool = True, deep: bool = False):
             pass
 
 
@@ -79,6 +79,6 @@ def gettext(org_text: str | ExtraTextIndex, *vals, is_format: bool = True):
         try:
             new_text = new_text.format(*vals)
         except IndexError:
-            Event.log.error("IndexError in gettext when str.format")
+            Event.log.error("IndexError in gettext when str.format", deep=True)
 
     return new_text

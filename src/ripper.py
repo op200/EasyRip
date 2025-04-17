@@ -383,7 +383,7 @@ class Ripper:
 
                 encoder_format_str = (
                     f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + f"{audio_option} -c:v libx264 {'-pix_fmt yuv420p' if is_pipe_input else ''} -x264-params "
+                    + f"{audio_option} -c:v libx264 {'' if is_pipe_input else '-pix_fmt yuv420p'} -x264-params "
                     + f'"{_param}" {ffparams_out} '
                     + (
                         f' -vf "{','.join(ff_vf_option)}" '
@@ -758,7 +758,7 @@ class Ripper:
                 encoder_format_str = (
                     f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
-                    + f" -c:v libx265 {'-pix_fmt yuv420p10le' if is_pipe_input else ''} -x265-params "
+                    + f" -c:v libx265 {'' if is_pipe_input else '-pix_fmt yuv420p10le'} -x265-params "
                     + f' "{_param}" {ffparams_out} '
                     + (
                         f' -vf "{','.join(ff_vf_option)}" '
