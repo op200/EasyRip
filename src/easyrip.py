@@ -253,10 +253,10 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
         log.info("Execute shutdown in {}s", shutdown_sec)
         if os.name == 'nt':
             _cmd = (f'shutdown /s /t {shutdown_sec} /c "{gettext('{} run completed, shutdown in {}s', PROJECT_TITLE, shutdown_sec)}"',)
-            # 防 Windows Defender
-            os.system(_cmd[0])
         elif os.name == 'posix':
-            os.system(f"shutdown -h +{shutdown_sec // 60}")
+            _cmd = (f"shutdown -h +{shutdown_sec // 60}", )
+        # 防 Windows Defender
+        os.system(_cmd[0])
 
     if is_exit_when_run_finished:
         sys.exit()
