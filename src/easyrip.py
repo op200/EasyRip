@@ -265,20 +265,6 @@ def run_ripper_list(is_exit_when_run_finished: bool = False, shutdow_sec_str: st
     log.info("Run completed")
 
 
-
-def set_lang():
-    _sys_lang = get_system_language()
-    GlobalLangVal.gettext_target_lang = _sys_lang
-    if (_lang_config := config.get_user_profile('language')) not in {'auto', None}:
-        _lang = str(_lang_config).split("-")
-        if len(_lang) == 1:
-            _lang.append('')
-        GlobalLangVal.gettext_target_lang = (
-            getattr(Language, _lang[0], Language.Unknow),
-            getattr(Region, _lang[1], Region.Unknow),
-        )
-
-
 def run_command(command: list[str] | str) -> bool:
 
     if isinstance(command, list):
@@ -481,9 +467,6 @@ def run_command(command: list[str] | str) -> bool:
                         case "false" | "False":
                             _val = False
                     config.set_user_profile(cmd_list[2], _val)
-                    match cmd_list[2]:
-                        case "language":
-                            set_lang()
                     init()
                 case "list":
                     config.show_config_list()
@@ -674,6 +657,18 @@ def init(is_first_run: bool = False):
                 updated_path = f"{new_path}{os.pathsep}{current_path}"
                 os.environ["PATH"] = updated_path
 
+    # 设置语言
+    _sys_lang = get_system_language()
+    GlobalLangVal.gettext_target_lang = _sys_lang
+    if (_lang_config := config.get_user_profile('language')) not in {'auto', None}:
+        _lang = str(_lang_config).split("-")
+        if len(_lang) == 1:
+            _lang.append('')
+        GlobalLangVal.gettext_target_lang = (
+            getattr(Language, _lang[0], Language.Unknow),
+            getattr(Region, _lang[1], Region.Unknow),
+        )
+
     # 设置日志文件路径名
     log.html_log_file = gettext("encoding_log.html")
     if _path := str(config.get_user_profile('force_log_file_path')):
@@ -728,9 +723,6 @@ def init(is_first_run: bool = False):
             log.default_foreground_color = 39
         if log.default_background_color == 40:
             log.default_background_color = 49
-
-    # 设置语言
-    set_lang()
 
     if is_first_run:
         # 检测环境
