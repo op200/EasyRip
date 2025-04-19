@@ -130,7 +130,7 @@ class config:
         if key in config._config["user_profile"]:
             config._config["user_profile"][key] = val
         else:
-            log.error("Key {} is not found in user profile", key)
+            log.error("Key '{}' is not found in user profile", key)
             return False
         return config._write_config()
 
@@ -144,7 +144,7 @@ class config:
             log.error("User profile is not a valid dictionary")
             return None
         if key not in config._config["user_profile"]:
-            log.error("Key {} is not found in user profile", key)
+            log.error("Key '{}' is not found in user profile", key)
             return None
         return config._config["user_profile"][key]
 

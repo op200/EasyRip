@@ -250,7 +250,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "User profile is not found, regenerate config": "用户配置文件不存在，重新生成配置",
     "User profile is not a valid dictionary": "用户配置文件不是有效的字典",
     "User profile is not found": "用户配置文件不存在",
-    "Key {} is not found in user profile": "用户配置文件中不存在 {}",
+    "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
     # config about
     "Easy Rip's language, support: {}": "Easy Rip 的语言，支持: {}",
     "Auto check the update of Easy Rip": "自动检测 Easy Rip 更新",
