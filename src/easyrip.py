@@ -82,97 +82,101 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
 
 
 def check_env():
-    change_title(f'{gettext("Check env...")} {PROJECT_TITLE}')
+    try:
+        change_title(f'{gettext("Check env...")} {PROJECT_TITLE}')
 
-    if config.get_user_profile('check_dependent'):
+        if config.get_user_profile('check_dependent'):
 
-        _url = 'https://ffmpeg.org/download.html'
-        for _name in {'FFmpeg', 'FFprobe'}:
+            _url = 'https://ffmpeg.org/download.html'
+            for _name in {'FFmpeg', 'FFprobe'}:
+                if not shutil.which(_name):
+                    print()
+                    log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
+                    print(get_input_prompt(), end='')
+                else:
+                    _new_ver = subprocess.run(f'{_name} -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0]
+                    
+                    if "." in _new_ver:
+                        log_new_ver("7.1.1", _new_ver.split("-")[0], _name, _url)
+                    else:
+                        log_new_ver("2025.03.03", ".".join(_new_ver.split("-")[:3]), _name, _url)
+
+
+            _name, _url = 'flac', 'https://github.com/xiph/flac/releases'
             if not shutil.which(_name):
                 print()
-                log.error('{} not found, download it: {}', _name, f'(full build ver) {_url}')
+                log.warning('{} not found, download it: {}', _name, f'(ver >= 1.5.0) {_url}')
                 print(get_input_prompt(), end='')
+
+            elif check_ver('1.5.0', (old_ver_str:=subprocess.run('flac -v', capture_output=True, text=True).stdout.split()[1])):
+                log.error("flac ver ({}) must >= 1.5.0", old_ver_str)
+
             else:
-                _new_ver = subprocess.run(f'{_name} -version', capture_output=True, text=True).stdout.split(maxsplit=3)[2].split('_')[0]
-                
-                if "." in _new_ver:
-                    log_new_ver("7.1.1", _new_ver.split("-")[0], _name, _url)
-                else:
-                    log_new_ver("2025.03.03", ".".join(_new_ver.split("-")[:3]), _name, _url)
+                log_new_ver(
+                    easyrip_web.get_github_api_ver("https://api.github.com/repos/xiph/flac/releases/latest"),
+                    old_ver_str,
+                    _name, _url)
 
 
-        _name, _url = 'flac', 'https://github.com/xiph/flac/releases'
-        if not shutil.which(_name):
-            print()
-            log.warning('{} not found, download it: {}', _name, f'(ver >= 1.5.0) {_url}')
-            print(get_input_prompt(), end='')
-
-        elif check_ver('1.5.0', (old_ver_str:=subprocess.run('flac -v', capture_output=True, text=True).stdout.split()[1])):
-            log.error("flac ver ({}) must >= 1.5.0", old_ver_str)
-
-        else:
-            log_new_ver(
-                easyrip_web.get_github_api_ver("https://api.github.com/repos/xiph/flac/releases/latest"),
-                old_ver_str,
-                _name, _url)
-
-
-        _name, _url = 'mp4fpsmod', 'https://github.com/nu774/mp4fpsmod/releases'
-        if not shutil.which(_name):
-            print()
-            log.warning('{} not found, download it: {}', _name, _url)
-            print(get_input_prompt(), end='')
-        else:
-            log_new_ver(
-                easyrip_web.get_github_api_ver("https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"),
-                subprocess.run(_name, capture_output=True, text=True).stderr.split(maxsplit=2)[1],
-                _name, _url)
-
-
-        _name, _url = 'MP4Box', 'https://gpac.io/downloads/gpac-nightly-builds/'
-        if not shutil.which(_name):
-            print()
-            log.warning('{} not found, download it: {}', _name, _url)
-            print(get_input_prompt(), end='')
-        else:
-            log_new_ver(
-                '2.5',
-                subprocess.run('mp4box -version', capture_output=True, text=True).stderr.split('-', 2)[1].strip().split()[2],
-                _name, _url)
-
-
-        _url = 'https://mkvtoolnix.download/downloads.html'
-        for _name in {'mkvpropedit', 'mkvmerge'}:
+            _name, _url = 'mp4fpsmod', 'https://github.com/nu774/mp4fpsmod/releases'
             if not shutil.which(_name):
                 print()
                 log.warning('{} not found, download it: {}', _name, _url)
                 print(get_input_prompt(), end='')
             else:
                 log_new_ver(
-                    '91',
-                    subprocess.run(f'{_name} --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
+                    easyrip_web.get_github_api_ver("https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"),
+                    subprocess.run(_name, capture_output=True, text=True).stderr.split(maxsplit=2)[1],
                     _name, _url)
 
 
-        # _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
-        # if not shutil.which(_name):
-        #     print()
-        #     log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
-        #     print(get_input_prompt(), end='')
-        # elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
-        #     log.error("The MediaInfo must be CLI ver")
+            _name, _url = 'MP4Box', 'https://gpac.io/downloads/gpac-nightly-builds/'
+            if not shutil.which(_name):
+                print()
+                log.warning('{} not found, download it: {}', _name, _url)
+                print(get_input_prompt(), end='')
+            else:
+                log_new_ver(
+                    '2.5',
+                    subprocess.run('mp4box -version', capture_output=True, text=True).stderr.split('-', 2)[1].strip().split()[2],
+                    _name, _url)
 
 
-    if config.get_user_profile('check_update'):
-        log_new_ver(
-            easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
-            PROJECT_VERSION, PROJECT_NAME,
-            GlobalVal.PROJECT_RELEASE_URL)
+            _url = 'https://mkvtoolnix.download/downloads.html'
+            for _name in {'mkvpropedit', 'mkvmerge'}:
+                if not shutil.which(_name):
+                    print()
+                    log.warning('{} not found, download it: {}', _name, _url)
+                    print(get_input_prompt(), end='')
+                else:
+                    log_new_ver(
+                        '91',
+                        subprocess.run(f'{_name} --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
+                        _name, _url)
 
 
-    sys.stdout.flush()
-    sys.stderr.flush()
-    change_title(PROJECT_TITLE)
+            # _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
+            # if not shutil.which(_name):
+            #     print()
+            #     log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
+            #     print(get_input_prompt(), end='')
+            # elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
+            #     log.error("The MediaInfo must be CLI ver")
+
+
+        if config.get_user_profile('check_update'):
+            log_new_ver(
+                easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
+                PROJECT_VERSION, PROJECT_NAME,
+                GlobalVal.PROJECT_RELEASE_URL)
+
+
+        sys.stdout.flush()
+        sys.stderr.flush()
+        change_title(PROJECT_TITLE)
+
+    except Exception as e:
+        log.error(f"The def check_env error: {repr(e)} {e}", deep=True)
 
 
 def get_input_prompt():
