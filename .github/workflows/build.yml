@@ -42,6 +42,11 @@ jobs:
         cache: "pip"
     - run: pip install -U -r requirements.txt
 
+    - name: Unittest
+      run: |
+        python -m unittest
+      continue-on-error: false
+
     - name: Building the application
       run: |
         python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico --output-dir=./easyrip_nuitka_output src/easyrip.py
