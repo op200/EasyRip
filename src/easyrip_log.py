@@ -132,7 +132,7 @@ class log:
             message,
             *vals,
             is_format=is_format,
-            deep_stack=deep,
+            deep=deep,
         )
 
     @staticmethod

@@ -150,7 +150,7 @@ def check_env():
                     print(get_input_prompt(), end='')
                 else:
                     log_new_ver(
-                        '91',
+                        '92',
                         subprocess.run(f'{_name} --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
                         _name, _url)
 

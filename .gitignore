@@ -6,5 +6,6 @@
 !src/
 !resources/
 !requirements.txt
+!tests.py
 
 __pycache__
