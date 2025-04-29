@@ -221,10 +221,15 @@ class Ripper:
 
 
         vspipe_input: str = ""
+        pipe_gvar_list = [s for s in self.option_map.get('pipe:gvar', "").split(':') if s]
+        pipe_gvar_dict = {s.split('=')[0]: s.split('=')[1] for s in pipe_gvar_list if '=' in s}
+        if sub_pathname:
+            pipe_gvar_dict['subtitle'] = sub_pathname
+
         if input_suffix == ".vpy":
-            vspipe_input = f'vspipe -c y4m {f'-a "subtitle={sub_pathname}"' if sub_pathname else ""} "{{input}}" - | '
+            vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k,v in pipe_gvar_dict.items())} "{{input}}" - | '
         elif vpy_pathname:
-            vspipe_input = f'vspipe -c y4m {f'-a "subtitle={sub_pathname}"' if sub_pathname else ""} -a "input={{input}}" "{vpy_pathname}" - | '
+            vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k,v in pipe_gvar_dict.items())} -a "input={{input}}" "{vpy_pathname}" - | '
 
         hwaccel = f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
 

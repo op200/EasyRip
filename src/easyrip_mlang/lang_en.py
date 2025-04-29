@@ -125,6 +125,10 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    Select a vpy file as pipe to input, this vpy must have input global val\n"
         "    The input in vspipe: vspipe -a input=<input> filter.vpy\n"
         "\n"
+        "  -pipe:gvar <key>=<val>[:...]\n"
+        "    Customize the global variables passed to vspipe, and use ':' intervals for multiple variables\n"
+        '    e.g. -pipe:gvar "a=1 2 3:b=abc" -> vspipe -a "a=1 2 3" -a "b=abc"\n'
+        "\n"
         "  -vf <string>\n"
         "    Customize FFmpeg's -vf\n"
         "    Using it together with -sub is undefined behavior\n"

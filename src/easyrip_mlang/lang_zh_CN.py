@@ -125,13 +125,17 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    选择一个 vpy 文件作为管道的输入，这个 vpy 必须有 input 全局变量\n"
         "    演示如何 input: vspipe -a input=<input> filter.vpy\n"
         "\n"
+        "  -pipe:gvar <key>=<val>[:...]\n"
+        "    自定义传给 vspipe 的全局变量，多个则用':'间隔\n"
+        '    例如: -pipe:gvar "a=1 2 3:b=abc" -> vspipe -a "a=1 2 3" -a "b=abc"\n'
+        "\n"
         "  -vf <string>\n"
         "    自定义 FFmpeg 的 -vf\n"
         "    与 -sub 同时使用为未定义行为\n"
         "\n"
         "  -sub <string | 'auto' | 'auto:...'>\n"
         "    它使用 libass 制作硬字幕，需要硬字幕时请输入字幕路径名\n"
-        '    使用"::"以输入多个字幕，例如: 01.zh-Hans.ass::01.zh-Hant.ass::01.en.ass\n'
+        '    使用 "::" 以输入多个字幕，例如: 01.zh-Hans.ass::01.zh-Hant.ass::01.en.ass\n'
         "    如果使用'auto'，相同前缀的字幕文件将作为输入\n"
         "    'auto:...'可以只选择指定中缀，例如'auto:zh-Hans:zh-Hant'\n"
         "\n"
