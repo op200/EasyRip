@@ -433,7 +433,7 @@ def run_command(command: list[str] | str) -> bool:
                     host = res.group(1)
                     port = res.group(2)
                     if port:
-                        port = int(port)
+                        port = int(port.lstrip(':'))
                     elif host.isdigit():
                         port = int(host)
                         host = None
