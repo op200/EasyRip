@@ -237,6 +237,15 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "Stop run command": "命令执行终止",
     # log
     "encoding_log.html": "编码日志.html",
+    "Start": "开始",
+    "Input file pathname": "输入文件路径名",
+    "Output directory": "输出目录",
+    "Temporary file name": "临时文件名",
+    "Output file name": "输出文件名",
+    "Encoding speed": "编码速率",
+    "File size": "文件体积",
+    "Time consuming": "耗时",
+    "End": "结束",
     # ripper.py
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}'，已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",

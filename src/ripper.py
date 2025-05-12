@@ -9,6 +9,7 @@ from threading import Thread
 
 import easyrip_web
 from easyrip_log import log
+from easyrip_mlang import gettext
 
 __all__ = ['Ripper']
 
@@ -917,11 +918,11 @@ class Ripper:
             run_start_time = datetime.now()
             log.write_html_log(
                 f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 1rem;">'
-                f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">Start</span><br>'
-                f'原文件路径名：<span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
-                f'输出目录：<span style="color:darkcyan;">"{self.output_dir}"</span><br>'
-                f'临时文件名：<span style="color:darkcyan;">"{temp_name}"</span><br>'
-                f'输出文件名：<span style="color:darkcyan;">"{output_filename}"</span><br>'
+                f'<span style="color:green;">{run_start_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:aqua;">{gettext("Start")}</span><br>'
+                f'{gettext("Input file pathname")}: <span style="color:darkcyan;">"{self.input_pathname}"</span><br>'
+                f'{gettext("Output directory")}: <span style="color:darkcyan;">"{self.output_dir}"</span><br>'
+                f'{gettext("Temporary file name")}: <span style="color:darkcyan;">"{temp_name}"</span><br>'
+                f'{gettext("Output file name")}: <span style="color:darkcyan;">"{output_filename}"</span><br>'
                 f'Ripper:<br>'
                 f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span></div>')
 
@@ -974,10 +975,10 @@ class Ripper:
             # 写入日志
             run_end_time = datetime.now()
             log.write_html_log(
-                f'<div style="background-color:#b4b4b4;padding:0 1rem;">Encoding speed=<span style="color:darkcyan;">{speed}</span><br>'
-                f'File size=<span style="color:darkcyan;">{file_size} MiB</span><br>'
-                f'Time consuming=<span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
-                f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">End</span><br>'
+                f'<div style="background-color:#b4b4b4;padding:0 1rem;">{gettext("Encoding speed")}: <span style="color:darkcyan;">{speed}</span><br>'
+                f'{gettext("File size")}: <span style="color:darkcyan;">{file_size} MiB</span><br>'
+                f'{gettext("Time consuming")}: <span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
+                f'<span style="color:green;">{run_end_time.strftime('%Y.%m.%d %H:%M:%S.%f')[:-4]}</span> <span style="color:brown;">{gettext("End")}</span><br>'
                 f'</div><hr style="color:brown;margin:0 0 6px;">')
 
             # 删除临时文件

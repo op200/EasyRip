@@ -23,7 +23,12 @@ class log:
         error = enum.auto()
         none = enum.auto()
 
-    html_log_file: str = "encoding_log.html"  # 在调用前重定义
+    class LogMode(enum.Enum):
+        normal = enum.auto()
+        only_print = enum.auto()
+        only_write = enum.auto()
+
+    html_log_file: str = "encoding_log.html"  # 在调用前覆写
     log_print_level: LogLevel = LogLevel.send
     log_write_level: LogLevel = LogLevel.send
 
@@ -38,7 +43,13 @@ class log:
     hr = "———————————————————————————————————"
 
     @staticmethod
-    def _do_log(log_level: LogLevel, message: object, *vals, **kwargs):
+    def _do_log(
+        log_level: LogLevel,
+        message: object,
+        mode: LogMode = LogMode.normal,
+        *vals,
+        **kwargs,
+    ):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
             message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
@@ -54,12 +65,18 @@ class log:
             case log.LogLevel.info:
                 log.info_num += 1
 
-                if log.log_print_level.value <= log.LogLevel.info.value:
+                if (
+                    mode != log.LogMode.only_write
+                    and log.log_print_level.value <= log.LogLevel.info.value
+                ):
                     print(
                         f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
                     )
 
-                if log.log_write_level.value <= log.LogLevel.info.value:
+                if (
+                    mode != log.LogMode.only_print
+                    and log.log_write_level.value <= log.LogLevel.info.value
+                ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
                     )
@@ -69,13 +86,19 @@ class log:
             case log.LogLevel.warning:
                 log.warning_num += 1
 
-                if log.log_print_level.value <= log.LogLevel.warning.value:
+                if (
+                    mode != log.LogMode.only_write
+                    and log.log_print_level.value <= log.LogLevel.warning.value
+                ):
                     print(
                         f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
-                if log.log_write_level.value <= log.LogLevel.warning.value:
+                if (
+                    mode != log.LogMode.only_print
+                    and log.log_write_level.value <= log.LogLevel.warning.value
+                ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
                     )
@@ -85,13 +108,19 @@ class log:
             case log.LogLevel.error:
                 log.error_num += 1
 
-                if log.log_print_level.value <= log.LogLevel.error.value:
+                if (
+                    mode != log.LogMode.only_write
+                    and log.log_print_level.value <= log.LogLevel.error.value
+                ):
                     print(
                         f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
-                if log.log_write_level.value <= log.LogLevel.error.value:
+                if (
+                    mode != log.LogMode.only_print
+                    and log.log_write_level.value <= log.LogLevel.error.value
+                ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
                     )
@@ -126,33 +155,54 @@ class log:
                     )
 
     @staticmethod
-    def info(message: object, *vals, is_format: bool = True, deep: bool = False):
+    def info(
+        message: object,
+        *vals,
+        is_format: bool = True,
+        deep: bool = False,
+        mode: LogMode = LogMode.normal,
+    ):
         log._do_log(
             log.LogLevel.info,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
+            mode=mode,
         )
 
     @staticmethod
-    def warning(message: object, *vals, is_format: bool = True, deep: bool = False):
+    def warning(
+        message: object,
+        *vals,
+        is_format: bool = True,
+        deep: bool = False,
+        mode: LogMode = LogMode.normal,
+    ):
         log._do_log(
             log.LogLevel.warning,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
+            mode=mode,
         )
 
     @staticmethod
-    def error(message: object, *vals, is_format: bool = True, deep: bool = False):
+    def error(
+        message: object,
+        *vals,
+        is_format: bool = True,
+        deep: bool = False,
+        mode: LogMode = LogMode.normal,
+    ):
         log._do_log(
             log.LogLevel.error,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
+            mode=mode,
         )
 
     @staticmethod
