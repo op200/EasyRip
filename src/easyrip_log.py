@@ -45,8 +45,8 @@ class log:
     @staticmethod
     def _do_log(
         log_level: LogLevel,
+        mode: LogMode,
         message: object,
-        mode: LogMode = LogMode.normal,
         *vals,
         **kwargs,
     ):
@@ -164,11 +164,11 @@ class log:
     ):
         log._do_log(
             log.LogLevel.info,
+            mode,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
-            mode=mode,
         )
 
     @staticmethod
@@ -179,13 +179,15 @@ class log:
         deep: bool = False,
         mode: LogMode = LogMode.normal,
     ):
+        print(vals)
+        print(mode, type(mode))
         log._do_log(
             log.LogLevel.warning,
+            mode,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
-            mode=mode,
         )
 
     @staticmethod
@@ -198,11 +200,11 @@ class log:
     ):
         log._do_log(
             log.LogLevel.error,
+            mode,
             message,
             *vals,
             is_format=is_format,
             deep=deep,
-            mode=mode,
         )
 
     @staticmethod
@@ -211,10 +213,12 @@ class log:
         message: object,
         *vals,
         is_format: bool = True,
+        mode: LogMode = LogMode.normal,
         is_server: bool = False,
     ):
         log._do_log(
             log.LogLevel.send,
+            mode,
             message,
             *vals,
             http_send_header=header,
