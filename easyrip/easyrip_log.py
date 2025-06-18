@@ -180,8 +180,6 @@ class log:
         deep: bool = False,
         mode: LogMode = LogMode.normal,
     ):
-        print(vals)
-        print(mode, type(mode))
         log._do_log(
             log.LogLevel.warning,
             mode,
