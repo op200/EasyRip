@@ -12,11 +12,11 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
   如果你有 Python 环境
 
   *
-  1. You can `pip install https://github.com/op200/EasyRip.git` to pull the version from the repositoryand, or 'pip install easyrip' to obtain the stable version.
+  1. You can `pip install -U https://github.com/op200/EasyRip.git` to pull the version from the repositoryand, or `pip install -U easyrip` to obtain the stable version.
   2. After installation, run `easyrip` on command.
 
   *
-  1. 你可以 `pip install https://github.com/op200/EasyRip.git` 获取仓库中的版本，或者 `pip install easyrip` 获取稳定版。
+  1. 你可以 `pip install -U https://github.com/op200/EasyRip.git` 获取仓库中的版本，或者 `pip install -U easyrip` 获取稳定版。
   2. 安装后直接在命令行运行 `easyrip`。
 
 
@@ -51,7 +51,7 @@ Run `easyrip`, input `help` to get help doc
 ### Dependency
 
 * Python 3.13 (must >=3.11)
-  ```bash
+  ```pwsh
   pip install -U pycryptodome
   ```
 
