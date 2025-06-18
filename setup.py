@@ -1,0 +1,26 @@
+import re
+from setuptools import setup, find_packages
+
+
+def get_version():
+    with open("easyrip/global_val.py", "r", encoding="utf-8") as f:
+        version_match = re.search(
+            r'PROJECT_VERSION\s*=\s*[\'"]([^\'"]*)[\'"]', f.read(), re.M
+        )
+
+    return version_match.group(1) if version_match else "0.0.0"
+
+
+setup(
+    name="easyrip",
+    version=get_version(),
+    packages=find_packages(),
+    install_requires=[
+        "pycryptodome",
+    ],
+    entry_points={
+        "console_scripts": [
+            "easyrip=easyrip.__main__:run",
+        ],
+    },
+)

@@ -1,11 +1,14 @@
 /*
+!.vscode/
 !.gitignore
 !LICENSE
 !README.md
 !.github/
-!src/
+!easyrip.py
+!easyrip/
 !resources/
 !requirements.txt
 !tests.py
+!setup.py
 
 __pycache__

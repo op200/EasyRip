@@ -4,9 +4,6 @@ import re
 import shutil
 import subprocess
 import unittest
-import sys
-
-sys.path.append("src")
 
 import easyrip
 from easyrip import gettext, log, run_command
@@ -84,6 +81,8 @@ class TestRip(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        assert os.path.exists(f"{TestRip.test_va_basename}.{TestRip.test_va_suffix}")
+
         assert shutil.which("ffmpeg")
         assert shutil.which("ffprobe")
         assert shutil.which("flac")

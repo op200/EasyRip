@@ -2,9 +2,9 @@ import json
 import os
 import sys
 
-from global_val import GlobalVal
-from easyrip_log import log
-from easyrip_mlang import gettext
+from .global_val import GlobalVal
+from .easyrip_log import log
+from .easyrip_mlang import gettext
 
 
 PROJECT_NAME = GlobalVal.PROJECT_NAME

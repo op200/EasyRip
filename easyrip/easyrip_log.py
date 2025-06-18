@@ -3,8 +3,9 @@ import enum
 import datetime
 import traceback
 
-from easyrip_mlang import gettext, GlobalLangVal
-import easyrip_web
+from .easyrip_mlang import gettext, GlobalLangVal
+from . import easyrip_web
+
 
 __all__ = ["Event", "log"]
 

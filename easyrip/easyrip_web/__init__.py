@@ -1,7 +1,7 @@
 import subprocess
 import json
 
-from global_val import GlobalVal
+from ..global_val import GlobalVal
 from . import http_server
 
 
