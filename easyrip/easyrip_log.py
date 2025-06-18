@@ -1,3 +1,6 @@
+from ctypes import wintypes
+import ctypes
+import os
 import sys
 import enum
 import datetime
@@ -17,6 +20,67 @@ class Event:
 
 
 class log:
+    @staticmethod
+    def init():
+        if os.name != "nt":
+            return
+
+        class CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
+            _fields_ = [
+                ("dwSize", wintypes._COORD),
+                ("dwCursorPosition", wintypes._COORD),
+                ("wAttributes", wintypes.WORD),
+                ("srWindow", wintypes.SMALL_RECT),
+                ("dwMaximumWindowSize", wintypes._COORD),
+            ]
+
+        csbi = CONSOLE_SCREEN_BUFFER_INFO()
+        hOut = ctypes.windll.kernel32.GetStdHandle(-11)
+        ctypes.windll.kernel32.FlushConsoleInputBuffer(hOut)
+        ctypes.windll.kernel32.GetConsoleScreenBufferInfo(hOut, ctypes.byref(csbi))
+        attributes = csbi.wAttributes
+        color_map = {
+            0: 0,  # 黑色
+            1: 4,  # 蓝色
+            2: 2,  # 绿色
+            3: 6,  # 青色
+            4: 1,  # 红色
+            5: 5,  # 紫红色
+            6: 3,  # 黄色
+            7: 7,  # 白色
+        }
+
+        log.default_foreground_color = (
+            30
+            + color_map.get(attributes & 0x0007, 9)
+            + 60 * ((attributes & 0x0008) != 0)
+        )
+        log.default_background_color = (
+            40
+            + color_map.get((attributes >> 4) & 0x0007, 9)
+            + 60 * ((attributes & 0x0080) != 0)
+        )
+
+        if log.default_foreground_color == 37:
+            log.default_foreground_color = 39
+        if log.default_background_color == 40:
+            log.default_background_color = 49
+
+        if log.default_background_color == 42:
+            log.time_color = 92
+
+        if log.default_background_color == 44 or log.default_foreground_color == 34:
+            log.info_color = 96
+
+        if log.default_background_color == 43 or log.default_foreground_color == 33:
+            log.warning_color = 93
+
+        if log.default_background_color == 41 or log.default_foreground_color == 31:
+            log.error_color = 91
+
+        if log.default_background_color == 45 or log.default_foreground_color == 35:
+            log.send_color = 95
+
     class LogLevel(enum.Enum):
         send = enum.auto()
         info = enum.auto()
@@ -35,6 +99,11 @@ class log:
 
     default_foreground_color: int = 39
     default_background_color: int = 49
+    time_color: int = 32
+    info_color: int = 34
+    warning_color: int = 33
+    error_color: int = 31
+    send_color: int = 35
 
     info_num: int = 0
     warning_num: int = 0
@@ -60,7 +129,7 @@ class log:
         if kwargs.get("deep"):
             message = f"{traceback.format_exc()}\n{message}"
 
-        time_str = f"\033[{92 if log.default_background_color == 42 else 32}m{time_now}"
+        time_str = f"\033[{log.time_color}m{time_now}"
 
         match log_level:
             case log.LogLevel.info:
@@ -71,7 +140,7 @@ class log:
                     and log.log_print_level.value <= log.LogLevel.info.value
                 ):
                     print(
-                        f"{time_str}\033[{94 if log.default_background_color == 44 else 34}m [INFO] {message}\033[{log.default_foreground_color}m"
+                        f"{time_str}\033[{log.info_color}m [INFO] {message}\033[{log.default_foreground_color}m"
                     )
 
                 if (
@@ -92,7 +161,7 @@ class log:
                     and log.log_print_level.value <= log.LogLevel.warning.value
                 ):
                     print(
-                        f"{time_str}\033[{93 if log.default_background_color == 43 else 33}m [WARNING] {message}\033[{log.default_foreground_color}m",
+                        f"{time_str}\033[{log.warning_color}m [WARNING] {message}\033[{log.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
@@ -114,7 +183,7 @@ class log:
                     and log.log_print_level.value <= log.LogLevel.error.value
                 ):
                     print(
-                        f"{time_str}\033[{91 if log.default_background_color == 41 else 31}m [ERROR] {message}\033[{log.default_foreground_color}m",
+                        f"{time_str}\033[{log.error_color}m [ERROR] {message}\033[{log.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
@@ -139,7 +208,7 @@ class log:
 
                     if log.log_print_level.value <= log.LogLevel.send.value:
                         print(
-                            f"{time_str}\033[{95 if log.default_background_color == 45 else 35}m [Send] {message}\033[{log.default_foreground_color}m"
+                            f"{time_str}\033[{log.send_color}m [Send] {message}\033[{log.default_foreground_color}m"
                         )
 
                     if log.log_write_level.value <= log.LogLevel.send.value:
@@ -152,7 +221,7 @@ class log:
                     )
                 elif log.log_print_level.value <= log.LogLevel.send.value:
                     print(
-                        f"\033[{95 if log.default_background_color == 45 else 35}m{message}\033[{log.default_foreground_color}m"
+                        f"\033[{log.send_color}m{message}\033[{log.default_foreground_color}m"
                     )
 
     @staticmethod

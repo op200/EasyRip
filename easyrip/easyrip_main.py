@@ -4,7 +4,6 @@ from time import sleep
 import tkinter as tk
 from tkinter import filedialog
 import ctypes
-from ctypes import wintypes
 import sys
 import os
 import shutil
@@ -151,7 +150,7 @@ def check_env():
                     print(get_input_prompt(), end='')
                 else:
                     log_new_ver(
-                        '92',
+                        '93',
                         subprocess.run(f'{_name} --version', capture_output=True, text=True).stdout.split(maxsplit=2)[1],
                         _name, _url)
 
@@ -169,7 +168,7 @@ def check_env():
             log_new_ver(
                 easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
                 PROJECT_VERSION, PROJECT_NAME,
-                GlobalVal.PROJECT_RELEASE_URL)
+                GlobalVal.PROJECT_URL)
 
 
         sys.stdout.flush()
@@ -695,39 +694,7 @@ def init(is_first_run: bool = False):
             log.error(f"{repr(e)} {e}", deep=True)
 
     # 获取终端颜色
-    if os.name == 'nt':
-        class CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
-            _fields_ = [
-                ("dwSize", wintypes._COORD),
-                ("dwCursorPosition", wintypes._COORD),
-                ("wAttributes", wintypes.WORD),
-                ("srWindow", wintypes.SMALL_RECT),
-                ("dwMaximumWindowSize", wintypes._COORD),
-            ]
-
-        csbi = CONSOLE_SCREEN_BUFFER_INFO()
-        hOut = ctypes.windll.kernel32.GetStdHandle(-11)
-        ctypes.windll.kernel32.FlushConsoleInputBuffer(hOut)
-        ctypes.windll.kernel32.GetConsoleScreenBufferInfo(hOut, ctypes.byref(csbi))
-        attributes = csbi.wAttributes
-        color_map = {
-            0: 0,  # 黑色
-            1: 4,  # 蓝色
-            2: 2,  # 绿色
-            3: 6,  # 青色
-            4: 1,  # 红色
-            5: 5,  # 紫红色
-            6: 3,  # 黄色
-            7: 7,  # 白色
-        }
-
-        log.default_foreground_color = 30 + color_map.get(attributes & 0x0007, 9) + 60 * ((attributes & 0x0008) != 0)
-        log.default_background_color = 40 + color_map.get((attributes >> 4) & 0x0007, 9) + 60 * ((attributes & 0x0080) != 0)
-
-        if log.default_foreground_color == 37:
-            log.default_foreground_color = 39
-        if log.default_background_color == 40:
-            log.default_background_color = 49
+    log.init()
 
     if is_first_run:
         # 检测环境

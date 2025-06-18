@@ -1,11 +1,7 @@
 import subprocess
 import json
 
-from ..global_val import GlobalVal
 from . import http_server
-
-
-PROJECT_RELEASE_API = GlobalVal.PROJECT_RELEASE_API
 
 
 def get_sys_proxy(target_url: str) -> str:
