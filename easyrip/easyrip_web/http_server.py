@@ -251,4 +251,7 @@ def run_server(host: str = "", port: int = 0, password: str | None = None):
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
     Event.log.info("Starting HTTP service on port {}...", httpd.server_port)
-    httpd.serve_forever()
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        Event.log.info("HTTP service stopped by ^C")

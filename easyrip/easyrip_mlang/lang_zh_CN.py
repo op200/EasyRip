@@ -253,6 +253,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "FFmpeg report: {}": "FFmpeg report: {}",
     # web
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
+    "HTTP service stopped by ^C": "HTTP 服务被 ^C 停止",
     "There is a running command, terminate this request": "存在正在运行的命令，终止此次请求",
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
     # config

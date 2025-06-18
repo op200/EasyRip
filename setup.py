@@ -1,3 +1,4 @@
+from pathlib import Path
 import re
 from setuptools import setup, find_packages
 
@@ -24,4 +25,6 @@ setup(
             "easyrip=easyrip.__main__:run",
         ],
     },
+    long_description=(Path(__file__).parent / "README.md").read_text(encoding="utf-8"),
+    long_description_content_type="text/markdown",
 )
