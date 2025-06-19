@@ -79,22 +79,25 @@ class TestRip(unittest.TestCase):
 
         run_command("list clear")
 
-    @classmethod
-    def setUpClass(cls):
-        assert os.path.exists(f"{TestRip.test_va_basename}.{TestRip.test_va_suffix}")
-
-        assert shutil.which("ffmpeg")
-        assert shutil.which("ffprobe")
-        assert shutil.which("flac")
-        assert shutil.which("mp4fpsmod")
-        assert shutil.which("mp4box")
-        assert shutil.which("mkvpropedit")
-        assert shutil.which("mkvmerge")
-
-        easyrip.init(True)
-
     def setUp(self):
         TestRip.restore()
+
+        self.assertTrue(
+            os.path.exists(f"{TestRip.test_va_basename}.{TestRip.test_va_suffix}")
+        )
+
+        for tool in (
+            "ffmpeg",
+            "ffprobe",
+            "flac",
+            "mp4fpsmod",
+            "mp4box",
+            "mkvpropedit",
+            "mkvmerge",
+        ):
+            self.assertTrue(shutil.which(tool), f"The '{tool}' not found in PATH")
+
+        easyrip.init(True)
 
     def tearDown(self):
         TestRip.restore()

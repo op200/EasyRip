@@ -27,7 +27,6 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
     Download exe in [Actions](https://github.com/op200/EasyRip/actions).
     Or download exe or bat script collection in [Releases](https://github.com/op200/EasyRip/releases).
 
-  *
     在 [Actions](https://github.com/op200/EasyRip/actions) 中下载最新的 exe。
     或者在 [Releases](https://github.com/op200/EasyRip/releases) 中下载 exe 或 bat 脚本包。
 
