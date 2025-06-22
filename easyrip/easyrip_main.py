@@ -168,7 +168,7 @@ def check_env():
             log_new_ver(
                 easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
                 PROJECT_VERSION, PROJECT_NAME,
-                GlobalVal.PROJECT_URL)
+                f"{GlobalVal.PROJECT_URL} {gettext("or run '{}' when you use pip","pip install -U easyrip")}")
 
 
         sys.stdout.flush()

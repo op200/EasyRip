@@ -70,8 +70,9 @@ def get_system_language():
 def gettext(org_text: str | ExtraTextIndex, *vals, is_format: bool = True):
     new_text: str | None = None
 
-    if GlobalLangVal.gettext_target_lang[0] is Language.zh:
-        new_text = lang_zh_CN.lang_map.get(org_text)
+    match GlobalLangVal.gettext_target_lang[0]:
+        case Language.zh:
+            new_text = lang_zh_CN.lang_map.get(org_text)
 
     new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 

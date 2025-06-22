@@ -30,7 +30,8 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
     在 [Actions](https://github.com/op200/EasyRip/actions) 中下载最新的 exe。
     或者在 [Releases](https://github.com/op200/EasyRip/releases) 中下载 exe 或 bat 脚本包。
 
-  * The file `BatchScriptPackage` in [Releases](https://github.com/op200/EasyRip/releases) is a bat script collection. 
+  * 
+    The file `BatchScriptPackage` in [Releases](https://github.com/op200/EasyRip/releases) is a bat script collection. 
     It is used to facilitate ordinary users, it only has Chinese.
 
     [Releases](https://github.com/op200/EasyRip/releases) 中每隔一段时间发布一次名为 BatchScriptPackage 的 bat 脚本包  
