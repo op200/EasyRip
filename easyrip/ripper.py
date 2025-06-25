@@ -45,6 +45,10 @@ class Ripper:
         hevc_nvenc = 'hevc_nvenc'
         hevc_qsv = 'hevc_qsv'
 
+        av1_amf = 'av1_amf'
+        av1_nvenc = 'av1_nvenc'
+        av1_qsv = 'av1_qsv'
+
         @classmethod
         def _missing_(cls, value: object):
             default = cls.custom
@@ -775,7 +779,7 @@ class Ripper:
                 )
 
 
-            case Ripper.PresetName.h264_amf | Ripper.PresetName.h264_nvenc | Ripper.PresetName.h264_qsv | Ripper.PresetName.hevc_amf | Ripper.PresetName.hevc_nvenc | Ripper.PresetName.hevc_qsv:
+            case Ripper.PresetName.h264_amf | Ripper.PresetName.h264_nvenc | Ripper.PresetName.h264_qsv | Ripper.PresetName.hevc_amf | Ripper.PresetName.hevc_nvenc | Ripper.PresetName.hevc_qsv | Ripper.PresetName.av1_amf | Ripper.PresetName.av1_nvenc | Ripper.PresetName.av1_qsv:
 
                 _option_map = {
                     'q:v': self.option_map.get('q:v'),
