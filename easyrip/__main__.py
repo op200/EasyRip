@@ -15,7 +15,7 @@ def run():
 
     while True:
         try:
-            command = input(get_input_prompt())
+            command = input(get_input_prompt(is_color=True))
             sys.stdout.flush()
             sys.stderr.flush()
         except Exception:

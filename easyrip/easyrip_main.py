@@ -179,8 +179,11 @@ def check_env():
         log.error(f"The def check_env error: {repr(e)} {e}", deep=True)
 
 
-def get_input_prompt():
-    return f'{os.path.realpath(os.getcwd())}> {gettext("Easy Rip command")}>'
+def get_input_prompt(is_color: bool = False) -> str:
+    cmd_prompt = f"{gettext("Easy Rip command")}>"
+    if is_color:
+        cmd_prompt = f"\033[{log.send_color}m{cmd_prompt}\033[{log.default_foreground_color}m"
+    return f"{os.path.realpath(os.getcwd())}> {cmd_prompt}"
 
 
 if os.name == 'nt':

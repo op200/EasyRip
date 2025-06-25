@@ -120,18 +120,12 @@ class log:
         *vals,
         **kwargs,
     ):
-        is_format = kwargs.get("is_format", True)
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
-        if is_format:
-            message = gettext(
-                message
-                if type(message) is GlobalLangVal.ExtraTextIndex
-                else str(message),
-                *vals,
-                is_format=True,
-            )
-        else:
-            message = str(message)
+        message = gettext(
+            message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
+            *vals,
+            is_format=kwargs.get("is_format", True),
+        )
 
         if kwargs.get("deep"):
             message = f"{traceback.format_exc()}\n{message}"
