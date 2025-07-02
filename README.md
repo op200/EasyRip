@@ -52,7 +52,7 @@ Run `easyrip`, input `help` to get help doc
 
 * Python 3.13 (must >=3.11)
   ```pwsh
-  pip install -U pycryptodome
+  pip install -U pycryptodome fonttools
   ```
 
 * CLI
