@@ -1019,7 +1019,7 @@ class Ripper:
                 # 处理 soft-sub
                 sotf_sub_list: list[str]
                 soft_sub_map_list: list[str] = soft_sub.split(":")
-                if soft_sub == "auto":
+                if soft_sub_map_list[0] == "auto":
                     sotf_sub_list = []
 
                     _input_basename = os.path.splitext(
@@ -1036,7 +1036,7 @@ class Ripper:
                             and _file_basename_list[0].startswith(_input_prefix)
                             and (
                                 len(soft_sub_map_list) == 1
-                                or os.path.splitext(_file_basename_list[0])[1]
+                                or os.path.splitext(_file_basename_list[0])[1].lstrip(".")
                                 in soft_sub_map_list[1:]
                             )
                         ):
@@ -1048,6 +1048,7 @@ class Ripper:
 
                 # 子集化
                 subset_folder = Path(self.output_dir) / f"subset_temp_{temp_name}"
+                log.info(f"{sotf_sub_list=:}")
                 if Ripper(
                     sotf_sub_list,
                     (subset_folder.name,),

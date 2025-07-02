@@ -297,7 +297,7 @@ def run_ripper_list(
         try:
             ripper.run()
         except Exception as e:
-            log.error(e)
+            log.error(e, deep=True)
             log.warning("Stop run ripper")
         sleep(1)
     if log.warning_num > warning_num:
@@ -659,6 +659,10 @@ def run_command(command: list[str] | str) -> bool:
                         if not os.path.exists(path):
                             log.warning('The file "{}" does not exist', path)
 
+                    _input_basename = os.path.splitext(
+                        os.path.basename(input_pathname_list[0])
+                    )
+
                     if sub_map := option_map.get("sub"):
                         sub_list: list[str]
                         sub_map_list: list[str] = sub_map.split(":")
@@ -666,9 +670,6 @@ def run_command(command: list[str] | str) -> bool:
                         if sub_map_list[0] == "auto":
                             sub_list = []
 
-                            _input_basename = os.path.splitext(
-                                os.path.basename(input_pathname_list[0])
-                            )
                             while _input_basename[1] != "":
                                 _input_basename = os.path.splitext(_input_basename[0])
                             _input_prefix: str = _input_basename[0]
@@ -681,7 +682,9 @@ def run_command(command: list[str] | str) -> bool:
                                     and _file_basename_list[0].startswith(_input_prefix)
                                     and (
                                         len(sub_map_list) == 1
-                                        or os.path.splitext(_file_basename_list[0])[1]
+                                        or os.path.splitext(_file_basename_list[0])[
+                                            1
+                                        ].lstrip(".")
                                         in sub_map_list[1:]
                                     )
                                 ):
@@ -707,7 +710,7 @@ def run_command(command: list[str] | str) -> bool:
                                     Ripper(
                                         input_pathname_list,
                                         [
-                                            f"{_output_basename}.{_output_base_suffix_name}"
+                                            f"{_output_basename or _input_basename[0]}{_output_base_suffix_name}"
                                         ],
                                         output_dir,
                                         Ripper.PresetName(preset_name),
