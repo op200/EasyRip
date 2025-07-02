@@ -18,7 +18,8 @@ setup(
     packages=find_packages(),
     python_requires=">=3.11",
     install_requires=[
-        "pycryptodome",
+        "pycryptodome>=3.21.0",
+        "fonttools>=4.58.4",
     ],
     entry_points={
         "console_scripts": [

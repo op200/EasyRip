@@ -149,7 +149,7 @@ class log:
                     and log.log_write_level.value <= log.LogLevel.info.value
                 ):
                     log.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
@@ -171,7 +171,7 @@ class log:
                     and log.log_write_level.value <= log.LogLevel.warning.value
                 ):
                     log.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
@@ -193,7 +193,7 @@ class log:
                     and log.log_write_level.value <= log.LogLevel.error.value
                 ):
                     log.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
+                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
@@ -214,7 +214,7 @@ class log:
 
                     if log.log_write_level.value <= log.LogLevel.send.value:
                         log.write_html_log(
-                            f'<div style="background-color:#b4b4b4;margin-bottom:2px;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
+                            f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
 
                     Event.append_http_server_log_queue(
@@ -228,6 +228,7 @@ class log:
     @staticmethod
     def info(
         message: object,
+        /,
         *vals,
         is_format: bool = True,
         deep: bool = False,
@@ -245,6 +246,7 @@ class log:
     @staticmethod
     def warning(
         message: object,
+        /,
         *vals,
         is_format: bool = True,
         deep: bool = False,
@@ -262,6 +264,7 @@ class log:
     @staticmethod
     def error(
         message: object,
+        /,
         *vals,
         is_format: bool = True,
         deep: bool = False,
@@ -280,6 +283,7 @@ class log:
     def send(
         header: str,
         message: object,
+        /,
         *vals,
         is_format: bool = True,
         mode: LogMode = LogMode.normal,
