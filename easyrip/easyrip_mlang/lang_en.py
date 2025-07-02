@@ -1,9 +1,9 @@
-from ..global_val import GlobalVal
-from . import global_lang_val
+from ..global_val import Global_val
+from .global_lang_val import Global_lang_val
 
-lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
-    global_lang_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
-        f"{GlobalVal.PROJECT_NAME}\nVersion: {GlobalVal.PROJECT_VERSION}\n{GlobalVal.PROJECT_URL}\n"
+lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
+    Global_lang_val.Extra_text_index.HELP_DOC: (
+        f"{Global_val.PROJECT_NAME}\nVersion: {Global_val.PROJECT_VERSION}\n{Global_val.PROJECT_URL}\n"
         "\n"
         "\n"
         "Help:\n"
@@ -99,8 +99,9 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "Easy Rip options:\n"
         "\n"
-        "  -i <string[::string...] | 'fd'>\n"
+        "  -i <string[::string[?string...]...] | 'fd'>\n"
         "    Input files' pathname or use file dialog\n"
+        "    In some cases, it is allowed to use '?' as a delimiter to input multiple into a ripper, for example, 'preset subset' allows multiple ASS inputs\n"
         "\n"
         "  -o <string>\n"
         "    Output file basename's prefix\n"
@@ -114,12 +115,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    Setting preset\n"
         "    Preset name:\n"
         "      custom\n"
+        "      subset\n"
         "      copy\n"
         "      flac\n"
         "      x264fast x264slow\n"
         "      x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
         "      h264_amf h264_nvenc h264_qsv\n"
         "      hevc_amf hevc_nvenc hevc_qsv\n"
+        "      av1_amf av1_nvenc av1_qsv\n"
         "\n"
         "  -pipe <string>\n"
         "    Select a vpy file as pipe to input, this vpy must have input global val\n"
@@ -174,6 +177,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    Audio encoder:\n"
         "      copy\n"
         "      libopus\n"
+        "      flac\n"
         "\n"
         "  -b:a <string>\n"
         "    Setting audio bitrate. Default '160k'\n"
@@ -237,5 +241,5 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "      Set FFmpeg output file duration\n"
         "      Same as ffmpeg -i ... -t <time> ...\n"
     ),
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "{} has new version {}. You can download it: {}",
+    Global_lang_val.Extra_text_index.NEW_VER_TIP: "{} has new version {}. You can download it: {}",
 }

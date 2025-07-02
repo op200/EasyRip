@@ -2,12 +2,12 @@ import json
 import os
 import sys
 
-from .global_val import GlobalVal
+from .global_val import Global_val
 from .easyrip_log import log
 from .easyrip_mlang import gettext
 
 
-PROJECT_NAME = GlobalVal.PROJECT_NAME
+PROJECT_NAME = Global_val.PROJECT_NAME
 CONFIG_VERSION = "2.9.4"
 
 

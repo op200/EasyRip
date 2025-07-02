@@ -2,7 +2,7 @@ from pathlib import Path
 import re
 from typing import Iterable
 
-from ...global_val import GlobalVal
+from ...global_val import Global_val
 from ...easyrip_log import log
 from .ass import Ass, Script_info_data, parse_ass_text
 from .font import Font_type, Font, load_fonts, subset_font, get_font_path_from_registry
@@ -174,7 +174,7 @@ def subset(
         # 保存子集化后的字幕
         sub.script_info.data = [
             Script_info_data(
-                raw_str=f"; ---------- Font Subset by {GlobalVal.PROJECT_TITLE} ----------"
+                raw_str=f"; ---------- Font Subset by {Global_val.PROJECT_TITLE} ----------"
             ),
             *(
                 Script_info_data(
@@ -183,7 +183,7 @@ def subset(
                 for k, v in family__affix.items()
             ),
             Script_info_data(
-                raw_str=f"; ---------- {'Font Subset End':^{len(GlobalVal.PROJECT_TITLE) + 20}} ----------"
+                raw_str=f"; ---------- {'Font Subset End':^{len(Global_val.PROJECT_TITLE) + 20}} ----------"
             ),
         ] + sub.script_info.data
         with (output_dir / _ass_path.name).open("wb") as f:

@@ -6,8 +6,8 @@ from .easyrip_main import (
     check_env,
     gettext,
     check_ver,
-    GlobalVal,
-    GlobalLangVal,
+    Global_val,
+    Global_lang_val,
 )
 
 __all__ = [
@@ -18,8 +18,8 @@ __all__ = [
     "check_env",
     "gettext",
     "check_ver",
-    "GlobalVal",
-    "GlobalLangVal",
+    "Global_val",
+    "Global_lang_val",
 ]
 
-__version__ = GlobalVal.PROJECT_VERSION
+__version__ = Global_val.PROJECT_VERSION

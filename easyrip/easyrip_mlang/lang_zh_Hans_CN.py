@@ -1,9 +1,9 @@
-from ..global_val import GlobalVal
-from . import global_lang_val
+from ..global_val import Global_val
+from .global_lang_val import Global_lang_val
 
-lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
-    global_lang_val.GlobalLangVal.ExtraTextIndex.HELP_DOC: (
-        f"{GlobalVal.PROJECT_NAME}\n版本: {GlobalVal.PROJECT_VERSION}\n{GlobalVal.PROJECT_URL}\n"
+lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
+    Global_lang_val.Extra_text_index.HELP_DOC: (
+        f"{Global_val.PROJECT_NAME}\n版本: {Global_val.PROJECT_VERSION}\n{Global_val.PROJECT_URL}\n"
         "\n"
         "\n"
         "帮助:\n"
@@ -99,8 +99,9 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "\n"
         "Easy Rip options:\n"
         "\n"
-        "  -i <string[::string...] | 'fd'>\n"
+        "  -i <string[::string[?string...]...] | 'fd'>\n"
         "    输入文件的路径名或输入'fd'以使用文件对话框\n"
+        "    部分情况下允许使用 '?' 作为间隔符往一个 ripper 中输入多个，例如 '-preset subset' 允许输入多个 ASS\n"
         "\n"
         "  -o <string>\n"
         "    输出文件的文件名前缀\n"
@@ -114,12 +115,14 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    设置预设\n"
         "    预设名:\n"
         "      custom\n"
+        "      subset\n"
         "      copy\n"
         "      flac\n"
         "      x264fast x264slow\n"
         "      x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
         "      h264_amf h264_nvenc h264_qsv\n"
         "      hevc_amf hevc_nvenc hevc_qsv\n"
+        "      av1_amf av1_nvenc av1_qsv\n"
         "\n"
         "  -pipe <string>\n"
         "    选择一个 vpy 文件作为管道的输入，这个 vpy 必须有 input 全局变量\n"
@@ -174,6 +177,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
         "    音频编码器:\n"
         "      copy\n"
         "      libopus\n"
+        "      flac\n"
         "\n"
         "  -b:a <string>\n"
         "    设置音频码率。默认值 '160k'\n"
@@ -241,7 +245,7 @@ lang_map: dict[str | global_lang_val.GlobalLangVal.ExtraTextIndex, str] = {
     "{} not found, download it: {}": "没找到 {}，在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
     # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
-    global_lang_val.GlobalLangVal.ExtraTextIndex.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
+    Global_lang_val.Extra_text_index.NEW_VER_TIP: "检测到 {} 有新版本 {}。可在此下载: {}",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run ripper": "ripper 执行终止",
     "There are {} {} during run": "执行期间有 {} 个 {}",

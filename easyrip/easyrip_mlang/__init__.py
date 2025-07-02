@@ -1,15 +1,15 @@
 import ctypes
 
 from . import lang_en
-from . import lang_zh_CN
+from . import lang_zh_Hans_CN
 from . import global_lang_val
 
-Language, Region, GlobalLangVal = (
+Language, Region, Global_lang_val = (
     global_lang_val.Language,
     global_lang_val.Region,
-    global_lang_val.GlobalLangVal,
+    global_lang_val.Global_lang_val,
 )
-ExtraTextIndex = GlobalLangVal.ExtraTextIndex
+Extra_text_index = Global_lang_val.Extra_text_index
 
 
 class Event:
@@ -67,12 +67,12 @@ def get_system_language():
     return (lang, sub_lang)
 
 
-def gettext(org_text: str | ExtraTextIndex, *vals, is_format: bool = True):
+def gettext(org_text: str | Extra_text_index, *vals, is_format: bool = True):
     new_text: str | None = None
 
-    match GlobalLangVal.gettext_target_lang[0]:
+    match Global_lang_val.gettext_target_lang[0]:
         case Language.zh:
-            new_text = lang_zh_CN.lang_map.get(org_text)
+            new_text = lang_zh_Hans_CN.lang_map.get(org_text)
 
     new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 

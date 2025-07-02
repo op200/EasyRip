@@ -6,7 +6,7 @@ import enum
 import datetime
 import traceback
 
-from .easyrip_mlang import gettext, GlobalLangVal
+from .easyrip_mlang import gettext, Global_lang_val
 from . import easyrip_web
 
 
@@ -122,7 +122,7 @@ class log:
     ):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
-            message if type(message) is GlobalLangVal.ExtraTextIndex else str(message),
+            message if type(message) is Global_lang_val.Extra_text_index else str(message),
             *vals,
             is_format=kwargs.get("is_format", True),
         )

@@ -15,11 +15,11 @@ import subprocess
 from multiprocessing import shared_memory
 
 
-from .global_val import GlobalVal
+from .global_val import Global_val
 from .easyrip_log import log, Event as LogEvent
 from .ripper import Ripper
 from .easyrip_mlang import (
-    GlobalLangVal,
+    Global_lang_val,
     Language,
     Region,
     get_system_language,
@@ -33,10 +33,10 @@ from .easyrip_config import config
 __all__ = ["init", "run_command", "log", "Ripper"]
 
 
-PROJECT_NAME = GlobalVal.PROJECT_NAME
-__version__ = PROJECT_VERSION = GlobalVal.PROJECT_VERSION
-PROJECT_TITLE = GlobalVal.PROJECT_TITLE
-PROJECT_URL = GlobalVal.PROJECT_URL
+PROJECT_NAME = Global_val.PROJECT_NAME
+__version__ = PROJECT_VERSION = Global_val.PROJECT_VERSION
+PROJECT_TITLE = Global_val.PROJECT_TITLE
+PROJECT_URL = Global_val.PROJECT_URL
 
 
 def change_title(title):
@@ -81,7 +81,7 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
         if check_ver(new_ver, old_ver):
             print()
             log.info(
-                GlobalLangVal.ExtraTextIndex.NEW_VER_TIP, program_name, new_ver, dl_url
+                Global_lang_val.Extra_text_index.NEW_VER_TIP, program_name, new_ver, dl_url
             )
             print(get_input_prompt(True), end="")
     except Exception as e:
@@ -208,10 +208,10 @@ def check_env():
 
         if config.get_user_profile("check_update"):
             log_new_ver(
-                easyrip_web.get_github_api_ver(GlobalVal.PROJECT_RELEASE_API),
+                easyrip_web.get_github_api_ver(Global_val.PROJECT_RELEASE_API),
                 PROJECT_VERSION,
                 PROJECT_NAME,
-                f"{GlobalVal.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
+                f"{Global_val.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
             )
 
         sys.stdout.flush()
@@ -350,7 +350,7 @@ def run_command(command: list[str] | str) -> bool:
 
     match cmd_list[0]:
         case "h" | "help":
-            log.send("", GlobalLangVal.ExtraTextIndex.HELP_DOC, is_format=False)
+            log.send("", Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
 
         case "v" | "ver" | "version":
             log.send("", f"{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}")
@@ -770,12 +770,12 @@ def init(is_first_run: bool = False):
 
     # 设置语言
     _sys_lang = get_system_language()
-    GlobalLangVal.gettext_target_lang = _sys_lang
+    Global_lang_val.gettext_target_lang = _sys_lang
     if (_lang_config := config.get_user_profile("language")) not in {"auto", None}:
         _lang = str(_lang_config).split("-")
         if len(_lang) == 1:
             _lang.append("")
-        GlobalLangVal.gettext_target_lang = (
+        Global_lang_val.gettext_target_lang = (
             getattr(Language, _lang[0], Language.Unknow),
             getattr(Region, _lang[1], Region.Unknow),
         )

@@ -12,7 +12,7 @@ from typing import Iterable
 
 from .. import easyrip_web
 from ..easyrip_log import log
-from ..easyrip_mlang import gettext
+from ..easyrip_mlang import gettext, Global_lang_val
 from . import media_info
 from .utils import get_base62_time
 from .font_subset import subset
@@ -243,7 +243,7 @@ class Ripper:
 
                 case Ripper.Muxer.mkv:
                     muxer_format_str = (
-                        r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
+                        r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" --no-global-tags --no-track-tags '
                         + (
                             f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1"
                             if force_fps
@@ -1017,10 +1017,10 @@ class Ripper:
             # 内封字幕合成
             if soft_sub := self.option_map.get("soft-sub"):
                 # 处理 soft-sub
-                sotf_sub_list: list[str]
+                soft_sub_list: list[str]
                 soft_sub_map_list: list[str] = soft_sub.split(":")
                 if soft_sub_map_list[0] == "auto":
-                    sotf_sub_list = []
+                    soft_sub_list = []
 
                     _input_basename = os.path.splitext(
                         os.path.basename(self.input_path_list[0])
@@ -1036,21 +1036,23 @@ class Ripper:
                             and _file_basename_list[0].startswith(_input_prefix)
                             and (
                                 len(soft_sub_map_list) == 1
-                                or os.path.splitext(_file_basename_list[0])[1].lstrip(".")
+                                or os.path.splitext(_file_basename_list[0])[1].lstrip(
+                                    "."
+                                )
                                 in soft_sub_map_list[1:]
                             )
                         ):
-                            sotf_sub_list.append(
+                            soft_sub_list.append(
                                 os.path.join(self.output_dir, _file_basename)
                             )
                 else:
-                    sotf_sub_list = soft_sub.split("?")
+                    soft_sub_list = soft_sub.split("?")
 
                 # 子集化
                 subset_folder = Path(self.output_dir) / f"subset_temp_{temp_name}"
-                log.info(f"{sotf_sub_list=:}")
+                log.info("-soft-sub list = {}", soft_sub_list)
                 if Ripper(
-                    sotf_sub_list,
+                    soft_sub_list,
                     (subset_folder.name,),
                     self.output_dir,
                     Ripper.PresetName.subset,
@@ -1064,12 +1066,12 @@ class Ripper:
                     os.rename(org_full_name, new_full_name)
 
                     _mux_cmd = (
-                        f'mkvmerge -o "{org_full_name}" "{new_full_name}" '
+                        f'mkvmerge -o "{org_full_name}" --no-global-tags --no-track-tags "{new_full_name}" '
                         + " ".join(
                             (
-                                f'{"" if len(affixes := f.stem.rsplit(".", maxsplit=1)) == 1 else f"--language 0:{affixes[1]} " if f.suffix == ".ass" else "--attach-file "}"{f.absolute()}"'
-                                for f in subset_folder.iterdir()
-                                if f.suffix in {".ass", ".otf", ".ttf"}
+                                f'{"" if len(affixes := _file.stem.rsplit(".", maxsplit=1)) == 1 else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} " if _file.suffix == ".ass" else "--attach-file "}"{_file.absolute()}"'
+                                for _file in subset_folder.iterdir()
+                                if _file.suffix in {".ass", ".otf", ".ttf"}
                             )
                         )
                     )

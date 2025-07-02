@@ -26,13 +26,13 @@ class TestBasic(unittest.TestCase):
         self.assertFalse(easyrip.check_ver("1.2", "1.2.1"))
         self.assertFalse(easyrip.check_ver("1.2+2", "1.2.1"))
         self.assertFalse(
-            easyrip.check_ver("2.9.4+4", easyrip.GlobalVal.PROJECT_VERSION)
+            easyrip.check_ver("2.9.4+4", easyrip.Global_val.PROJECT_VERSION)
         )
 
     def test_log(self):
         self.assertEqual(gettext(""), "")
         self.assertEqual(gettext("{}"), "{}")
-        gettext(easyrip.GlobalLangVal.ExtraTextIndex.HELP_DOC, is_format=False)
+        gettext(easyrip.Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
 
         html_log_file = log.html_log_file
         easyrip.init(True)

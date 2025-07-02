@@ -36,9 +36,43 @@ class Region(enum.Enum):
     CN = ("CN", "China")
 
 
-class GlobalLangVal:
-    class ExtraTextIndex(enum.Enum):
+class Global_lang_val:
+    class Extra_text_index(enum.Enum):
         HELP_DOC = enum.auto()
         NEW_VER_TIP = enum.auto()
 
     gettext_target_lang: tuple[Language, Region] = (Language.Unknow, Region.Unknow)
+
+    language_tag__local_str: dict[str, str] = {
+        # 语言代码
+        "zh": "中文",
+        "en": "English",
+        "ja": "日本語",
+        "ko": "한국어",  # 韩文
+        "fr": "Français",  # 法文
+        "de": "Deutsch",  # 德文
+        "es": "Español",  # 西班牙文
+        "ru": "Русский",  # 俄文
+        "ar": "العربية",  # 阿拉伯文
+        "yue": "粵語",
+        # 文字变体
+        "Hans": "简体",  # 简体中文
+        "Hant": "繁體",  # 繁体中文
+        # 地区
+        "CN": "中国大陆",
+        "HK": "香港",
+        "TW": "台灣",
+        "US": "United States",
+        "JP": "日本",
+        "GB": "United Kingdom",
+        # 方言 / 变体
+        "cmn": "普通话",
+        "wuu": "吴语",
+    }
+
+    @staticmethod
+    def language_tag_to_local_str(language_tag: str) -> str:
+        return "-".join(
+            Global_lang_val.language_tag__local_str.get(s, s)
+            for s in language_tag.split("-")
+        )
