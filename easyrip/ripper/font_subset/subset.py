@@ -107,7 +107,9 @@ def subset(
                     tag_bold: str | None = None
                     tag_italic: str | None = None
 
-                    for tag, value in re.findall(r"\\(fn@|fn|b|i)([^\\}]*)", text):
+                    for tag, value in re.findall(
+                        r"\\\s*(fn@|fn|b(?![a-zA-Z])|i(?![a-zA-Z]))([^\\}]+)", text
+                    ):
                         match tag:
                             case "fn@" | "fn":
                                 tag_fn = value
@@ -143,6 +145,14 @@ def subset(
                                 new_bold = False
                             case "1":
                                 new_bold = True
+                            case _:
+                                log.error(
+                                    "Undefined behavior: {} in line {} in file {}",
+                                    "\\b",
+                                    event.Text,
+                                    _ass_path,
+                                )
+                                return_res = not strict
 
                     if tag_italic is not None:
                         match tag_italic.strip():
@@ -152,6 +162,14 @@ def subset(
                                 new_italic = False
                             case "1":
                                 new_italic = True
+                            case _:
+                                log.error(
+                                    "Undefined behavior: {} in line {} in file {}",
+                                    "\\i",
+                                    event.Text,
+                                    _ass_path,
+                                )
+                                return_res = not strict
 
                     current_font_sign = (
                         new_fontname,
