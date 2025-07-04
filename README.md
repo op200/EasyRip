@@ -65,6 +65,6 @@ Run `easyrip`, input `help` to get help doc
 
 ### Supported languages
 * en
-* zh-Hans-CN
+* zh-CN
 
 If you want to add or modify translation, edit the `easyrip/easyrip_mlang`

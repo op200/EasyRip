@@ -291,12 +291,10 @@ def subset(
             font__subset_str[_font] = val
 
         # 映射日志
-        mapping_res: str
+        mapping_res: str = ""
 
         if key[0] == _k[0]:
-            if key[1] == _k[1]:
-                mapping_res = ""
-            else:
+            if key[1] != _k[1]:
                 mapping_res = f"( _ / {_k[1].name} )"
         else:
             mapping_res = f"( {_k[0]} / {'_' if key[1] == _k[1] else _k[1].name} )"
@@ -305,9 +303,9 @@ def subset(
             mapping_res = " -> " + mapping_res
 
         log.info(
-            "Auto mapping: {}",
+            "Font family auto mapping: {}",
             f"( {key[0]} / {key[1].name} ){mapping_res}",
-            deep=strict,
+            deep=(strict and bool(mapping_res)),
         )
 
     # 子集化字体

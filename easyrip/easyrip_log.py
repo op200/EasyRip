@@ -93,9 +93,9 @@ class log:
         only_print = enum.auto()
         only_write = enum.auto()
 
-    html_log_file: str = "encoding_log.html"  # 在调用前覆写
-    log_print_level: LogLevel = LogLevel.send
-    log_write_level: LogLevel = LogLevel.send
+    html_filename: str = "encoding_log.html"  # 在调用前覆写
+    print_level: LogLevel = LogLevel.send
+    write_level: LogLevel = LogLevel.send
 
     default_foreground_color: int = 39
     default_background_color: int = 49
@@ -122,7 +122,9 @@ class log:
     ):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
-            message if type(message) is Global_lang_val.Extra_text_index else str(message),
+            message
+            if type(message) is Global_lang_val.Extra_text_index
+            else str(message),
             *vals,
             is_format=kwargs.get("is_format", True),
         )
@@ -138,7 +140,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_write
-                    and log.log_print_level.value <= log.LogLevel.info.value
+                    and log.print_level.value <= log.LogLevel.info.value
                 ):
                     print(
                         f"{time_str}\033[{log.info_color}m [INFO] {message}\033[{log.default_foreground_color}m"
@@ -146,7 +148,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_print
-                    and log.log_write_level.value <= log.LogLevel.info.value
+                    and log.write_level.value <= log.LogLevel.info.value
                 ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
@@ -159,7 +161,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_write
-                    and log.log_print_level.value <= log.LogLevel.warning.value
+                    and log.print_level.value <= log.LogLevel.warning.value
                 ):
                     print(
                         f"{time_str}\033[{log.warning_color}m [WARNING] {message}\033[{log.default_foreground_color}m",
@@ -168,7 +170,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_print
-                    and log.log_write_level.value <= log.LogLevel.warning.value
+                    and log.write_level.value <= log.LogLevel.warning.value
                 ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
@@ -181,7 +183,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_write
-                    and log.log_print_level.value <= log.LogLevel.error.value
+                    and log.print_level.value <= log.LogLevel.error.value
                 ):
                     print(
                         f"{time_str}\033[{log.error_color}m [ERROR] {message}\033[{log.default_foreground_color}m",
@@ -190,7 +192,7 @@ class log:
 
                 if (
                     mode != log.LogMode.only_print
-                    and log.log_write_level.value <= log.LogLevel.error.value
+                    and log.write_level.value <= log.LogLevel.error.value
                 ):
                     log.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
@@ -207,12 +209,12 @@ class log:
                 ):
                     http_send_header = kwargs.get("http_send_header", "")
 
-                    if log.log_print_level.value <= log.LogLevel.send.value:
+                    if log.print_level.value <= log.LogLevel.send.value:
                         print(
                             f"{time_str}\033[{log.send_color}m [Send] {message}\033[{log.default_foreground_color}m"
                         )
 
-                    if log.log_write_level.value <= log.LogLevel.send.value:
+                    if log.write_level.value <= log.LogLevel.send.value:
                         log.write_html_log(
                             f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
@@ -220,7 +222,7 @@ class log:
                     Event.append_http_server_log_queue(
                         (http_send_header, "Send", message)
                     )
-                elif log.log_print_level.value <= log.LogLevel.send.value:
+                elif log.print_level.value <= log.LogLevel.send.value:
                     print(
                         f"\033[{log.send_color}m{message}\033[{log.default_foreground_color}m"
                     )
@@ -303,10 +305,10 @@ class log:
     @staticmethod
     def write_html_log(message: str):
         try:
-            with open(log.html_log_file, "at", encoding="utf-8") as f:
+            with open(log.html_filename, "at", encoding="utf-8") as f:
                 f.write(message)
         except Exception as e:
-            _level = log.log_write_level
-            log.log_write_level = log.LogLevel.none
+            _level = log.write_level
+            log.write_level = log.LogLevel.none
             log.error(f"{repr(e)} {e}", deep=True)
-            log.log_write_level = _level
+            log.write_level = _level

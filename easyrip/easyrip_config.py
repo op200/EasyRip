@@ -169,7 +169,9 @@ class config:
     def _get_config_about(key: str) -> str:
         return (
             {
-                "language": gettext("Easy Rip's language, support: {}", "en, zh"),
+                "language": gettext(
+                    "Easy Rip's language, support: {}", "auto, en, zh-CN"
+                ),
                 "check_update": gettext("Auto check the update of Easy Rip"),
                 "check_dependent": gettext(
                     "Auto check the versions of all dependent programs"
@@ -182,11 +184,11 @@ class config:
                 ),
                 "log_print_level": gettext(
                     "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}",
-                    "none error warning info send",
+                    "none, error, warning, info, send",
                 ),
                 "log_write_level": gettext(
                     "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}",
-                    "none error warning info send",
+                    "none, error, warning, info, send",
                 ),
             }
             | (config._config or dict())

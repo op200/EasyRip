@@ -140,7 +140,7 @@ class Ripper:
         output_prefix: Iterable[str | None],
         output_dir: str | None,
         option: Option | PresetName,
-        option_map: dict,
+        option_map: dict[str, str],
     ):
         self.input_path_list = [Path(path) for path in input_path]
 
@@ -150,8 +150,19 @@ class Ripper:
             path[0] or (path[1] or self.input_path_list[-1]).stem
             for path in zip_longest(output_prefix, self.input_path_list, fillvalue=None)
         ]
+
         self.output_dir = output_dir or os.path.realpath(os.getcwd())
+
         self.option_map = option_map.copy()
+
+        # 内封字幕时强制修改 muxer
+        if (
+            self.option_map.get("soft-sub") or self.option_map.get("only-mux-sub-path")
+        ) and self.option_map.get("muxer") != "mkv":
+            self.option_map["muxer"] = "mkv"
+            log.info(
+                "The muxer must be 'mkv' when mux subtitle and font. Auto modified"
+            )
 
         if isinstance(option, Ripper.PresetName):
             self.preset_name = option
@@ -161,10 +172,6 @@ class Ripper:
             self.option = option
 
         self._progress = {}
-
-        # 内封字幕时强制改为 MKV
-        if self.option_map.get("soft-sub"):
-            self.option_map["muxer"] = "mkv"
 
     def __str__(self):
         return (
@@ -242,14 +249,51 @@ class Ripper:
                     )
 
                 case Ripper.Muxer.mkv:
+                    if (
+                        only_mux_sub_path := self.option_map.get("only-mux-sub-path")
+                    ) is not None:
+                        only_mux_sub_path = Path(only_mux_sub_path)
+                        if not only_mux_sub_path.is_dir():
+                            log.error("It is not a dir: {}", only_mux_sub_path)
+                            only_mux_sub_path = None
+
                     muxer_format_str = (
-                        r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" --no-global-tags --no-track-tags '
+                        r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
                         + (
                             f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1"
                             if force_fps
                             else ""
                         )
-                        + r' --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
+                        + (
+                            " ".join(
+                                (
+                                    ""
+                                    if len(
+                                        affixes := _file.stem.rsplit(".", maxsplit=1)
+                                    )
+                                    == 1
+                                    else "--attach-file "
+                                    if _file.suffix in {".otf", ".ttf", ".ttc"}
+                                    else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} "
+                                )
+                                + f'"{_file.absolute()}"'
+                                for _file in only_mux_sub_path.iterdir()
+                                if _file.suffix
+                                in {
+                                    ".srt",
+                                    ".ass",
+                                    ".ssa",
+                                    ".sup",
+                                    ".idx",
+                                    ".otf",
+                                    ".ttf",
+                                    ".ttc",
+                                }
+                            )
+                            if only_mux_sub_path
+                            else ""
+                        )
+                        + r' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
                     )
 
         else:
@@ -886,7 +930,7 @@ class Ripper:
         else:
             match self.option.muxer:
                 case Ripper.Muxer.mp4:
-                    if self.option_map.get("no-auto-infix", "0") != "0":
+                    if self.option_map.get("auto-infix", "1") == "0":
                         suffix = ".mp4"
                     else:
                         suffix = ".va.mp4" if self.option.audio_encoder else ".v.mp4"
@@ -898,7 +942,7 @@ class Ripper:
                     )
 
                 case Ripper.Muxer.mkv:
-                    if self.option_map.get("no-auto-infix", "0") != "0":
+                    if self.option_map.get("auto-infix", "1") == "0":
                         suffix = ".mkv"
                     else:
                         suffix = ".va.mkv" if self.option.audio_encoder else ".v.mkv"
@@ -910,7 +954,7 @@ class Ripper:
                     )
 
                 case _:
-                    if self.option_map.get("no-auto-infix", "0") != "0":
+                    if self.option_map.get("auto-infix", "1") == "0":
                         suffix = ".mkv"
                     else:
                         suffix = ".va.mkv" if self.option.audio_encoder else ".v.mkv"
@@ -925,7 +969,7 @@ class Ripper:
         # 执行
         output_filename = basename + suffix
         run_start_time = datetime.now()
-        run_sign = f"{f' Sub Ripeer {sub_ripper_num}' if (sub_ripper_num := self.option_map.get('sub-ripper')) else ' Ripper'}"
+        run_sign = f"{f' Sub Ripper {sub_ripper_num}' if (sub_ripper_num := self.option_map.get('sub-ripper')) else ' Ripper'}"
         log.write_html_log(
             f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 1rem;">'
             f'<span style="color:green;">{run_start_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:aqua;">{gettext("Start")}{run_sign}</span><br>'
@@ -974,7 +1018,7 @@ class Ripper:
 
                 _mux_temp_name: str
                 _mux_cmd: str
-                _mux_muxer: str | None = None
+                _mux_muxer: str = ""
                 match self.option.muxer:
                     case Ripper.Muxer.mp4:
                         _mux_temp_name = f"{temp_name}_{get_base62_time()}.mp4"
@@ -1000,12 +1044,18 @@ class Ripper:
                         self.output_dir,
                         Ripper.PresetName.copy,
                         {
-                            "sub-ripper": int(self.option_map.get("sub-ripper", 0)) + 1,
-                            "no-auto-infix": "1",
-                            "c:a": "copy",
-                            "muxer": _mux_muxer,
-                            "r": self.option_map.get("r"),
-                            "fps": self.option_map.get("fps"),
+                            k: v
+                            for k, v in {
+                                "sub-ripper": str(
+                                    int(self.option_map.get("sub-ripper", 0)) + 1
+                                ),
+                                "auto-infix": "0",
+                                "c:a": "copy",
+                                "muxer": _mux_muxer,
+                                "r": self.option_map.get("r"),
+                                "fps": self.option_map.get("fps"),
+                            }.items()
+                            if v
                         },
                     )
                     mux_ripper.run()
@@ -1065,20 +1115,27 @@ class Ripper:
                     )
                     os.rename(org_full_name, new_full_name)
 
-                    _mux_cmd = (
-                        f'mkvmerge -o "{org_full_name}" --no-global-tags --no-track-tags "{new_full_name}" '
-                        + " ".join(
-                            (
-                                f'{"" if len(affixes := _file.stem.rsplit(".", maxsplit=1)) == 1 else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} " if _file.suffix == ".ass" else "--attach-file "}"{_file.absolute()}"'
-                                for _file in subset_folder.iterdir()
-                                if _file.suffix in {".ass", ".otf", ".ttf"}
-                            )
-                        )
-                    )
-                    log.info(_mux_cmd)
-                    if os.system(_mux_cmd):
-                        log.error("There have error in running")
-                    else:
+                    if Ripper(
+                        [new_full_name],
+                        [os.path.splitext(org_full_name)[0]],
+                        self.output_dir,
+                        Ripper.PresetName.copy,
+                        {
+                            k: v
+                            for k, v in {
+                                "only-mux-sub-path": str(subset_folder),
+                                "sub-ripper": str(
+                                    int(self.option_map.get("sub-ripper", 0)) + 1
+                                ),
+                                "auto-infix": "0",
+                                "c:a": "copy",
+                                "muxer": "mkv",
+                                "r": self.option_map.get("r"),
+                                "fps": self.option_map.get("fps"),
+                            }.items()
+                            if v
+                        },
+                    ).run():
                         if os.path.exists(new_full_name):
                             os.remove(new_full_name)
                 else:

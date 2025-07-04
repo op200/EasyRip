@@ -108,6 +108,12 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "    多个输入时允许有迭代器和时间格式化:\n"
         '      e.g. "name--?{start=6,padding=4,increment=2}--?{time:%Y.%m.%S}"\n'
         "\n"
+        "  -auto-infix <0 | 1>\n"
+        "    If enable, output file name will have auto infix:\n"
+        "      no audio: '.v'\n"
+        "      with audio: '.va'\n"
+        "    Default: 1\n"
+        "\n"
         "  -o:dir <string>\n"
         "    输出文件的目标目录\n"
         "\n"
@@ -142,6 +148,10 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "    如果使用'auto'，相同前缀的字幕文件将作为输入\n"
         "    'auto:...'可以只选择指定中缀，例如'auto:zh-Hans:zh-Hant'\n"
         "\n"
+        "  -only-mux-sub-path <string>\n"
+        "    All subtitles and fonts in this path will be muxed\n"
+        "\n"
+        "  -soft-sub <string[?string...] | 'auto' | 'auto:...'>\n"
         "  -soft-sub <string[?string...] | 'auto' | 'auto:...'>\n"
         "    往 MKV 中封装子集化字幕\n"
         "\n"
@@ -306,6 +316,6 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Program startup directory, when the value is empty, starts in the working directory": "程序启动目录，值为空时在工作目录启动",
     "Force change of log file path, when the value is empty, it is the working directory": "强制更改日志文件所在路径，值为空时为工作目录",
     "Do not write to log file": "不写入日志文件",
-    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}": "高于此等级的日志会被打印到控制台，若值为 'none' 则不打印，支持: {}",
-    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "高于此等级的日志会被写入，若值为 'none' 则不写入，支持: {}",
+    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}": "此等级及以上的日志会打印到控制台，若值为 'none' 则不打印，支持: {}",
+    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "此等级及以上的日志会写入日志文件，若值为 'none' 则不写入，支持: {}",
 }

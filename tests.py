@@ -34,9 +34,9 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(gettext("{}"), "{}")
         gettext(easyrip.Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
 
-        html_log_file = log.html_log_file
+        html_log_file = log.html_filename
         easyrip.init(True)
-        self.assertEqual(log.html_log_file, gettext(html_log_file))
+        self.assertEqual(log.html_filename, gettext(html_log_file))
 
         log.send("", "msg")
         log.send("", "{}, {}", 1, 2)

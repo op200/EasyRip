@@ -1,7 +1,7 @@
 import ctypes
 
 from . import lang_en
-from . import lang_zh_Hans_CN
+from . import lang_zh_CN
 from . import global_lang_val
 
 Language, Region, Global_lang_val = (
@@ -38,7 +38,7 @@ def get_system_language():
         0x16: Language.ru,  # 俄语
     }
 
-    # 次要语言代码映射（以英语为例）
+    # 次要语言代码映射
     sub_lang_map = {
         0x01: Region.US,  # 美国
         0x02: Region.UK,  # 英国
@@ -72,7 +72,7 @@ def gettext(org_text: str | Extra_text_index, *vals, is_format: bool = True):
 
     match Global_lang_val.gettext_target_lang[0]:
         case Language.zh:
-            new_text = lang_zh_Hans_CN.lang_map.get(org_text)
+            new_text = lang_zh_CN.lang_map.get(org_text)
 
     new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 

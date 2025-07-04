@@ -781,16 +781,16 @@ def init(is_first_run: bool = False):
         )
 
     # 设置日志文件路径名
-    log.html_log_file = gettext("encoding_log.html")
+    log.html_filename = gettext("encoding_log.html")
     if _path := str(config.get_user_profile("force_log_file_path") or ""):
-        log.html_log_file = os.path.join(_path, log.html_log_file)
+        log.html_filename = os.path.join(_path, log.html_filename)
 
     # 设置日志级别
     try:
-        log.log_print_level = getattr(
+        log.print_level = getattr(
             log.LogLevel, str(config.get_user_profile("log_print_level"))
         )
-        log.log_write_level = getattr(
+        log.write_level = getattr(
             log.LogLevel, str(config.get_user_profile("log_write_level"))
         )
     except Exception as e:
