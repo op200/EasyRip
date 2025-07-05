@@ -540,77 +540,77 @@ class Ass:
         )
         return "\n\n".join(generator)
 
+    @staticmethod
+    def parse_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
+        if not use_libass_spec:
+            # 模式1: 不处理转义字符
+            result: list[tuple[bool, str]] = []
+            current = []  # 当前累积的字符
+            in_tag = False  # 是否在标签内
 
-def parse_ass_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
-    if not use_libass_spec:
-        # 模式1: 不处理转义字符
-        result: list[tuple[bool, str]] = []
-        current = []  # 当前累积的字符
-        in_tag = False  # 是否在标签内
-
-        for char in text:
-            if in_tag is False:
-                if char == "{":
-                    # 开始新标签，先保存当前累积的普通文本
-                    if current:
-                        result.append((False, "".join(current)))
+            for char in text:
+                if in_tag is False:
+                    if char == "{":
+                        # 开始新标签，先保存当前累积的普通文本
+                        if current:
+                            result.append((False, "".join(current)))
+                            current = []
+                        current.append(char)
+                        in_tag = True
+                    else:
+                        current.append(char)  # 普通文本
+                else:
+                    current.append(char)  # 标签内容
+                    if char == "}":
+                        # 标签结束
+                        result.append((True, "".join(current)))
                         current = []
+                        in_tag = False
+
+            # 处理剩余部分
+            if current:
+                result.append((False, "".join(current)))
+            return result
+
+        else:
+            # 模式2: 处理转义字符（libass规范）
+            result = []
+            current = []  # 当前累积的字符
+            in_tag = False  # 是否在标签内
+            escape_next = False  # 下一个字符是否转义
+
+            for char in text:
+                if escape_next:
+                    # 处理转义字符（任何字符直接作为普通字符）
                     current.append(char)
-                    in_tag = True
-                else:
-                    current.append(char)  # 普通文本
-            else:
-                current.append(char)  # 标签内容
-                if char == "}":
-                    # 标签结束
-                    result.append((True, "".join(current)))
-                    current = []
-                    in_tag = False
-
-        # 处理剩余部分
-        if current:
-            result.append((False, "".join(current)))
-        return result
-
-    else:
-        # 模式2: 处理转义字符（libass规范）
-        result = []
-        current = []  # 当前累积的字符
-        in_tag = False  # 是否在标签内
-        escape_next = False  # 下一个字符是否转义
-
-        for char in text:
-            if escape_next:
-                # 处理转义字符（任何字符直接作为普通字符）
-                current.append(char)
-                escape_next = False
-            elif char == "\\":
-                # 标记下一个字符为转义
-                current.append(char)
-                escape_next = True
-            elif char == "{":
-                if not in_tag:
-                    # 开始新标签（非转义的{）
-                    if current:
-                        result.append((False, "".join(current)))
+                    escape_next = False
+                elif char == "\\":
+                    # 标记下一个字符为转义
+                    current.append(char)
+                    escape_next = True
+                elif char == "{":
+                    if not in_tag:
+                        # 开始新标签（非转义的{）
+                        if current:
+                            result.append((False, "".join(current)))
+                            current = []
+                        current.append(char)
+                        in_tag = True
+                    else:
+                        current.append(char)  # 标签内的{
+                elif char == "}":
+                    if in_tag:
+                        # 非转义的}结束标签
+                        current.append(char)
+                        result.append((True, "".join(current)))
                         current = []
-                    current.append(char)
-                    in_tag = True
+                        in_tag = False
+                    else:
+                        current.append(char)  # 普通文本的}
                 else:
-                    current.append(char)  # 标签内的{
-            elif char == "}":
-                if in_tag:
-                    # 非转义的}结束标签
-                    current.append(char)
-                    result.append((True, "".join(current)))
-                    current = []
-                    in_tag = False
-                else:
-                    current.append(char)  # 普通文本的}
-            else:
-                current.append(char)  # 普通字符
+                    current.append(char)  # 普通字符
 
-        # 处理剩余部分
-        if current:
-            result.append((False, "".join(current)))
-        return result
+            # 处理剩余部分
+            if current:
+                result.append((False, "".join(current)))
+            return result

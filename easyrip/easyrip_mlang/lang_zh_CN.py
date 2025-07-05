@@ -152,7 +152,6 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "    All subtitles and fonts in this path will be muxed\n"
         "\n"
         "  -soft-sub <string[?string...] | 'auto' | 'auto:...'>\n"
-        "  -soft-sub <string[?string...] | 'auto' | 'auto:...'>\n"
         "    往 MKV 中封装子集化字幕\n"
         "\n"
         "  -subset-font-dir <string[?string...]>\n"

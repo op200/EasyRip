@@ -4,7 +4,7 @@ from typing import Iterable
 
 from ...global_val import Global_val
 from ...easyrip_log import log
-from .ass import Ass, Script_info_data, parse_ass_text
+from .ass import Ass, Script_info_data
 from .font import Font_type, Font, load_fonts, subset_font, get_font_path_from_registry
 from ..utils import UTF8_BOM, get_base62_time
 
@@ -101,7 +101,7 @@ def subset(
             new_text = ""
             # 解析 Text
             current_font_sign: tuple[str, Font_type] = default_font_sign
-            for is_tag, text in parse_ass_text(event.Text, use_libass_spec):
+            for is_tag, text in Ass.parse_text(event.Text, use_libass_spec):
                 if is_tag:
                     tag_fn: str | None = None
                     tag_bold: str | None = None

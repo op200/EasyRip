@@ -243,9 +243,9 @@ class Ripper:
             match muxer:
                 case Ripper.Muxer.mp4:
                     muxer_format_str = (
-                        r' && mp4box -add "{output}" -new "{output}" && mp4fpsmod '
+                        ' && mp4box -add "{output}" -new "{output}" && mp4fpsmod '
                         + (f"-r 0:{force_fps}" if force_fps else "")
-                        + r' -i "{output}"'
+                        + ' -i "{output}"'
                     )
 
                 case Ripper.Muxer.mkv:
@@ -258,7 +258,7 @@ class Ripper:
                             only_mux_sub_path = None
 
                     muxer_format_str = (
-                        r' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
+                        ' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
                         + (
                             f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1"
                             if force_fps
@@ -293,7 +293,7 @@ class Ripper:
                             if only_mux_sub_path
                             else ""
                         )
-                        + r' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
+                        + ' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
                     )
 
         else:
@@ -357,8 +357,7 @@ class Ripper:
                         encoder_format_str.replace("\\34/", '"')
                         .replace("\\39/", "'")
                         .format_map(
-                            self.option_map
-                            | {"input": r"{input}", "output": r"{output}"}
+                            self.option_map | {"input": "{input}", "output": "{output}"}
                         )
                     )
 
