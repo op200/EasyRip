@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
 import enum
 from pathlib import Path
+import re
 
 from ...easyrip_log import log
-from ..utils import read_text
+from ..utils import read_text, uuencode_ssa, uudecode_ssa
 
 
 class Style_fmt_it(enum.Enum):
@@ -111,7 +112,7 @@ DEFAULT_STYLE_FMT_ORDER = (
 
 
 @dataclass
-class Style:
+class Styles:
     fmt_order: tuple[
         Style_fmt_it,
         Style_fmt_it,
@@ -245,7 +246,18 @@ class Style:
                 f"Format: {', '.join(f.value for f in self.fmt_order)}",
                 *(
                     "Style: "
-                    + ",".join((str(getattr(style, k.value)) for k in self.fmt_order))
+                    + ",".join(
+                        (
+                            str(
+                                v
+                                if type(v := getattr(style, k.value)) is not float
+                                else int(v)
+                                if v == int(v)
+                                else v
+                            )
+                            for k in self.fmt_order
+                        )
+                    )
                     for style in self.data
                 ),
             )
@@ -285,6 +297,81 @@ class Event_data:
     Effect: str
     Text: str
 
+    @staticmethod
+    def parse_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
+        if not use_libass_spec:
+            # 模式1: 不处理转义字符
+            result: list[tuple[bool, str]] = []
+            current = []  # 当前累积的字符
+            in_tag = False  # 是否在标签内
+
+            for char in text:
+                if in_tag is False:
+                    if char == "{":
+                        # 开始新标签，先保存当前累积的普通文本
+                        if current:
+                            result.append((False, "".join(current)))
+                            current = []
+                        current.append(char)
+                        in_tag = True
+                    else:
+                        current.append(char)  # 普通文本
+                else:
+                    current.append(char)  # 标签内容
+                    if char == "}":
+                        # 标签结束
+                        result.append((True, "".join(current)))
+                        current = []
+                        in_tag = False
+
+            # 处理剩余部分
+            if current:
+                result.append((False, "".join(current)))
+            return result
+
+        else:
+            # 模式2: 处理转义字符（libass规范）
+            result = []
+            current = []  # 当前累积的字符
+            in_tag = False  # 是否在标签内
+            escape_next = False  # 下一个字符是否转义
+
+            for char in text:
+                if escape_next:
+                    # 处理转义字符（任何字符直接作为普通字符）
+                    current.append(char)
+                    escape_next = False
+                elif char == "\\":
+                    # 标记下一个字符为转义
+                    current.append(char)
+                    escape_next = True
+                elif char == "{":
+                    if not in_tag:
+                        # 开始新标签（非转义的{）
+                        if current:
+                            result.append((False, "".join(current)))
+                            current = []
+                        current.append(char)
+                        in_tag = True
+                    else:
+                        current.append(char)  # 标签内的{
+                elif char == "}":
+                    if in_tag:
+                        # 非转义的}结束标签
+                        current.append(char)
+                        result.append((True, "".join(current)))
+                        current = []
+                        in_tag = False
+                    else:
+                        current.append(char)  # 普通文本的}
+                else:
+                    current.append(char)  # 普通字符
+
+            # 处理剩余部分
+            if current:
+                result.append((False, "".join(current)))
+            return result
+
 
 DEFAULT_EVENT_FMT_ORDER = (
     Event_fmt_it.Layer,
@@ -301,7 +388,7 @@ DEFAULT_EVENT_FMT_ORDER = (
 
 
 @dataclass
-class Event:
+class Events:
     fmt_order: tuple[
         Event_fmt_it,
         Event_fmt_it,
@@ -392,6 +479,76 @@ class Event:
         )
 
 
+class Attach_type(enum.Enum):
+    Fonts = "Fonts"
+    Graphics = "Graphics"
+
+
+@dataclass
+class Attachment_data:
+    type: Attach_type
+    name: str
+    org_data: bytes | None = None
+    data: str | None = None
+
+    def data_to_bytes(self) -> bytes:
+        """返回 org_data, 若无 org_data 则从 data 生成"""
+        if self.org_data is None:
+            if self.data is None:
+                raise Exception()
+            self.org_data = uudecode_ssa(self.data)
+
+        return self.org_data
+
+    def data_to_str(self) -> str:
+        """返回 data, 若无 data 则从 org_data 生成"""
+        if self.data is None:
+            if self.org_data is None:
+                raise Exception()
+            self.data = uuencode_ssa(self.org_data)
+
+        return self.data
+
+    def set_data(self, new_data: str | bytes) -> None:
+        """输入 str 判定为 ASS 附件格式的 data, 输入 bytes 判定为原始数据 org_data"""
+        if isinstance(new_data, str):
+            self.data = new_data
+        else:
+            self.org_data = new_data
+
+
+@dataclass
+class Attachments:
+    data: list[Attachment_data] = field(default_factory=list)
+
+    def to_ass_str(
+        self,
+        drop_fonts: bool = False,
+        drop_graphics: bool = False,
+    ) -> str:
+        res = ""
+        previous_type: Attach_type | None = None
+
+        for data in self.data:
+            if (drop_fonts and data.type == Attach_type.Fonts) or (
+                drop_graphics and data.type == Attach_type.Graphics
+            ):
+                continue
+
+            if data.type != previous_type:
+                res += f"\n[{data.type.name}]\n"
+                previous_type = data.type
+
+            res += (
+                f"{'fontname' if data.type == Attach_type.Fonts else 'filename'}: {data.name}\n{data.data_to_str()}".rstrip(
+                    "\n"
+                )
+                + "\n"
+            )
+
+        return res[1:] if len(res) else ""  # 去除头部的 \n
+
+
 @dataclass
 class Unknow_data:
     head: str
@@ -400,7 +557,7 @@ class Unknow_data:
     def to_ass_str(self) -> str:
         return "\n".join(
             (
-                self.head,
+                f"[{self.head}]",
                 *(text for text in self.data),
             )
         )
@@ -417,14 +574,17 @@ class Ass:
             log.error("Not a file: {}", path)
 
         self.script_info: Script_info = Script_info()
-        self.style: Style = Style()
-        self.event: Event = Event()
+        self.styles: Styles = Styles()
+        self.attachments: Attachments = Attachments()
+        self.events: Events = Events()
         self.unknow_data: list[Unknow_data] = []
 
         class State(enum.Enum):
             unknow = enum.auto()
             script_info = enum.auto()
             styles = enum.auto()
+            fonts = enum.auto()
+            graphics = enum.auto()
             events = enum.auto()
 
         state: State = State.unknow
@@ -439,17 +599,23 @@ class Ass:
             if line.startswith("[") and line.endswith("]"):
                 if new_unknow_data is not None:
                     self.unknow_data.append(new_unknow_data)
+                    new_unknow_data = None
 
                 match head := line[1:-1]:
                     case "Script Info":
                         state = State.script_info
                     case "V4+ Styles":
                         state = State.styles
+                    case "Fonts":
+                        state = State.fonts
+                    case "Graphics":
+                        state = State.graphics
                     case "Events":
                         state = State.events
                     case _:
-                        state = State.unknow
-                        new_unknow_data = Unknow_data(head)
+                        if bool(re.search(r"[a-z]", head)):
+                            state = State.unknow
+                            new_unknow_data = Unknow_data(head)
 
             elif line.startswith("Format:"):
                 formats_generator = (v.strip() for v in line[7:].split(","))
@@ -459,14 +625,14 @@ class Ass:
                         if len(format_order) != 23:
                             raise Ass_generation_failed("Style Format len != 23")
 
-                        self.style.fmt_order = format_order
+                        self.styles.fmt_order = format_order
 
                     case State.events:
                         format_order = tuple(Event_fmt_it(v) for v in formats_generator)
                         if len(format_order) != 10:
                             raise Ass_generation_failed("Event Format != 10")
 
-                        self.event.fmt_order = format_order
+                        self.events.fmt_order = format_order
 
             else:
                 match state:
@@ -485,7 +651,37 @@ class Ass:
                             )
                             continue
 
-                        self.style.data.append(self.style.new_data(style_tuple))
+                        self.styles.data.append(self.styles.new_data(style_tuple))
+
+                    case State.graphics:
+                        if line.startswith("filename:"):
+                            self.attachments.data.append(
+                                Attachment_data(
+                                    type=Attach_type.Graphics,
+                                    name=line[9:].strip(),
+                                    data="",
+                                )
+                            )
+                        else:
+                            if self.attachments.data[-1].data is None:
+                                log.error("Unknow error", deep=True)
+                                continue
+                            self.attachments.data[-1].data += line + "\n"
+
+                    case State.fonts:
+                        if line.startswith("fontname:"):
+                            self.attachments.data.append(
+                                Attachment_data(
+                                    type=Attach_type.Fonts,
+                                    name=line[9:].strip(),
+                                    data="",
+                                )
+                            )
+                        else:
+                            if self.attachments.data[-1].data is None:
+                                log.error("Unknow error", deep=True)
+                                continue
+                            self.attachments.data[-1].data += line + "\n"
 
                     case State.events:
                         event_type: Event_type
@@ -509,8 +705,8 @@ class Ass:
                             )
                             continue
 
-                        self.event.data.append(
-                            self.event.new_data(event_tuple, event_type)
+                        self.events.data.append(
+                            self.events.new_data(event_tuple, event_type)
                         )
 
                     case State.unknow:
@@ -527,90 +723,22 @@ class Ass:
             self.unknow_data.append(new_unknow_data)
 
     def __str__(
-        self, drop_unrander: bool = False, drop_unkow_data: bool = False
+        self,
+        drop_unrander: bool = False,
+        drop_unkow_data: bool = False,
+        drop_fonts: bool = False,
+        drop_graphics: bool = False,
     ) -> str:
         generator = (
             self.script_info.to_ass_str(),
-            self.style.to_ass_str(),
-            self.event.to_ass_str(drop_unrander),
+            self.styles.to_ass_str(),
+            self.attachments.to_ass_str(
+                drop_fonts=drop_fonts, drop_graphics=drop_graphics
+            ),
+            self.events.to_ass_str(drop_unrander),
             *(
                 data.to_ass_str()
                 for data in (() if drop_unkow_data else self.unknow_data)
             ),
         )
-        return "\n\n".join(generator)
-
-    @staticmethod
-    def parse_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
-        if not use_libass_spec:
-            # 模式1: 不处理转义字符
-            result: list[tuple[bool, str]] = []
-            current = []  # 当前累积的字符
-            in_tag = False  # 是否在标签内
-
-            for char in text:
-                if in_tag is False:
-                    if char == "{":
-                        # 开始新标签，先保存当前累积的普通文本
-                        if current:
-                            result.append((False, "".join(current)))
-                            current = []
-                        current.append(char)
-                        in_tag = True
-                    else:
-                        current.append(char)  # 普通文本
-                else:
-                    current.append(char)  # 标签内容
-                    if char == "}":
-                        # 标签结束
-                        result.append((True, "".join(current)))
-                        current = []
-                        in_tag = False
-
-            # 处理剩余部分
-            if current:
-                result.append((False, "".join(current)))
-            return result
-
-        else:
-            # 模式2: 处理转义字符（libass规范）
-            result = []
-            current = []  # 当前累积的字符
-            in_tag = False  # 是否在标签内
-            escape_next = False  # 下一个字符是否转义
-
-            for char in text:
-                if escape_next:
-                    # 处理转义字符（任何字符直接作为普通字符）
-                    current.append(char)
-                    escape_next = False
-                elif char == "\\":
-                    # 标记下一个字符为转义
-                    current.append(char)
-                    escape_next = True
-                elif char == "{":
-                    if not in_tag:
-                        # 开始新标签（非转义的{）
-                        if current:
-                            result.append((False, "".join(current)))
-                            current = []
-                        current.append(char)
-                        in_tag = True
-                    else:
-                        current.append(char)  # 标签内的{
-                elif char == "}":
-                    if in_tag:
-                        # 非转义的}结束标签
-                        current.append(char)
-                        result.append((True, "".join(current)))
-                        current = []
-                        in_tag = False
-                    else:
-                        current.append(char)  # 普通文本的}
-                else:
-                    current.append(char)  # 普通字符
-
-            # 处理剩余部分
-            if current:
-                result.append((False, "".join(current)))
-            return result
+        return "\n\n".join(v for v in generator if v)

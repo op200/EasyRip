@@ -916,6 +916,7 @@ class Ripper:
                 self.input_path_list,
                 self.option_map.get("subset-font-dir", "").split("?"),
                 Path(self.output_dir) / basename,
+                font_in_sub=self.option_map.get("subset-font-in-sub", "0") == "1",
                 use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
                 use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
                 == "1",
@@ -937,7 +938,10 @@ class Ripper:
                     cmd = " ".join(
                         (self.option.encoder_format_str, self.option.muxer_format_str)
                     ).format_map(
-                        {"input": str(self.input_path_list[0]), "output": temp_name}
+                        {
+                            "input": str(self.input_path_list[0]),
+                            "output": os.path.join(self.output_dir, temp_name),
+                        }
                     )
 
                 case Ripper.Muxer.mkv:
@@ -949,7 +953,10 @@ class Ripper:
                     cmd = " ".join(
                         (self.option.encoder_format_str, self.option.muxer_format_str)
                     ).format_map(
-                        {"input": str(self.input_path_list[0]), "output": temp_name}
+                        {
+                            "input": str(self.input_path_list[0]),
+                            "output": os.path.join(self.output_dir, temp_name),
+                        }
                     )
 
                 case _:
@@ -961,7 +968,10 @@ class Ripper:
                     cmd = self.option.encoder_format_str.format_map(
                         {
                             "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
+                            "output": os.path.join(
+                                self.output_dir,
+                                os.path.join(self.output_dir, temp_name),
+                            ),
                         }
                     )
 
@@ -1127,7 +1137,7 @@ class Ripper:
                                     int(self.option_map.get("sub-ripper", 0)) + 1
                                 ),
                                 "auto-infix": "0",
-                                "c:a": "copy",
+                                "c:a": self.option_map.get("c:a") and "copy",
                                 "muxer": "mkv",
                                 "r": self.option_map.get("r"),
                                 "fps": self.option_map.get("fps"),

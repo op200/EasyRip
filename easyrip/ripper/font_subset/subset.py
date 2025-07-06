@@ -1,12 +1,13 @@
+from io import BytesIO
 from pathlib import Path
 import re
 from typing import Iterable
 
 from ...global_val import Global_val
 from ...easyrip_log import log
-from .ass import Ass, Script_info_data
+from .ass import Ass, Event_data, Script_info_data, Attachment_data, Attach_type
 from .font import Font_type, Font, load_fonts, subset_font, get_font_path_from_registry
-from ..utils import UTF8_BOM, get_base62_time
+from ..utils import get_base62_time
 
 
 def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type:
@@ -21,6 +22,7 @@ def subset(
     font_path_list: Iterable[str | Path],
     output_dir: str | Path = Path("subset"),
     *,
+    font_in_sub: bool = False,
     use_win_font: bool = False,
     use_libass_spec: bool = False,
     drop_unrander: bool = True,
@@ -28,6 +30,9 @@ def subset(
     strict: bool = False,
 ) -> bool:
     return_res: bool = True
+
+    subset_sub_dict: dict[str, tuple[Path, Ass]] = {}
+    subset_font_bytes_and_name_dict: dict[str, list[tuple[str, bytes]]] = {}
 
     output_dir = Path(output_dir)
 
@@ -59,13 +64,14 @@ def subset(
         return family__affix[org_name] + org_name
 
     # 解析 ASS 并生成子字符集
-    font_sign__subset_str: dict[tuple[str, Font_type], str] = {}
+    font_sign__subset_str: dict[tuple[str, Font_type], dict[str, str]] = {}
     for _ass_path in sub_path_list:
-        sub = Ass(_ass_path := Path(_ass_path))
+        path_and_sub = Ass(_ass_path := Path(_ass_path))
+        _ass_path_abs = str(_ass_path.absolute())
 
         # Styles
         style__font_sign: dict[str, tuple[str, Font_type]] = {}
-        for style in sub.style.data:
+        for style in path_and_sub.styles.data:
             # 获取
             style__font_sign[style.Name] = (
                 style.Fontname,
@@ -76,7 +82,7 @@ def subset(
             style.Fontname = get_font_new_name(style.Fontname)
 
         # Events
-        for event in sub.event.data:
+        for event in path_and_sub.events.data:
             default_font_sign: tuple[str, Font_type]
 
             # 获取每行的默认字体
@@ -101,7 +107,7 @@ def subset(
             new_text = ""
             # 解析 Text
             current_font_sign: tuple[str, Font_type] = default_font_sign
-            for is_tag, text in Ass.parse_text(event.Text, use_libass_spec):
+            for is_tag, text in Event_data.parse_text(event.Text, use_libass_spec):
                 if is_tag:
                     tag_fn: str | None = None
                     tag_bold: str | None = None
@@ -178,10 +184,18 @@ def subset(
 
                 else:
                     add_text = re.sub(r"\\[nN]", "", text).replace("\\h", "\u00a0")
-                    if current_font_sign in font_sign__subset_str:
-                        font_sign__subset_str[current_font_sign] += add_text
+
+                    if current_font_sign not in font_sign__subset_str:
+                        font_sign__subset_str[current_font_sign] = {}
+
+                    if _ass_path_abs in font_sign__subset_str[current_font_sign]:
+                        font_sign__subset_str[current_font_sign][_ass_path_abs] += (
+                            add_text
+                        )
                     else:
-                        font_sign__subset_str[current_font_sign] = add_text
+                        font_sign__subset_str[current_font_sign][_ass_path_abs] = (
+                            add_text
+                        )
 
                 # 修改
                 new_text += text
@@ -189,8 +203,8 @@ def subset(
             # 修改
             event.Text = new_text
 
-        # 保存子集化后的字幕
-        sub.script_info.data = [
+        # 修改子集化后的字幕
+        path_and_sub.script_info.data = [
             Script_info_data(
                 raw_str=f"; ---------- Font Subset by {Global_val.PROJECT_TITLE} ----------"
             ),
@@ -203,14 +217,8 @@ def subset(
             Script_info_data(
                 raw_str=f"; ---------- {'Font Subset End':^{len(Global_val.PROJECT_TITLE) + 20}} ----------"
             ),
-        ] + sub.script_info.data
-        with (output_dir / _ass_path.name).open("wb") as f:
-            f.write(UTF8_BOM)
-            f.write(
-                sub.__str__(
-                    drop_unrander=drop_unrander, drop_unkow_data=drop_unkow_data
-                ).encode("utf-8")
-            )
+        ] + path_and_sub.script_info.data
+        subset_sub_dict[_ass_path_abs] = (output_dir / _ass_path.name, path_and_sub)
 
     # 加载 Font
     fonts: list[Font] = []
@@ -224,7 +232,7 @@ def subset(
                 font_sign__font[(family, _font.font_type)] = _font
 
     # 子集化映射
-    font__subset_str: dict[Font, str] = {}
+    font__subset_str: dict[Font, dict[str, str]] = {}
     for key, val in font_sign__subset_str.items():
         if key not in font_sign__font and use_win_font:
             # 从系统获取
@@ -286,7 +294,11 @@ def subset(
             _font = font_sign__font[key]
 
         if _font in font__subset_str:
-            font__subset_str[_font] += val
+            for k, v in val:
+                if k in font__subset_str[_font]:
+                    font__subset_str[_font][k] += v
+                else:
+                    font__subset_str[_font][k] = v
         else:
             font__subset_str[_font] = val
 
@@ -310,24 +322,60 @@ def subset(
 
     # 子集化字体
     for key, val in font__subset_str.items():
-        affix: str
-        new_filename: str
+        _affix: str
+        _basename: str
+        _infix: str
+        _suffix: str
         for family in key.familys:
             if family in family__affix:
-                affix = family__affix[family]
-                new_filename = (
-                    affix
-                    + family
-                    + f".{key.font_type.name}"
-                    + (".otf" if key.font.sfntVersion == "OTTO" else ".ttf")
-                )
+                _affix = family__affix[family]
+                _basename = family
+                _infix = key.font_type.name
+                _suffix = "otf" if key.font.sfntVersion == "OTTO" else "ttf"
                 break
         else:
             log.error("No font name", deep=True)
             return_res = False
             raise Exception()
 
-        new_font = subset_font(key.font, val, affix)
-        new_font.save(output_dir / new_filename)
+        if font_in_sub:
+            for org_path_abs, s in val.items():
+                new_font = subset_font(key.font, s, _affix)
+                with BytesIO() as buffer:
+                    new_font.save(buffer)
+                    if org_path_abs not in subset_font_bytes_and_name_dict:
+                        subset_font_bytes_and_name_dict[org_path_abs] = []
+                    subset_font_bytes_and_name_dict[org_path_abs].append(
+                        (
+                            f"{_affix}{_basename}_{'B' if key.font_type in {Font_type.Bold, Font_type.Bold_Italic} else ''}{'I' if key.font_type in {Font_type.Italic, Font_type.Bold_Italic} else ''}0.{_suffix}",
+                            buffer.getvalue(),
+                        )
+                    )
+        else:
+            new_font = subset_font(key.font, "".join(v for v in val.values()), _affix)
+            new_font.save(output_dir / f"{_affix}{_basename}.{_infix}.{_suffix}")
+
+    # 保存子集化的字幕
+    for org_path_abs_1, path_and_sub in subset_sub_dict.items():
+        if font_in_sub:
+            for (
+                org_path_abs_2,
+                font_bytes_and_name_list,
+            ) in subset_font_bytes_and_name_dict.items():
+                if org_path_abs_1 == org_path_abs_2:
+                    for font_bytes_and_name in font_bytes_and_name_list:
+                        path_and_sub[1].attachments.data.append(
+                            Attachment_data(
+                                type=Attach_type.Fonts,
+                                name=font_bytes_and_name[0],
+                                org_data=font_bytes_and_name[1],
+                            )
+                        )
+        with path_and_sub[0].open("w", encoding="utf-8-sig") as f:
+            f.write(
+                path_and_sub[1].__str__(
+                    drop_unrander=drop_unrander, drop_unkow_data=drop_unkow_data
+                )
+            )
 
     return return_res
