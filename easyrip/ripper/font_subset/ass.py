@@ -463,16 +463,26 @@ class Events:
 
         return res
 
-    def to_ass_str(self, drop_unrander: bool = False) -> str:
+    def to_ass_str(self, *, drop_unrander: bool = False) -> str:
         return "\n".join(
             (
                 "[Events]",
                 f"Format: {', '.join(f.value for f in self.fmt_order)}",
                 *(
                     f"{'Comment' if event.type == Event_type.Comment else 'Dialogue'}: "
-                    + ",".join((str(getattr(event, k.value)) for k in self.fmt_order))
+                    + ",".join(
+                        str(
+                            ""
+                            if (
+                                drop_unrander
+                                and k in (Event_fmt_it.Name, Event_fmt_it.Effect)
+                            )
+                            else getattr(event, k.value)
+                        )
+                        for k in self.fmt_order
+                    )
                     for event in self.data
-                    if drop_unrander is False
+                    if (drop_unrander is False)
                     or (event.type != Event_type.Comment and event.Text)
                 ),
             )
@@ -523,6 +533,7 @@ class Attachments:
 
     def to_ass_str(
         self,
+        *,
         drop_fonts: bool = False,
         drop_graphics: bool = False,
     ) -> str:
@@ -735,7 +746,7 @@ class Ass:
             self.attachments.to_ass_str(
                 drop_fonts=drop_fonts, drop_graphics=drop_graphics
             ),
-            self.events.to_ass_str(drop_unrander),
+            self.events.to_ass_str(drop_unrander=drop_unrander),
             *(
                 data.to_ass_str()
                 for data in (() if drop_unkow_data else self.unknow_data)
