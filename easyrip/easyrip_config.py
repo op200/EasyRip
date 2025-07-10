@@ -184,11 +184,11 @@ class config:
                 ),
                 "log_print_level": gettext(
                     "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}",
-                    "none, error, warning, info, send",
+                    "none, error, warning, info, send, debug",
                 ),
                 "log_write_level": gettext(
                     "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}",
-                    "none, error, warning, info, send",
+                    "none, error, warning, info, send, debug",
                 ),
             }
             | (config._config or dict())

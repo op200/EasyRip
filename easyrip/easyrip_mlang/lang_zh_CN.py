@@ -297,7 +297,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}'，已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
     "There have error in running": "执行时出错",
-    "FFmpeg report: {}": "FFmpeg report: {}",
+    "FFmpeg report: {}": "FFmpeg 报告: {}",
     # web
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
     "HTTP service stopped by ^C": "HTTP 服务被 ^C 停止",

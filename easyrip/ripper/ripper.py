@@ -242,10 +242,14 @@ class Ripper:
 
             match muxer:
                 case Ripper.Muxer.mp4:
-                    muxer_format_str = (
-                        ' && mp4box -add "{output}" -new "{output}" && mp4fpsmod '
-                        + (f"-r 0:{force_fps}" if force_fps else "")
-                        + ' -i "{output}"'
+                    muxer_format_str = ' && mp4box -add "{output}" -new "{output}"' + (
+                        ""
+                        if self.preset_name == Ripper.PresetName.flac
+                        else (
+                            " && mp4fpsmod "
+                            + (f"-r 0:{force_fps}" if force_fps else "")
+                            + ' -i "{output}"'
+                        )
                     )
 
                 case Ripper.Muxer.mkv:
@@ -377,32 +381,56 @@ class Ripper:
                 )
 
             case Ripper.PresetName.flac:
-                _encoder = {
-                    "u8": "pcm_u8",
-                    "s16": "pcm_s16le",
-                    "s32": "pcm_s32le",
-                    "flt": "pcm_s32le",
-                    "dbl": "pcm_s32le",
-                    "u8p": "pcm_u8",
-                    "s16p": "pcm_s16le",
-                    "s32p": "pcm_s32le",
-                    "fltp": "pcm_s32le",
-                    "dblp": "pcm_s32le",
-                    "s64": "pcm_s32le",
-                    "s64p": "pcm_s32le",
-                }.get(self.info.sample_fmt, "pcm_s32le")
-                if (
-                    self.info.bits_per_raw_sample == 24
-                    or self.info.bits_per_sample == 24
-                ):
-                    _encoder = "pcm_s24le"
+                _ff_encode_str: str = ""
+                _flac_encode_str: str = ""
+                _mux_flac_input_str: str = ""
+                _mux_flac_map_str: str = ""
+                _del_flac_str: str = ""
+
+                for i, _audio_info in enumerate(self.info.audio_info):
+                    _encoder: str = (
+                        "pcm_s24le"
+                        if (
+                            _audio_info.bits_per_raw_sample == 24
+                            or _audio_info.bits_per_sample == 24
+                        )
+                        else {
+                            "u8": "pcm_u8",
+                            "s16": "pcm_s16le",
+                            "s32": "pcm_s32le",
+                            "flt": "pcm_s32le",
+                            "dbl": "pcm_s32le",
+                            "u8p": "pcm_u8",
+                            "s16p": "pcm_s16le",
+                            "s32p": "pcm_s32le",
+                            "fltp": "pcm_s32le",
+                            "dblp": "pcm_s32le",
+                            "s64": "pcm_s32le",
+                            "s64p": "pcm_s32le",
+                        }.get(_audio_info.sample_fmt, "pcm_s32le")
+                    )
+
+                    _new_output_str: str = f"{{output}}.{_audio_info.index}.temp"
+
+                    _ff_encode_str += (
+                        f"-map 0:{_audio_info.index} -c:a {_encoder} {ffparams_out} "
+                        f'"{_new_output_str}.wav" '
+                    )
+                    _flac_encode_str += (
+                        f"&& flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
+                        f'-o "{_new_output_str}.flac" "{_new_output_str}.wav" && del /Q "{_new_output_str}.wav" '
+                    )
+
+                    _mux_flac_input_str += f'-i "{_new_output_str}.flac" '
+                    _mux_flac_map_str += f"-map {i} "
+
+                    _del_flac_str += f'&& del /Q "{_new_output_str}.flac" '
 
                 encoder_format_str = (
-                    FFMPEG_HEADER + ' -i "{input}" -map 0:a:0 -c:a '
-                    f"{_encoder} {ffparams_out} "
-                    '"{output}.temp.wav" && '
-                    f" flac -j 32 -8 -e -p -l {'19' if self.info.sample_rate > 48000 else '12'} "
-                    '-o "{output}" "{output}.temp.wav" && del /Q "{output}.temp.wav"'
+                    FFMPEG_HEADER + ' -i "{input}" '
+                    f"{_ff_encode_str} {_flac_encode_str} "
+                    f"&& ffmpeg -hide_banner {_mux_flac_input_str} {_mux_flac_map_str} -c copy "
+                    '"{output}" ' + _del_flac_str
                 )
 
             case Ripper.PresetName.x264fast | Ripper.PresetName.x264slow:
@@ -887,93 +915,122 @@ class Ripper:
         suffix: str
 
         # 根据格式判断
-        if self.option.preset_name == Ripper.PresetName.custom:
-            suffix = (
-                f".{_suffix}"
-                if (_suffix := self.option_map.get("custom:suffix"))
-                else ""
-            )
-            temp_name = temp_name + suffix
-            cmd = self.option.encoder_format_str.format_map(
-                {
-                    "input": str(self.input_path_list[0]),
-                    "output": os.path.join(self.output_dir, temp_name),
-                }
-            )
+        match self.option.preset_name:
+            case Ripper.PresetName.custom:
+                suffix = (
+                    f".{_suffix}"
+                    if (_suffix := self.option_map.get("custom:suffix"))
+                    else ""
+                )
+                temp_name = temp_name + suffix
+                cmd = self.option.encoder_format_str.format_map(
+                    {
+                        "input": str(self.input_path_list[0]),
+                        "output": os.path.join(self.output_dir, temp_name),
+                    }
+                )
 
-        elif self.option.preset_name == Ripper.PresetName.flac:
-            suffix = ".flac"
-            temp_name = temp_name + suffix
-            cmd = self.option.encoder_format_str.format_map(
-                {
-                    "input": str(self.input_path_list[0]),
-                    "output": os.path.join(self.output_dir, temp_name),
-                }
-            )
-
-        elif self.option.preset_name == Ripper.PresetName.subset:
-            subset_res = subset(
-                self.input_path_list,
-                self.option_map.get("subset-font-dir", "").split("?"),
-                Path(self.output_dir) / basename,
-                font_in_sub=self.option_map.get("subset-font-in-sub", "0") == "1",
-                use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
-                use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
-                == "1",
-                drop_non_render=self.option_map.get("subset-drop-non-render", "1") == "1",
-                drop_unkow_data=self.option_map.get("subset-drop-unkow-data", "1")
-                == "1",
-                strict=self.option_map.get("subset-strict", "0") == "1",
-            )
-            return subset_res
-
-        else:
-            match self.option.muxer:
-                case Ripper.Muxer.mp4:
-                    if self.option_map.get("auto-infix", "1") == "0":
-                        suffix = ".mp4"
-                    else:
-                        suffix = ".va.mp4" if self.option.audio_encoder else ".v.mp4"
+            case Ripper.PresetName.flac:
+                if self.option.muxer is not None or len(self.info.audio_info) > 1:
+                    suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
                     cmd = " ".join(
-                        (self.option.encoder_format_str, self.option.muxer_format_str)
+                        (
+                            self.option.encoder_format_str,
+                            self.option.muxer_format_str,
+                        )
                     ).format_map(
                         {
                             "input": str(self.input_path_list[0]),
                             "output": os.path.join(self.output_dir, temp_name),
                         }
                     )
-
-                case Ripper.Muxer.mkv:
-                    if self.option_map.get("auto-infix", "1") == "0":
-                        suffix = ".mkv"
-                    else:
-                        suffix = ".va.mkv" if self.option.audio_encoder else ".v.mkv"
-                    temp_name = temp_name + suffix
-                    cmd = " ".join(
-                        (self.option.encoder_format_str, self.option.muxer_format_str)
-                    ).format_map(
-                        {
-                            "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
-                        }
-                    )
-
-                case _:
-                    if self.option_map.get("auto-infix", "1") == "0":
-                        suffix = ".mkv"
-                    else:
-                        suffix = ".va.mkv" if self.option.audio_encoder else ".v.mkv"
+                else:
+                    suffix = ".flac"
                     temp_name = temp_name + suffix
                     cmd = self.option.encoder_format_str.format_map(
                         {
                             "input": str(self.input_path_list[0]),
-                            "output": os.path.join(
-                                self.output_dir,
-                                os.path.join(self.output_dir, temp_name),
-                            ),
+                            "output": os.path.join(self.output_dir, temp_name),
                         }
                     )
+
+            case Ripper.PresetName.subset:
+                subset_res = subset(
+                    self.input_path_list,
+                    self.option_map.get("subset-font-dir", "").split("?"),
+                    Path(self.output_dir) / basename,
+                    font_in_sub=self.option_map.get("subset-font-in-sub", "0") == "1",
+                    use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
+                    use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
+                    == "1",
+                    drop_non_render=self.option_map.get("subset-drop-non-render", "1")
+                    == "1",
+                    drop_unkow_data=self.option_map.get("subset-drop-unkow-data", "1")
+                    == "1",
+                    strict=self.option_map.get("subset-strict", "0") == "1",
+                )
+                return subset_res
+
+            case _:
+                match self.option.muxer:
+                    case Ripper.Muxer.mp4:
+                        if self.option_map.get("auto-infix", "1") == "0":
+                            suffix = ".mp4"
+                        else:
+                            suffix = (
+                                ".va.mp4" if self.option.audio_encoder else ".v.mp4"
+                            )
+                        temp_name = temp_name + suffix
+                        cmd = " ".join(
+                            (
+                                self.option.encoder_format_str,
+                                self.option.muxer_format_str,
+                            )
+                        ).format_map(
+                            {
+                                "input": str(self.input_path_list[0]),
+                                "output": os.path.join(self.output_dir, temp_name),
+                            }
+                        )
+
+                    case Ripper.Muxer.mkv:
+                        if self.option_map.get("auto-infix", "1") == "0":
+                            suffix = ".mkv"
+                        else:
+                            suffix = (
+                                ".va.mkv" if self.option.audio_encoder else ".v.mkv"
+                            )
+                        temp_name = temp_name + suffix
+                        cmd = " ".join(
+                            (
+                                self.option.encoder_format_str,
+                                self.option.muxer_format_str,
+                            )
+                        ).format_map(
+                            {
+                                "input": str(self.input_path_list[0]),
+                                "output": os.path.join(self.output_dir, temp_name),
+                            }
+                        )
+
+                    case _:
+                        if self.option_map.get("auto-infix", "1") == "0":
+                            suffix = ".mkv"
+                        else:
+                            suffix = (
+                                ".va.mkv" if self.option.audio_encoder else ".v.mkv"
+                            )
+                        temp_name = temp_name + suffix
+                        cmd = self.option.encoder_format_str.format_map(
+                            {
+                                "input": str(self.input_path_list[0]),
+                                "output": os.path.join(
+                                    self.output_dir,
+                                    os.path.join(self.output_dir, temp_name),
+                                ),
+                            }
+                        )
 
         # 执行
         output_filename = basename + suffix
@@ -1015,13 +1072,13 @@ class Ripper:
                 and self.option.audio_encoder == Ripper.AudioCodec.flac
             ):
                 _flac_basename = f"flac_temp_{get_base62_time()}"
-                _flac_fullname = _flac_basename + ".flac"
+                _flac_fullname = _flac_basename + ".flac.mkv"
                 _flac_ripper = Ripper(
                     [self.input_path_list[0]],
-                    [_flac_basename[0]],
+                    [_flac_basename],
                     self.output_dir,
                     Ripper.PresetName.flac,
-                    self.option_map,
+                    (self.option_map | {"muxer": "mkv"}),
                 )
                 _flac_ripper.run()
 
@@ -1156,7 +1213,7 @@ class Ripper:
         if os.path.exists(FF_REPORT_LOG_FILE):
             with open(FF_REPORT_LOG_FILE, "rt", encoding="utf-8") as file:
                 for line in file.readlines()[2:]:
-                    log.error("FFmpeg report: {}", line)
+                    log.warning("FFmpeg report: {}", line)
 
         # 获取体积
         temp_name_full = os.path.join(self.output_dir, temp_name)
