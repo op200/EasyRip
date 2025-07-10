@@ -173,7 +173,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "    Default: 0\n"
         "\n"
         "  -subset-drop-non-render <0 | 1>\n"
-        "    Drop non rendering lines like Comment line, Name and Effect in ASS\n"
+        "    Drop non rendered content such as Comment lines, Name, Effect, etc. in ASS\n"
         "    Default: 1\n"
         "\n"
         "  -subset-drop-unkow-data <0 | 1>\n"
