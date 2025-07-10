@@ -920,7 +920,7 @@ class Ripper:
                 use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
                 use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
                 == "1",
-                drop_unrander=self.option_map.get("subset-drop-unrander", "1") == "1",
+                drop_non_render=self.option_map.get("subset-drop-non-render", "1") == "1",
                 drop_unkow_data=self.option_map.get("subset-drop-unkow-data", "1")
                 == "1",
                 strict=self.option_map.get("subset-strict", "0") == "1",

@@ -172,8 +172,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         '      "11{22}33" (libass)\n'
         "    Default: 0\n"
         "\n"
-        "  -subset-drop-unrander <0 | 1>\n"
-        "    丢弃 ASS 中的注释行等非渲染行\n"
+        "  -subset-drop-non-render <0 | 1>\n"
+        "    丢弃 ASS 中的注释行、Name、Effect等非渲染内容\n"
         "    Default: 1\n"
         "\n"
         "  -subset-drop-unkow-data <0 | 1>\n"

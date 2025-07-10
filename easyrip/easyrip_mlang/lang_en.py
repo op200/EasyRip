@@ -172,8 +172,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         '      "11{22}33" (libass)\n'
         "    Default: 0\n"
         "\n"
-        "  -subset-drop-unrander <0 | 1>\n"
-        "    Drop unrander lines like Comment line in ASS\n"
+        "  -subset-drop-non-render <0 | 1>\n"
+        "    Drop non rendering lines like Comment line, Name and Effect in ASS\n"
         "    Default: 1\n"
         "\n"
         "  -subset-drop-unkow-data <0 | 1>\n"

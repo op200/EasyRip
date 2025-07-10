@@ -25,7 +25,7 @@ def subset(
     font_in_sub: bool = False,
     use_win_font: bool = False,
     use_libass_spec: bool = False,
-    drop_unrander: bool = True,
+    drop_non_render: bool = True,
     drop_unkow_data: bool = True,
     strict: bool = False,
 ) -> bool:
@@ -374,7 +374,7 @@ def subset(
         with path_and_sub[0].open("w", encoding="utf-8-sig") as f:
             f.write(
                 path_and_sub[1].__str__(
-                    drop_unrander=drop_unrander, drop_unkow_data=drop_unkow_data
+                    drop_non_render=drop_non_render, drop_unkow_data=drop_unkow_data
                 )
             )
 

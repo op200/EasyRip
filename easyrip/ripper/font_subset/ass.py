@@ -463,26 +463,36 @@ class Events:
 
         return res
 
-    def to_ass_str(self, *, drop_unrander: bool = False) -> str:
+    def to_ass_str(self, *, drop_non_render: bool = False) -> str:
         return "\n".join(
             (
                 "[Events]",
                 f"Format: {', '.join(f.value for f in self.fmt_order)}",
                 *(
-                    f"{'Comment' if event.type == Event_type.Comment else 'Dialogue'}: "
+                    f"{event.type.value}: "
                     + ",".join(
-                        str(
-                            ""
-                            if (
-                                drop_unrander
-                                and k in (Event_fmt_it.Name, Event_fmt_it.Effect)
+                        ""
+                        if (
+                            drop_non_render
+                            and (
+                                k == Event_fmt_it.Name
+                                or (
+                                    k == Event_fmt_it.Effect
+                                    and not (
+                                        v.startswith("Banner;")
+                                        or v.startswith("Scroll up;")
+                                        or v.startswith("Scroll down;")
+                                    )
+                                )
                             )
-                            else getattr(event, k.value)
                         )
-                        for k in self.fmt_order
+                        else v
+                        for k, v in (
+                            (k, str(getattr(event, k.value))) for k in self.fmt_order
+                        )
                     )
                     for event in self.data
-                    if (drop_unrander is False)
+                    if (drop_non_render is False)
                     or (event.type != Event_type.Comment and event.Text)
                 ),
             )
@@ -735,7 +745,7 @@ class Ass:
 
     def __str__(
         self,
-        drop_unrander: bool = False,
+        drop_non_render: bool = False,
         drop_unkow_data: bool = False,
         drop_fonts: bool = False,
         drop_graphics: bool = False,
@@ -746,7 +756,7 @@ class Ass:
             self.attachments.to_ass_str(
                 drop_fonts=drop_fonts, drop_graphics=drop_graphics
             ),
-            self.events.to_ass_str(drop_unrander=drop_unrander),
+            self.events.to_ass_str(drop_non_render=drop_non_render),
             *(
                 data.to_ass_str()
                 for data in (() if drop_unkow_data else self.unknow_data)
