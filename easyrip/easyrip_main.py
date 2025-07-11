@@ -81,7 +81,10 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
         if check_ver(new_ver, old_ver):
             print()
             log.info(
-                Global_lang_val.Extra_text_index.NEW_VER_TIP, program_name, new_ver, dl_url
+                Global_lang_val.Extra_text_index.NEW_VER_TIP,
+                program_name,
+                new_ver,
+                dl_url,
             )
             print(get_input_prompt(True), end="")
     except Exception as e:
@@ -380,7 +383,19 @@ def run_command(command: list[str] | str) -> bool:
 
         case "cd":
             try:
-                os.chdir(cmd_list[1])
+                _path = None
+
+                if isinstance(command, str):
+                    _path = command.split(" ", maxsplit=1)
+                    if len(_path) <= 1:
+                        _path = None
+                    else:
+                        _path = _path[1]
+
+                if _path is None:
+                    _path = cmd_list[1]
+
+                os.chdir(_path)
             except OSError as e:
                 log.error(e)
 
