@@ -265,7 +265,7 @@ class Ripper:
                         ' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
                         + (
                             f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1 "
-                            if force_fps
+                            if force_fps and only_mux_sub_path is None
                             else ""
                         )
                         + (
