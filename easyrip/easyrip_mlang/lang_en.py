@@ -21,7 +21,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "  log [<log level>] <message>\n"
         "    Output custom log\n"
         "    log level:\n"
-        "      info, warning | warn, error | err\n"
+        "      info, warning | warn, error | err, send, debug\n"
         "      Default: info\n"
         "\n"
         "  $ <code>\n"

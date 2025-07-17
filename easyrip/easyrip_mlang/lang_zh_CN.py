@@ -21,7 +21,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "  log [<日志级别>] <message>\n"
         "    输出自定义日志\n"
         "    日志级别:\n"
-        "      info, warning | warn, error | err\n"
+        "      info, warning | warn, error | err, send, debug\n"
         "      默认: info\n"
         "\n"
         "  $ <code>\n"

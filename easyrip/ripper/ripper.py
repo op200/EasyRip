@@ -775,8 +775,6 @@ class Ripper:
                             "tu-intra-depth": "4",
                             "tu-inter-depth": "4",
                             "limit-tu": "2",
-                            "bframes": "16",
-                            "ref": "8",
                             "subme": "7",
                             "open-gop": "1",
                             "gop-lookahead": "14",

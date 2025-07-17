@@ -369,6 +369,8 @@ def run_command(command: list[str] | str) -> bool:
                     log.error(msg)
                 case "send":
                     log.send("", msg)
+                case "debug":
+                    log.debug(msg)
                 case _:
                     log.info(f"{cmd_list[1]} {msg}")
 
@@ -390,7 +392,7 @@ def run_command(command: list[str] | str) -> bool:
                     if len(_path) <= 1:
                         _path = None
                     else:
-                        _path = _path[1]
+                        _path = _path[1].strip('"').strip("'")
 
                 if _path is None:
                     _path = cmd_list[1]
