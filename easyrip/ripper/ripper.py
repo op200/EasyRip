@@ -956,10 +956,22 @@ class Ripper:
                     )
 
             case Ripper.PresetName.subset:
-                subset_res = subset(
-                    self.input_path_list,
+                _output_dir = Path(self.output_dir) / basename
+                _output_dir.mkdir(parents=True, exist_ok=True)
+
+                _ass_list = list[Path]()
+                _other_sub_list = list[Path]()
+
+                for path in self.input_path_list:
+                    if path.suffix == ".ass":
+                        _ass_list.append(path)
+                    else:
+                        _other_sub_list.append(path)
+
+                subset_res = not bool(_ass_list) or subset(
+                    _ass_list,
                     self.option_map.get("subset-font-dir", "").split("?"),
-                    Path(self.output_dir) / basename,
+                    _output_dir,
                     font_in_sub=self.option_map.get("subset-font-in-sub", "0") == "1",
                     use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
                     use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
@@ -970,6 +982,10 @@ class Ripper:
                     == "1",
                     strict=self.option_map.get("subset-strict", "0") == "1",
                 )
+
+                for path in _other_sub_list:
+                    shutil.copy2(path, _output_dir / path.name)
+
                 return subset_res
 
             case _:
@@ -1148,7 +1164,14 @@ class Ripper:
                     for _file_basename in os.listdir(self.output_dir):
                         _file_basename_list = os.path.splitext(_file_basename)
                         if (
-                            _file_basename_list[1] == ".ass"
+                            _file_basename_list[1]
+                            in {
+                                ".srt",
+                                ".ass",
+                                ".ssa",
+                                ".sup",
+                                ".idx",
+                            }
                             and _file_basename_list[0].startswith(_input_prefix)
                             and (
                                 len(soft_sub_map_list) == 1
