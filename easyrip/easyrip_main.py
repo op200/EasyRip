@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from pathlib import Path
 from time import sleep
 import tkinter as tk
 from tkinter import filedialog
@@ -586,12 +587,12 @@ def run_command(command: list[str] | str) -> bool:
                         if re.search(
                             r'[<>:"/\\|?*]',
                             (
-                                _output_basename := re.sub(
+                                new_output_basename := re.sub(
                                     r"\?\{[^}]*\}", "", output_basename
                                 )
                             ),
                         ):
-                            log.error('Illegal char in -o "{}"', _output_basename)
+                            log.error('Illegal char in -o "{}"', new_output_basename)
                             return False
 
                     case "-o:dir":
@@ -636,40 +637,56 @@ def run_command(command: list[str] | str) -> bool:
                     return False
 
                 for i, input_pathname in enumerate(input_pathname_org_list):
+                    new_option_map = option_map.copy()
+
+                    def _iterator_fmt_replace(match: re.Match[str]):
+                        s = match.group(1)
+                        match s:
+                            case str() as s if s.startswith("time:"):
+                                try:
+                                    return _time.strftime(s[5:])
+                                except Exception as e:
+                                    log.error(f"{repr(e)} {e}", deep=True)
+                                    return ""
+                            case _:
+                                try:
+                                    d = {
+                                        k: v
+                                        for s1 in s.split(",")
+                                        for k, v in [s1.split("=")]
+                                    }
+                                    start = int(d.get("start", 0))
+                                    padding = int(d.get("padding", 0))
+                                    increment = int(d.get("increment", 1))
+                                    return str(start + i * increment).zfill(padding)
+                                except Exception as e:
+                                    log.error(f"{repr(e)} {e}", deep=True)
+                                    return ""
+
                     if output_basename is None:
-                        _output_basename = None
+                        new_output_basename = None
                     else:
                         _time = datetime.now()
 
-                        def _output_basename_re_sub_replace(match):
-                            s = match.group(1)
-                            match s:
-                                case str() as s if s.startswith("time:"):
-                                    try:
-                                        return _time.strftime(s[5:])
-                                    except Exception as e:
-                                        log.error(f"{repr(e)} {e}", deep=True)
-                                        return ""
-                                case _:
-                                    try:
-                                        d = {
-                                            k: v
-                                            for s1 in s.split(",")
-                                            for k, v in [s1.split("=")]
-                                        }
-                                        start = int(d.get("start", 0))
-                                        padding = int(d.get("padding", 0))
-                                        increment = int(d.get("increment", 1))
-                                        return str(start + i * increment).zfill(padding)
-                                    except Exception as e:
-                                        log.error(f"{repr(e)} {e}", deep=True)
-                                        return ""
-
-                        _output_basename = re.sub(
+                        new_output_basename = re.sub(
                             r"\?\{([^}]*)\}",
-                            _output_basename_re_sub_replace,
+                            _iterator_fmt_replace,
                             output_basename,
                         )
+
+                    if chapters := option_map.get("chapters"):
+                        chapters = re.sub(
+                            r"\?\{([^}]*)\}",
+                            _iterator_fmt_replace,
+                            chapters,
+                        )
+
+                        if not Path(chapters).is_file():
+                            log.warning(
+                                "The '-chapters' file {} does not exist", chapters
+                            )
+
+                        new_option_map["chapters"] = chapters
 
                     input_pathname_list: list[str] = input_pathname.split("?")
                     for path in input_pathname_list:
@@ -713,8 +730,7 @@ def run_command(command: list[str] | str) -> bool:
                         sub_list_len = len(sub_list)
                         if sub_list_len > 1:
                             for sub_path in sub_list:
-                                _new_option_map = option_map.copy()
-                                _new_option_map["sub"] = sub_path
+                                new_option_map["sub"] = sub_path
 
                                 _output_base_suffix_name = os.path.splitext(
                                     os.path.splitext(os.path.basename(sub_path))[0]
@@ -727,11 +743,11 @@ def run_command(command: list[str] | str) -> bool:
                                     Ripper(
                                         input_pathname_list,
                                         [
-                                            f"{_output_basename or _input_basename[0]}{_output_base_suffix_name}"
+                                            f"{new_output_basename or _input_basename[0]}{_output_base_suffix_name}"
                                         ],
                                         output_dir,
                                         Ripper.PresetName(preset_name),
-                                        _new_option_map,
+                                        new_option_map,
                                     )
                                 )
 
@@ -743,15 +759,14 @@ def run_command(command: list[str] | str) -> bool:
                             )
 
                         else:
-                            _new_option_map = option_map.copy()
-                            _new_option_map["sub"] = sub_list[0]
+                            new_option_map["sub"] = sub_list[0]
                             Ripper.ripper_list.append(
                                 Ripper(
                                     input_pathname_list,
-                                    [_output_basename],
+                                    [new_output_basename],
                                     output_dir,
                                     Ripper.PresetName(preset_name),
-                                    _new_option_map,
+                                    new_option_map,
                                 )
                             )
 
@@ -759,10 +774,10 @@ def run_command(command: list[str] | str) -> bool:
                         Ripper.ripper_list.append(
                             Ripper(
                                 input_pathname_list,
-                                [_output_basename],
+                                [new_output_basename],
                                 output_dir,
                                 Ripper.PresetName(preset_name),
-                                option_map,
+                                new_option_map,
                             )
                         )
 

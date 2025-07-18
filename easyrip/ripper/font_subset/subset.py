@@ -222,8 +222,8 @@ def subset(
 
     # 加载 Font
     fonts: list[Font] = []
-    for _ass_path in font_path_list:
-        fonts += load_fonts(_ass_path)
+    for _path in font_path_list:
+        fonts += load_fonts(_path)
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
     for _font in fonts:

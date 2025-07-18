@@ -38,8 +38,12 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     res_font_list: list[Font] = []
 
     for file in path.iterdir() if path.is_dir() else (path,):
-        if (suffix := file.suffix.lower()) not in {".ttf", ".otf", ".ttc"}:
+        if not (
+            file.is_file()
+            and ((suffix := file.suffix.lower()) in {".ttf", ".otf", ".ttc"})
+        ):
             continue
+
         try:
             if suffix == ".ttc":
                 fonts: list[TTFont] = [

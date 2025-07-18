@@ -228,10 +228,22 @@ class Ripper:
             if is_pipe_input:
                 ff_input_option.append('"{input}"')
                 ff_stream_option.append("1:a")
-                audio_option = f"{'' if _audio_encoder_str == 'copy' and self.preset_name == Ripper.PresetName.copy else f'-c:a {_audio_encoder_str} '}-b:a {self.option_map.get('b:a') or '160k'} "
             else:
                 ff_stream_option.append("0:a")
-                audio_option = f"{'' if _audio_encoder_str == 'copy' and self.preset_name == Ripper.PresetName.copy else f'-c:a {_audio_encoder_str} '}-b:a {self.option_map.get('b:a') or '160k'} "
+
+            _encoder_str = (
+                ""
+                if _audio_encoder_str == "copy"
+                and self.preset_name == Ripper.PresetName.copy
+                else f"-c:a {_audio_encoder_str} "
+            )
+            _bitrate_str = (
+                ""
+                if audio_encoder == Ripper.AudioCodec.copy
+                else f"-b:a {self.option_map.get('b:a') or '160k'}"
+            )
+            audio_option = f"{_encoder_str}{_bitrate_str} "
+
         else:
             audio_encoder = None
             audio_option = ""
@@ -242,13 +254,21 @@ class Ripper:
 
             match muxer:
                 case Ripper.Muxer.mp4:
-                    muxer_format_str = ' && mp4box -add "{output}" -new "{output}"' + (
-                        ""
-                        if self.preset_name == Ripper.PresetName.flac
-                        else (
-                            " && mp4fpsmod "
-                            + (f"-r 0:{force_fps}" if force_fps else "")
-                            + ' -i "{output}"'
+                    muxer_format_str = (
+                        ' && mp4box -add "{output}" -new "{output}" '
+                        + (
+                            f"-chap {chapters} "
+                            if (chapters := self.option_map.get("chapters"))
+                            else ""
+                        )
+                        + (
+                            ""
+                            if self.preset_name == Ripper.PresetName.flac
+                            else (
+                                "&& mp4fpsmod "
+                                + (f"-r 0:{force_fps}" if force_fps else "")
+                                + ' -i "{output}"'
+                            )
                         )
                     )
 
@@ -266,6 +286,11 @@ class Ripper:
                         + (
                             f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1 "
                             if force_fps and only_mux_sub_path is None
+                            else ""
+                        )
+                        + (
+                            f"--chapters {chapters} "
+                            if (chapters := self.option_map.get("chapters"))
                             else ""
                         )
                         + (
@@ -966,20 +991,49 @@ class Ripper:
                     else:
                         _other_sub_list.append(path)
 
-                subset_res = not bool(_ass_list) or subset(
-                    _ass_list,
-                    self.option_map.get("subset-font-dir", "").split("?"),
-                    _output_dir,
-                    font_in_sub=self.option_map.get("subset-font-in-sub", "0") == "1",
-                    use_win_font=self.option_map.get("subset-use-win-font", "0") == "1",
-                    use_libass_spec=self.option_map.get("subset-use-libass-spec", "0")
-                    == "1",
-                    drop_non_render=self.option_map.get("subset-drop-non-render", "1")
-                    == "1",
-                    drop_unkow_data=self.option_map.get("subset-drop-unkow-data", "1")
-                    == "1",
-                    strict=self.option_map.get("subset-strict", "0") == "1",
-                )
+                if _ass_list:
+                    _font_path_list = self.option_map.get("subset-font-dir")
+                    if _font_path_list is None:
+                        _font_path_list = [
+                            "",
+                            *(
+                                d.name
+                                for d in Path.cwd().iterdir()
+                                if d.is_dir() and "font" in d.name.lower()
+                            ),
+                        ]
+                    else:
+                        _font_path_list = _font_path_list.split("?")
+
+                    _font_in_sub = self.option_map.get("subset-font-in-sub", "0") == "1"
+                    _use_win_font = (
+                        self.option_map.get("subset-use-win-font", "0") == "1"
+                    )
+                    _use_libass_spec = (
+                        self.option_map.get("subset-use-libass-spec", "0") == "1"
+                    )
+                    _drop_non_render = (
+                        self.option_map.get("subset-drop-non-render", "1") == "1"
+                    )
+                    _drop_unkow_data = (
+                        self.option_map.get("subset-drop-unkow-data", "1") == "1"
+                    )
+                    _strict = self.option_map.get("subset-strict", "0") == "1"
+
+                    subset_res = subset(
+                        _ass_list,
+                        _font_path_list,
+                        _output_dir,
+                        # *
+                        font_in_sub=_font_in_sub,
+                        use_win_font=_use_win_font,
+                        use_libass_spec=_use_libass_spec,
+                        drop_non_render=_drop_non_render,
+                        drop_unkow_data=_drop_unkow_data,
+                        strict=_strict,
+                    )
+                else:
+                    subset_res = True
 
                 for path in _other_sub_list:
                     shutil.copy2(path, _output_dir / path.name)
