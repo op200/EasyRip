@@ -156,6 +156,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "\n"
         "  -subset-font-dir <string[?string...]>\n"
         "    The fonts directory when subset\n"
+        '    Default: Prioritize the current directory, followed by folders containing "font" (case-insensitive) within the current directory\n'
         "\n"
         "  -subset-font-in-sub <0 | 1>\n"
         "    Encode fonts into ASS file instead of standalone files\n"
@@ -205,6 +206,10 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "  -r / -fps <string | 'auto'>\n"
         "    Setting FPS when muxing\n"
         "    When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point\n"
+        "\n"
+        "  -chapters <string>\n"
+        "    Specify the chapters file to add\n"
+        "    Supports the same iteration syntax as '-o'\n"
         "\n"
         "  -custom / -custom:format / -custom:template <string>\n"
         "    When -preset custom, this option will run\n"
