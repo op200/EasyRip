@@ -233,8 +233,10 @@ class Ripper:
 
             _encoder_str = (
                 ""
-                if _audio_encoder_str == "copy"
+                if audio_encoder == Ripper.AudioCodec.copy
                 and self.preset_name == Ripper.PresetName.copy
+                else "-an "
+                if audio_encoder == Ripper.AudioCodec.flac
                 else f"-c:a {_audio_encoder_str} "
             )
             _bitrate_str = (
