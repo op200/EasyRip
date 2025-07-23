@@ -299,6 +299,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Time consuming": "耗时",
     "End": "结束",
     # ripper.py
+    "Failed to add ripper: {}": "添加 ripper 失败: {}",
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}'，已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
     "There have error in running": "执行时出错",

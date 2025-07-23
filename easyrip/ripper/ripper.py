@@ -25,6 +25,21 @@ FF_REPORT_LOG_FILE = "FFReport.log"
 class Ripper:
     ripper_list: list["Ripper"] = []
 
+    @staticmethod
+    def add_ripper(
+        input_path: Iterable[str | Path],
+        output_prefix: Iterable[str | None],
+        output_dir: str | None,
+        option: "Option | PresetName",
+        option_map: dict[str, str],
+    ):
+        try:
+            Ripper.ripper_list.append(
+                Ripper(input_path, output_prefix, output_dir, option, option_map)
+            )
+        except Exception as e:
+            log.error("Failed to add ripper: {}", e, deep=True)
+
     class PresetName(enum.Enum):
         custom = "custom"
 
@@ -362,7 +377,7 @@ class Ripper:
         if _preset := self.option_map.get("v:preset"):
             ffparams_out += f" -preset {_preset}"
 
-        FFMPEG_HEADER = f"ffmpeg {'-hide_banner ' if self.option_map.get('sub-ripper') else ''}-progress {FF_PROGRESS_LOG_FILE} -report {ffparams_ff} {ffparams_in}"
+        FFMPEG_HEADER = f"ffmpeg {'-hide_banner ' if self.option_map.get('_sub_ripper_num') else ''}-progress {FF_PROGRESS_LOG_FILE} -report {ffparams_ff} {ffparams_in}"
 
         match preset_name:
             case Ripper.PresetName.custom:
@@ -407,14 +422,31 @@ class Ripper:
                     + '"{output}"'
                 )
 
+                match self.option_map.get("c:a"):
+                    case None | "flac":
+                        if muxer == Ripper.Muxer.mp4:
+                            encoder_format_str = 'mp4box -add "{input}" -new "{output}"'
+                            for _audio_info in self.info.audio_info:
+                                encoder_format_str += f" -rem {_audio_info.index + 1}"
+                        else:
+                            encoder_format_str = (
+                                'mkvmerge -o "{output}" --no-audio "{input}"'
+                            )
+                    case "copy":
+                        encoder_format_str = (
+                            'mp4box -add "{input}" -new "{output}"'
+                            if muxer == Ripper.Muxer.mp4
+                            else 'mkvmerge -o "{output}" "{input}"'
+                        )
+
             case Ripper.PresetName.flac:
                 _ff_encode_str: str = ""
                 _flac_encode_str: str = ""
-                _mux_flac_input_str: str = ""
-                _mux_flac_map_str: str = ""
+                _mux_flac_input_list = list[str]()
+                # _mux_flac_map_str: str = ""
                 _del_flac_str: str = ""
 
-                for i, _audio_info in enumerate(self.info.audio_info):
+                for _audio_info in self.info.audio_info:
                     _encoder: str = (
                         "pcm_s24le"
                         if (
@@ -448,17 +480,36 @@ class Ripper:
                         f'-o "{_new_output_str}.flac" "{_new_output_str}.wav" && del /Q "{_new_output_str}.wav" '
                     )
 
-                    _mux_flac_input_str += f'-i "{_new_output_str}.flac" '
-                    _mux_flac_map_str += f"-map {i} "
+                    _mux_flac_input_list.append(f'"{_new_output_str}.flac"')
 
                     _del_flac_str += f'&& del /Q "{_new_output_str}.flac" '
 
-                encoder_format_str = (
-                    FFMPEG_HEADER + ' -i "{input}" '
-                    f"{_ff_encode_str} {_flac_encode_str} "
-                    f"&& ffmpeg -hide_banner {_mux_flac_input_str} {_mux_flac_map_str} -c copy "
-                    '"{output}" ' + _del_flac_str
-                )
+                match len(_mux_flac_input_list):
+                    case 0:
+                        raise Exception(f'No audio in "{self.input_path_list[0]}"')
+
+                    case 1 if muxer is None:
+                        encoder_format_str = (
+                            FFMPEG_HEADER + ' -i "{input}" '
+                            f"{_ff_encode_str} {_flac_encode_str} "
+                            f"&& {'copy' if os.name == 'nt' else 'cp'} {_mux_flac_input_list[0]} "
+                            + '"{output}" '
+                            + _del_flac_str
+                        )
+
+                    case _:
+                        _mux_str = (
+                            f"mp4box -add {' -add '.join(_mux_flac_input_list)}"
+                            + ' -new "{output}" '
+                            if muxer == Ripper.Muxer.mp4
+                            else 'mkvmerge -o "{output}" '
+                            + " ".join(_mux_flac_input_list)
+                        )
+                        encoder_format_str = (
+                            FFMPEG_HEADER + ' -i "{input}" '
+                            f"{_ff_encode_str} {_flac_encode_str} "
+                            f"&& {_mux_str} " + _del_flac_str
+                        )
 
             case Ripper.PresetName.x264fast | Ripper.PresetName.x264slow:
                 match preset_name:
@@ -1105,16 +1156,26 @@ class Ripper:
         # 执行
         output_filename = basename + suffix
         run_start_time = datetime.now()
-        run_sign = f"{f' Sub Ripper {sub_ripper_num}' if (sub_ripper_num := self.option_map.get('sub-ripper')) else ' Ripper'}"
+        run_sign = (
+            f" Sub Ripper {sub_ripper_num}"
+            if (sub_ripper_num := self.option_map.get("_sub_ripper_num"))
+            else " Ripper"
+        ) + (
+            f": {sub_ripper_title}"
+            if (sub_ripper_title := self.option_map.get("_sub_ripper_title"))
+            else ""
+        )
         log.write_html_log(
-            f'<hr style="color:aqua;margin:4px 0 0;"><div style="background-color:#b4b4b4;padding:0 1rem;">'
+            '<hr style="color:aqua;margin:4px 0 0;">'
+            '<div style="background-color:#b4b4b4;padding:0 1rem;">'
             f'<span style="color:green;">{run_start_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:aqua;">{gettext("Start")}{run_sign}</span><br>'
             f'{gettext("Input file pathname")}: <span style="color:darkcyan;">"{self.input_path_list[0]}"</span><br>'
             f'{gettext("Output directory")}: <span style="color:darkcyan;">"{self.output_dir}"</span><br>'
             f'{gettext("Temporary file name")}: <span style="color:darkcyan;">"{temp_name}"</span><br>'
             f'{gettext("Output file name")}: <span style="color:darkcyan;">"{output_filename}"</span><br>'
-            f"Ripper:<br>"
-            f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span></div>'
+            "Ripper:<br>"
+            f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span>'
+            # "</div>"
         )
 
         # 先删除，防止直接读到结束标志
@@ -1133,7 +1194,22 @@ class Ripper:
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
 
         log.info(cmd)
-        if os.system(cmd):
+        is_cmd_run_failed = os.system(cmd)
+
+        # 读取编码速度
+        speed: str = "N/A"
+        if os.path.exists(FF_PROGRESS_LOG_FILE):
+            with open(FF_PROGRESS_LOG_FILE, "rt", encoding="utf-8") as file:
+                for line in file.readlines()[::-1]:
+                    if res := re.search(r"speed=(.*)", line):
+                        speed = res.group(1)
+                        break
+
+        log.write_html_log(
+            f'{gettext("Encoding speed")}: <span style="color:darkcyan;">{speed}</span><br>'
+        )
+
+        if is_cmd_run_failed:
             log.error("There have error in running")
         else:  # 多文件合成
             # flac 音频轨合成
@@ -1148,26 +1224,27 @@ class Ripper:
                     [_flac_basename],
                     self.output_dir,
                     Ripper.PresetName.flac,
-                    (self.option_map | {"muxer": "mkv"}),
+                    (
+                        self.option_map
+                        | {
+                            "_sub_ripper_num": str(
+                                int(self.option_map.get("_sub_ripper_num", 0)) + 1
+                            ),
+                            "_sub_ripper_title": "FLAC Enc",
+                            "muxer": "mkv",
+                        }
+                    ),
                 )
                 _flac_ripper.run()
 
                 _mux_temp_name: str
                 _mux_cmd: str
-                _mux_muxer: str = ""
-                match self.option.muxer:
-                    case Ripper.Muxer.mp4:
-                        _mux_temp_name = f"{temp_name}_{get_base62_time()}.mp4"
-                        _mux_muxer = "mp4"
+                _mux_muxer: str = (
+                    "mp4" if self.option.muxer == Ripper.Muxer.mp4 else "mkv"
+                )
+                _mux_temp_name = f"{temp_name}_{get_base62_time()}.{_mux_muxer}"
 
-                    case Ripper.Muxer.mkv:
-                        _mux_temp_name = f"{temp_name}_{get_base62_time()}.mkv"
-                        _mux_muxer = "mkv"
-
-                    case _:
-                        _mux_temp_name = f"{temp_name}_{get_base62_time()}.mkv"
-
-                _mux_cmd = f'ffmpeg -hide_banner -i "{temp_name}" -i "{_flac_fullname}" -map 0:v -map 1:a -c copy "{_mux_temp_name}"'
+                _mux_cmd = f'mkvmerge -o "{_mux_temp_name}" --no-audio "{temp_name}" --no-video "{_flac_fullname}"'
 
                 log.info(_mux_cmd)
                 if os.system(_mux_cmd):
@@ -1182,9 +1259,10 @@ class Ripper:
                         {
                             k: v
                             for k, v in {
-                                "sub-ripper": str(
-                                    int(self.option_map.get("sub-ripper", 0)) + 1
+                                "_sub_ripper_num": str(
+                                    int(self.option_map.get("_sub_ripper_num", 0)) + 1
                                 ),
+                                "_sub_ripper_title": "FLAC Mux",
                                 "auto-infix": "0",
                                 "c:a": "copy",
                                 "muxer": _mux_muxer,
@@ -1267,9 +1345,10 @@ class Ripper:
                             k: v
                             for k, v in {
                                 "only-mux-sub-path": str(subset_folder),
-                                "sub-ripper": str(
-                                    int(self.option_map.get("sub-ripper", 0)) + 1
+                                "_sub_ripper_num": str(
+                                    int(self.option_map.get("_sub_ripper_num", 0)) + 1
                                 ),
+                                "_sub_ripper_title": "Soft Sub Mux",
                                 "auto-infix": "0",
                                 "c:a": self.option_map.get("c:a") and "copy",
                                 "muxer": "mkv",
@@ -1304,23 +1383,14 @@ class Ripper:
         except Exception as e:
             log.error(e)
 
-        # 读取编码速度
-        speed: str = "N/A"
-        if os.path.exists(FF_PROGRESS_LOG_FILE):
-            with open(FF_PROGRESS_LOG_FILE, "rt", encoding="utf-8") as file:
-                for line in file.readlines()[::-1]:
-                    if res := re.search(r"speed=(.*)", line):
-                        speed = res.group(1)
-                        break
-
         # 写入日志
         run_end_time = datetime.now()
         log.write_html_log(
-            f'<div style="background-color:#b4b4b4;padding:0 1rem;">{gettext("Encoding speed")}: <span style="color:darkcyan;">{speed}</span><br>'
             f'{gettext("File size")}: <span style="color:darkcyan;">{file_size} MiB</span><br>'
             f'{gettext("Time consuming")}: <span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
             f'<span style="color:green;">{run_end_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:brown;">{gettext("End")}{run_sign}</span><br>'
-            f'</div><hr style="color:brown;margin:0 0 6px;">'
+            "</div>"
+            '<hr style="color:brown;margin:0 0 6px;">'
         )
 
         # 删除临时文件

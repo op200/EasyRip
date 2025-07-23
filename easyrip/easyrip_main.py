@@ -739,16 +739,14 @@ def run_command(command: list[str] | str) -> bool:
                                     _output_base_suffix_name[1]
                                     or _output_base_suffix_name[0]
                                 )
-                                Ripper.ripper_list.append(
-                                    Ripper(
-                                        input_pathname_list,
-                                        [
-                                            f"{new_output_basename or _input_basename[0]}{_output_base_suffix_name}"
-                                        ],
-                                        output_dir,
-                                        Ripper.PresetName(preset_name),
-                                        new_option_map,
-                                    )
+                                Ripper.add_ripper(
+                                    input_pathname_list,
+                                    [
+                                        f"{new_output_basename or _input_basename[0]}{_output_base_suffix_name}"
+                                    ],
+                                    output_dir,
+                                    Ripper.PresetName(preset_name),
+                                    new_option_map,
                                 )
 
                         elif sub_list_len == 0:
@@ -760,25 +758,21 @@ def run_command(command: list[str] | str) -> bool:
 
                         else:
                             new_option_map["sub"] = sub_list[0]
-                            Ripper.ripper_list.append(
-                                Ripper(
-                                    input_pathname_list,
-                                    [new_output_basename],
-                                    output_dir,
-                                    Ripper.PresetName(preset_name),
-                                    new_option_map,
-                                )
-                            )
-
-                    else:
-                        Ripper.ripper_list.append(
-                            Ripper(
+                            Ripper.add_ripper(
                                 input_pathname_list,
                                 [new_output_basename],
                                 output_dir,
                                 Ripper.PresetName(preset_name),
                                 new_option_map,
                             )
+
+                    else:
+                        Ripper.add_ripper(
+                            input_pathname_list,
+                            [new_output_basename],
+                            output_dir,
+                            Ripper.PresetName(preset_name),
+                            new_option_map,
                         )
 
             except KeyError as e:

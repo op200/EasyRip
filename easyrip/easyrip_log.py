@@ -22,64 +22,73 @@ class Event:
 class log:
     @staticmethod
     def init():
-        if os.name != "nt":
-            return
+        """
+        1. 获取终端颜色
+        2. 写入 \\</div>
+        """
 
-        class CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
-            _fields_ = [
-                ("dwSize", wintypes._COORD),
-                ("dwCursorPosition", wintypes._COORD),
-                ("wAttributes", wintypes.WORD),
-                ("srWindow", wintypes.SMALL_RECT),
-                ("dwMaximumWindowSize", wintypes._COORD),
-            ]
+        # 获取终端颜色
+        if os.name == "nt":
 
-        csbi = CONSOLE_SCREEN_BUFFER_INFO()
-        hOut = ctypes.windll.kernel32.GetStdHandle(-11)
-        ctypes.windll.kernel32.FlushConsoleInputBuffer(hOut)
-        ctypes.windll.kernel32.GetConsoleScreenBufferInfo(hOut, ctypes.byref(csbi))
-        attributes = csbi.wAttributes
-        color_map = {
-            0: 0,  # 黑色
-            1: 4,  # 蓝色
-            2: 2,  # 绿色
-            3: 6,  # 青色
-            4: 1,  # 红色
-            5: 5,  # 紫红色
-            6: 3,  # 黄色
-            7: 7,  # 白色
-        }
+            class CONSOLE_SCREEN_BUFFER_INFO(ctypes.Structure):
+                _fields_ = [
+                    ("dwSize", wintypes._COORD),
+                    ("dwCursorPosition", wintypes._COORD),
+                    ("wAttributes", wintypes.WORD),
+                    ("srWindow", wintypes.SMALL_RECT),
+                    ("dwMaximumWindowSize", wintypes._COORD),
+                ]
 
-        log.default_foreground_color = (
-            30
-            + color_map.get(attributes & 0x0007, 9)
-            + 60 * ((attributes & 0x0008) != 0)
-        )
-        log.default_background_color = (
-            40
-            + color_map.get((attributes >> 4) & 0x0007, 9)
-            + 60 * ((attributes & 0x0080) != 0)
-        )
+            csbi = CONSOLE_SCREEN_BUFFER_INFO()
+            hOut = ctypes.windll.kernel32.GetStdHandle(-11)
+            ctypes.windll.kernel32.FlushConsoleInputBuffer(hOut)
+            ctypes.windll.kernel32.GetConsoleScreenBufferInfo(hOut, ctypes.byref(csbi))
+            attributes = csbi.wAttributes
+            color_map = {
+                0: 0,  # 黑色
+                1: 4,  # 蓝色
+                2: 2,  # 绿色
+                3: 6,  # 青色
+                4: 1,  # 红色
+                5: 5,  # 紫红色
+                6: 3,  # 黄色
+                7: 7,  # 白色
+            }
 
-        if log.default_foreground_color == 37:
-            log.default_foreground_color = 39
-        if log.default_background_color == 40:
-            log.default_background_color = 49
+            log.default_foreground_color = (
+                30
+                + color_map.get(attributes & 0x0007, 9)
+                + 60 * ((attributes & 0x0008) != 0)
+            )
+            log.default_background_color = (
+                40
+                + color_map.get((attributes >> 4) & 0x0007, 9)
+                + 60 * ((attributes & 0x0080) != 0)
+            )
 
-        if log.default_background_color == 42:
-            log.debug_color = log.time_color = 92
+            if log.default_foreground_color == 37:
+                log.default_foreground_color = 39
+            if log.default_background_color == 40:
+                log.default_background_color = 49
 
-        if log.default_background_color == 44 or log.default_foreground_color == 34:
-            log.info_color = 96
+            if log.default_background_color == 42:
+                log.debug_color = log.time_color = 92
 
-        if log.default_background_color == 43 or log.default_foreground_color == 33:
-            log.warning_color = 93
+            if log.default_background_color == 44 or log.default_foreground_color == 34:
+                log.info_color = 96
 
-        if log.default_background_color == 41 or log.default_foreground_color == 31:
-            log.error_color = 91
+            if log.default_background_color == 43 or log.default_foreground_color == 33:
+                log.warning_color = 93
 
-        if log.default_background_color == 45 or log.default_foreground_color == 35:
-            log.send_color = 95
+            if log.default_background_color == 41 or log.default_foreground_color == 31:
+                log.error_color = 91
+
+            if log.default_background_color == 45 or log.default_foreground_color == 35:
+                log.send_color = 95
+
+        # 写入 </div>
+        if os.path.isfile(log.html_filename) and os.path.getsize(log.html_filename):
+            log.write_html_log("</div></div></div>")
 
     class LogLevel(enum.Enum):
         debug = enum.auto()
