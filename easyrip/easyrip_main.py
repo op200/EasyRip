@@ -194,7 +194,7 @@ def check_env():
                     print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        "93",
+                        "94",
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
