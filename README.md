@@ -50,7 +50,7 @@ Run `easyrip`, input `help` to get help doc
 
 ### Dependency
 
-* Python 3.13 (must >=3.11)
+* Python 3.13 (must >=3.12)
   ```pwsh
   pip install -U pycryptodome fonttools
   ```

@@ -18,8 +18,8 @@ from .utils import get_base62_time
 from .font_subset import subset
 
 
-FF_PROGRESS_LOG_FILE = "FFProgress.log"
-FF_REPORT_LOG_FILE = "FFReport.log"
+FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
+FF_REPORT_LOG_FILE = Path("FFReport.log")
 
 
 class Ripper:
@@ -928,7 +928,7 @@ class Ripper:
                 break
 
             try:
-                with open(FF_PROGRESS_LOG_FILE, "rt", encoding="utf-8") as file:
+                with FF_PROGRESS_LOG_FILE.open("rt", encoding="utf-8") as file:
                     file.seek(0, 2)  # 将文件指针移动到文件末尾
                     total_size = file.tell()  # 获取文件的总大小
                     buffer = []
@@ -1179,8 +1179,7 @@ class Ripper:
         )
 
         # 先删除，防止直接读到结束标志
-        if os.path.exists(FF_PROGRESS_LOG_FILE):
-            os.remove(FF_PROGRESS_LOG_FILE)
+        FF_PROGRESS_LOG_FILE.unlink(missing_ok=True)
 
         self._progress["frame_count"] = 0
         self._progress["duration"] = 0
@@ -1198,8 +1197,8 @@ class Ripper:
 
         # 读取编码速度
         speed: str = "N/A"
-        if os.path.exists(FF_PROGRESS_LOG_FILE):
-            with open(FF_PROGRESS_LOG_FILE, "rt", encoding="utf-8") as file:
+        if FF_PROGRESS_LOG_FILE.is_file():
+            with FF_PROGRESS_LOG_FILE.open("rt", encoding="utf-8") as file:
                 for line in file.readlines()[::-1]:
                     if res := re.search(r"speed=(.*)", line):
                         speed = res.group(1)
@@ -1366,8 +1365,8 @@ class Ripper:
                 shutil.rmtree(subset_folder)
 
         # 获取 ffmpeg report 中的报错
-        if os.path.exists(FF_REPORT_LOG_FILE):
-            with open(FF_REPORT_LOG_FILE, "rt", encoding="utf-8") as file:
+        if FF_REPORT_LOG_FILE.is_file():
+            with FF_REPORT_LOG_FILE.open("rt", encoding="utf-8") as file:
                 for line in file.readlines()[2:]:
                     log.warning("FFmpeg report: {}", line)
 
@@ -1394,10 +1393,8 @@ class Ripper:
         )
 
         # 删除临时文件
-        if os.path.exists(FF_PROGRESS_LOG_FILE):
-            os.remove(FF_PROGRESS_LOG_FILE)
-        if os.path.exists(FF_REPORT_LOG_FILE):
-            os.remove(FF_REPORT_LOG_FILE)
+        FF_PROGRESS_LOG_FILE.unlink(missing_ok=True)
+        FF_REPORT_LOG_FILE.unlink(missing_ok=True)
 
         # 删除临时环境变量
         os.environ.pop("FFREPORT", None)

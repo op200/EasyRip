@@ -16,7 +16,7 @@ setup(
     name="easyrip",
     version=get_version(),
     packages=find_packages(),
-    python_requires=">=3.11",
+    python_requires=">=3.12",
     install_requires=[
         "pycryptodome>=3.21.0",
         "fonttools>=4.58.4",
