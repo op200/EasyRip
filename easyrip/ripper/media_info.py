@@ -26,7 +26,6 @@ class Media_info:
     duration: float = 0
     """时长 (s)"""
 
-    audio_track_num: int = 0
     audio_info: list[Audio_info] = field(default_factory=list)
 
 
