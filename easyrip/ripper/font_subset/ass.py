@@ -762,4 +762,4 @@ class Ass:
                 for data in (() if drop_unkow_data else self.unknow_data)
             ),
         )
-        return "\n\n".join(v for v in generator if v)
+        return "\n\n".join(v for v in generator if v) + "\n"

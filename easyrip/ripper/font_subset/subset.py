@@ -209,10 +209,23 @@ def subset(
                 raw_str=f"; ---------- Font Subset by {Global_val.PROJECT_TITLE} ----------"
             ),
             *(
-                Script_info_data(
-                    raw_str=f'; Font Subset Mapping: "{v}{k}"   ->   "{k}"'
-                )
+                Script_info_data(raw_str=f'Font Subset Mapping: "{v}{k}"   ->   "{k}"')
                 for k, v in family__affix.items()
+            ),
+            Script_info_data(
+                raw_str=f"Font Subset Setting: {
+                    '  '.join(
+                        f'{k} {v}'
+                        for k, v in {
+                            '-subset-font-in-sub': '1' if font_in_sub else '0',
+                            '-subset-use-win-font': '1' if use_win_font else '0',
+                            '-subset-use-libass-spec': '1' if use_libass_spec else '0',
+                            '-subset-drop-non-render': '1' if drop_non_render else '0',
+                            '-subset-drop-unkow-data': '1' if drop_unkow_data else '0',
+                            '-subset-strict': '1' if strict else '0',
+                        }.items()
+                    )
+                }"
             ),
             Script_info_data(
                 raw_str=f"; ---------- {'Font Subset End':^{len(Global_val.PROJECT_TITLE) + 20}} ----------"
@@ -357,6 +370,7 @@ def subset(
 
     # 保存子集化的字幕
     for org_path_abs_1, path_and_sub in subset_sub_dict.items():
+        # 内嵌字体
         if font_in_sub:
             for (
                 org_path_abs_2,
@@ -371,7 +385,8 @@ def subset(
                                 org_data=font_bytes_and_name[1],
                             )
                         )
-        with path_and_sub[0].open("w", encoding="utf-8-sig") as f:
+
+        with path_and_sub[0].open("wt", encoding="utf-8-sig", newline="") as f:
             f.write(
                 path_and_sub[1].__str__(
                     drop_non_render=drop_non_render, drop_unkow_data=drop_unkow_data
