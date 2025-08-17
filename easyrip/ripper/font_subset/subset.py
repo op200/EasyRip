@@ -386,7 +386,7 @@ def subset(
                             )
                         )
 
-        with path_and_sub[0].open("wt", encoding="utf-8-sig", newline="") as f:
+        with path_and_sub[0].open("wt", encoding="utf-8-sig", newline="\n") as f:
             f.write(
                 path_and_sub[1].__str__(
                     drop_non_render=drop_non_render, drop_unkow_data=drop_unkow_data

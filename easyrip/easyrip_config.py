@@ -37,7 +37,9 @@ class config:
 
         if not os.path.exists(config._config_pathname):
             os.makedirs(config._config_dir, exist_ok=True)
-            with open(config._config_pathname, "w", encoding="utf-8") as f:
+            with open(
+                config._config_pathname, "wt", encoding="utf-8", newline="\n"
+            ) as f:
                 json.dump(
                     {
                         "version": CONFIG_VERSION,
@@ -105,7 +107,7 @@ class config:
             config._config = new_config
         del new_config
 
-        with open(config._config_pathname, "w", encoding="utf-8") as f:
+        with open(config._config_pathname, "wt", encoding="utf-8", newline="\n") as f:
             try:
                 json.dump(config._config, f, ensure_ascii=False, indent=3)
                 return True
