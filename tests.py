@@ -16,6 +16,11 @@ class TestBasic(unittest.TestCase):
         easyrip.check_env()
 
     def test_version(self):
+        self.assertTrue(easyrip.check_ver("1.2.3.1", "1.2.3"))
+        self.assertFalse(easyrip.check_ver("1.2.3", "1.2.3.1"))
+        self.assertTrue(easyrip.check_ver("1.2.3.1", "1.2.3.0"))
+        self.assertFalse(easyrip.check_ver("1.2.3.0", "1.2.3.1"))
+
         self.assertTrue(easyrip.check_ver("1.3.3", "1.2.3"))
         self.assertFalse(easyrip.check_ver("1.2.3", "1.2.3"))
         self.assertFalse(easyrip.check_ver("1.2.3+1", "1.2.3+2"))
