@@ -299,7 +299,8 @@ def run_ripper_list(
         log.info(progress)
         change_title(progress)
         try:
-            ripper.run()
+            if ripper.run() is False:
+                log.error("Run {} failed", "ripper")
         except Exception as e:
             log.error(e, deep=True)
             log.warning("Stop run ripper")

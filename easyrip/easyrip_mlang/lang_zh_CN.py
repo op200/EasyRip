@@ -304,6 +304,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
     "There have error in running": "执行时出错",
     "FFmpeg report: {}": "FFmpeg 报告: {}",
+    "{} not found. Skip it": "没找到 {}。默认跳过",
+    'The font "{}" does not contain these characters: {}': '字体 "{}" 不包含字符: {}',
     # web
     "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
     "HTTP service stopped by ^C": "HTTP 服务被 ^C 停止",
@@ -327,4 +329,6 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Do not write to log file": "不写入日志文件",
     "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}": "此等级及以上的日志会打印到控制台，若值为 'none' 则不打印，支持: {}",
     "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "此等级及以上的日志会写入日志文件，若值为 'none' 则不写入，支持: {}",
+    # 通用
+    "Run {} failed": "执行 {} 失败",
 }

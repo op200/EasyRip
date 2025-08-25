@@ -170,8 +170,24 @@ def get_font_path_from_registry(font_name) -> list[str]:
     return res
 
 
-def subset_font(font: TTFont, subset_str: str, afffix: str) -> TTFont:
-    subset_font = deepcopy(font)
+def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]:
+    subset_font = deepcopy(font.font)
+
+    # 检查哪些字符不存在于字体中
+    cmap = subset_font.getBestCmap()
+    available_chars = set(chr(key) for key in cmap.keys())
+    input_chars = set(subset_str)
+    missing_chars = input_chars - available_chars
+
+    if missing_chars:
+        # 将缺失字符按Unicode码点排序
+        sorted_missing = sorted(missing_chars, key=lambda c: ord(c))
+        missing_info = ", ".join(f"'{c}' (U+{ord(c):04X})" for c in sorted_missing)
+        log.warning(
+            'The font "{}" does not contain these characters: {}',
+            f"{font.familys} / {font.font_type.name}",
+            missing_info,
+        )
 
     # 创建子集化选项
     options = subset.Options()
@@ -199,7 +215,7 @@ def subset_font(font: TTFont, subset_str: str, afffix: str) -> TTFont:
     # 修改 Name Record
     affix_ascii = afffix.encode("ascii")
     affix_utf16be = afffix.encode("utf-16-be")
-    table_name: table__n_a_m_e = font.get("name")  # type: ignore
+    table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
     subset_table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
     subset_table_name.names = []  # 重写 name table
     for record in table_name.names:
@@ -226,4 +242,4 @@ def subset_font(font: TTFont, subset_str: str, afffix: str) -> TTFont:
             )
         )
 
-    return subset_font
+    return subset_font, not missing_chars

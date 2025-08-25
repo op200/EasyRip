@@ -1091,6 +1091,8 @@ class Ripper:
                 for path in _other_sub_list:
                     shutil.copy2(path, _output_dir / path.name)
 
+                if subset_res is False:
+                    log.error("Run {} failed", "subset")
                 return subset_res
 
             case _:

@@ -353,7 +353,11 @@ def subset(
 
         if font_in_sub:
             for org_path_abs, s in val.items():
-                new_font = subset_font(key.font, s, _affix)
+                new_font, is_subset_success = subset_font(key, s, _affix)
+
+                if strict and is_subset_success is False:
+                    return_res = False
+
                 with BytesIO() as buffer:
                     new_font.save(buffer)
                     if org_path_abs not in subset_font_bytes_and_name_dict:
@@ -365,7 +369,13 @@ def subset(
                         )
                     )
         else:
-            new_font = subset_font(key.font, "".join(v for v in val.values()), _affix)
+            new_font, is_subset_success = subset_font(
+                key, "".join(v for v in val.values()), _affix
+            )
+
+            if strict and is_subset_success is False:
+                return_res = False
+
             new_font.save(output_dir / f"{_affix}{_basename}.{_infix}.{_suffix}")
 
     # 保存子集化的字幕
