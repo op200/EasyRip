@@ -215,7 +215,7 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
     # 修改 Name Record
     affix_ascii = afffix.encode("ascii")
     affix_utf16be = afffix.encode("utf-16-be")
-    table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
+    table_name: table__n_a_m_e = font.font.get("name")  # type: ignore
     subset_table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
     subset_table_name.names = []  # 重写 name table
     for record in table_name.names:

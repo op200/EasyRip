@@ -114,7 +114,7 @@ def subset(
                     tag_italic: str | None = None
 
                     for tag, value in re.findall(
-                        r"\\\s*(fn@|fn|b(?![a-zA-Z])|i(?![a-zA-Z]))([^\\}]+)", text
+                        r"\\\s*(fn@|fn|b(?![a-zA-Z])|i(?![a-zA-Z])|r)([^\\}]*)", text
                     ):
                         match tag:
                             case "fn@" | "fn":
@@ -123,6 +123,15 @@ def subset(
                                 tag_bold = value
                             case "i":
                                 tag_italic = value
+                            case "r":
+                                if value in style__font_sign:
+                                    current_font_sign = style__font_sign[value]
+                                else:
+                                    current_font_sign = default_font_sign
+                                    if value != "":
+                                        log.warning(
+                                            "The \\r style '{}' not in Styles", value
+                                        )
 
                     new_fontname: str = current_font_sign[0]
                     new_bold: bool
@@ -136,12 +145,14 @@ def subset(
                             case _:
                                 new_fontname = _tag_fn
 
-                        # 修改
-                        text = text.replace(
-                            f"\\fn{tag_fn}", f"\\fn{get_font_new_name(new_fontname)}"
-                        ).replace(
-                            f"\\fn@{tag_fn}", f"\\fn@{get_font_new_name(new_fontname)}"
-                        )
+                                # 修改
+                                text = text.replace(
+                                    f"\\fn{tag_fn}",
+                                    f"\\fn{get_font_new_name(new_fontname)}",
+                                ).replace(
+                                    f"\\fn@{tag_fn}",
+                                    f"\\fn@{get_font_new_name(new_fontname)}",
+                                )
 
                     if tag_bold is not None:
                         match tag_bold.strip():
@@ -307,7 +318,7 @@ def subset(
             _font = font_sign__font[key]
 
         if _font in font__subset_str:
-            for k, v in val:
+            for k, v in val.items():
                 if k in font__subset_str[_font]:
                     font__subset_str[_font][k] += v
                 else:

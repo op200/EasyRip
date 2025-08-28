@@ -609,7 +609,7 @@ def run_command(command: list[str] | str) -> bool:
                                 log.error(f"{repr(e)} {e}", deep=True)
                                 return False
 
-                    case "-preset":
+                    case "-preset" | "-p":
                         preset_name = cmd_list[i + 1]
 
                     case "-run":
