@@ -584,6 +584,14 @@ class Ripper:
                             },
                         }
 
+                if (
+                    (_crf := _option_map.get("crf"))
+                    and (_qpmin := _option_map.get("qpmin"))
+                    and (_qpmax := _option_map.get("qpmax"))
+                    and not (_qpmin <= _crf <= _qpmax)
+                ):
+                    log.warning("The CRF is not between QPmin and QPmax")
+
                 _param = ":".join((f"{key}={val}" for key, val in _option_map.items()))
 
                 encoder_format_str = (
@@ -871,6 +879,14 @@ class Ripper:
                 if _option_map.get("hme", "0") == "0":
                     _option_map.pop("hme-search")
                     _option_map.pop("hme-range")
+
+                if (
+                    (_crf := _option_map.get("crf"))
+                    and (_qpmin := _option_map.get("qpmin"))
+                    and (_qpmax := _option_map.get("qpmax"))
+                    and not (_qpmin <= _crf <= _qpmax)
+                ):
+                    log.warning("The CRF is not between QPmin and QPmax")
 
                 _param = ":".join(f"{key}={val}" for key, val in _option_map.items())
 

@@ -117,7 +117,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "  -o:dir <string>\n"
         "    输出文件的目标目录\n"
         "\n"
-        "  -preset <string>\n"
+        "  -p / -preset <string>\n"
         "    设置预设\n"
         "    预设名:\n"
         "      custom\n"

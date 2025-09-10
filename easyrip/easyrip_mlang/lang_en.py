@@ -117,7 +117,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "  -o:dir <string>\n"
         "    Destination directory of the output file\n"
         "\n"
-        "  -preset <string>\n"
+        "  -p / -preset <string>\n"
         "    Setting preset\n"
         "    Preset name:\n"
         "      custom\n"
