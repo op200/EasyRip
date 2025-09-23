@@ -843,7 +843,7 @@ class Ripper:
                         _option_map = {
                             "crf": "17",
                             "qpmin": "3",
-                            "qpmax": "20",
+                            "qpmax": "21.5",
                             "psy-rd": "2.2",
                             "rd": "5",
                             "rdoq-level": "2",
