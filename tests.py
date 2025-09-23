@@ -128,7 +128,7 @@ class TestRip(unittest.TestCase):
                     "-show_data",
                     "-print_format",
                     "json",
-                    f"{TestRip.test_video_output_basename}.rip.mp4",
+                    f"{TestRip.test_video_output_basename}.v.mp4",
                 ],
                 stdout=subprocess.PIPE,
                 text=True,

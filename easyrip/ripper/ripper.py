@@ -13,7 +13,7 @@ from typing import Iterable
 from .. import easyrip_web
 from ..easyrip_log import log
 from ..easyrip_mlang import gettext, Global_lang_val, translate_subtitles
-from . import media_info
+from .media_info import Media_info
 from .utils import get_base62_time
 from .font_subset import subset
 
@@ -135,7 +135,7 @@ class Ripper:
 
     preset_name: PresetName
 
-    info: media_info.Media_info
+    info: Media_info
 
     _progress: dict
     """
@@ -159,7 +159,7 @@ class Ripper:
     ):
         self.input_path_list = [Path(path) for path in input_path]
 
-        self.info = media_info.get_media_info(self.input_path_list[0])
+        self.info = Media_info.from_path(self.input_path_list[0])
 
         self.output_prefix_list = [
             path[0] or (path[1] or self.input_path_list[-1]).stem
