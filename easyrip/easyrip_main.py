@@ -21,11 +21,11 @@ from .easyrip_log import log, Event as LogEvent
 from .ripper import Ripper
 from .easyrip_mlang import (
     Global_lang_val,
-    Language,
-    Region,
+    Lang_tag,
     get_system_language,
     gettext,
     Event as MlangEvent,
+    translate_subtitles,
 )
 from . import easyrip_web
 from .easyrip_config import config
@@ -194,7 +194,7 @@ def check_env():
                     print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        "94",
+                        "95",
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
@@ -405,8 +405,8 @@ def run_command(command: list[str] | str) -> bool:
 
         case "dir":
             files = os.listdir(os.getcwd())
-            for f in files:
-                print(f)
+            for f_and_s in files:
+                print(f_and_s)
             log.send("", " | ".join(files))
 
         case "mkdir" | "makedir":
@@ -552,6 +552,45 @@ def run_command(command: list[str] | str) -> bool:
                     init()
                 case "list":
                     config.show_config_list()
+
+        case "translate":
+            if not (_infix := cmd_list[1]):
+                log.error("Need target infix")
+                return False
+
+            if not (_target_tag_str := cmd_list[2]):
+                log.error("Need target language")
+                return False
+
+            translate_overwrite: bool = False
+            for s in cmd_list[3:]:
+                if s == "-overwrite":
+                    translate_overwrite = True
+
+            try:
+                _file_list = translate_subtitles(
+                    directory=Path(os.getcwd()),
+                    infix=_infix,
+                    target_lang=_target_tag_str,
+                )
+            except Exception as e:
+                log.error(e, is_format=False)
+                return False
+
+            for f_and_s in _file_list:
+                if translate_overwrite is False and f_and_s[0].is_file():
+                    log.error("There is a file with the same name, cancel file writing")
+                    return False
+
+            for f_and_s in _file_list:
+                with f_and_s[0].open("wt", encoding="utf-8-sig", newline="\n") as f:
+                    f.write(f_and_s[1])
+
+            log.info(
+                "Successfully translated: {}",
+                f"{(_len := len(_file_list))} file{'s' if _len > 1 else ''}",
+            )
+            return True
 
         case _:
             input_pathname_org_list: list[str] = []
@@ -799,13 +838,7 @@ def init(is_first_run: bool = False):
     _sys_lang = get_system_language()
     Global_lang_val.gettext_target_lang = _sys_lang
     if (_lang_config := config.get_user_profile("language")) not in {"auto", None}:
-        _lang = str(_lang_config).split("-")
-        if len(_lang) == 1:
-            _lang.append("")
-        Global_lang_val.gettext_target_lang = (
-            getattr(Language, _lang[0], Language.Unknow),
-            getattr(Region, _lang[1], Region.Unknow),
-        )
+        Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
 
     # 设置日志文件路径名
     log.html_filename = gettext("encoding_log.html")

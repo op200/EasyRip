@@ -12,7 +12,7 @@ from typing import Iterable
 
 from .. import easyrip_web
 from ..easyrip_log import log
-from ..easyrip_mlang import gettext, Global_lang_val
+from ..easyrip_mlang import gettext, Global_lang_val, translate_subtitles
 from . import media_info
 from .utils import get_base62_time
 from .font_subset import subset
@@ -1346,6 +1346,25 @@ class Ripper:
                     Ripper.PresetName.subset,
                     self.option_map,
                 ).run():
+                    # 翻译
+                    if translate_sub := self.option_map.get("translate-sub"):
+                        _tr = translate_sub.split(":")
+                        if not len(_tr) == 2:
+                            log.error("{} param illegal", "-translate-sub")
+                        else:
+                            try:
+                                _file_list = translate_subtitles(
+                                    subset_folder, _tr[0], _tr[1]
+                                )
+                            except Exception as e:
+                                log.error(e, is_format=False)
+                            else:
+                                for f_and_s in _file_list:
+                                    with f_and_s[0].open(
+                                        "wt", encoding="utf-8-sig", newline="\n"
+                                    ) as f:
+                                        f.write(f_and_s[1])
+
                     # 合成 MKV
                     org_full_name: str = os.path.join(self.output_dir, temp_name)
                     new_full_name: str = os.path.join(
