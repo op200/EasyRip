@@ -571,7 +571,7 @@ class Attachments:
 
 
 @dataclass
-class Unknow_data:
+class Unknown_data:
     head: str
     data: list[str] = field(default_factory=list)
 
@@ -598,18 +598,18 @@ class Ass:
         self.styles: Styles = Styles()
         self.attachments: Attachments = Attachments()
         self.events: Events = Events()
-        self.unknow_data: list[Unknow_data] = []
+        self.unknown_data: list[Unknown_data] = []
 
         class State(enum.Enum):
-            unknow = enum.auto()
+            unknown = enum.auto()
             script_info = enum.auto()
             styles = enum.auto()
             fonts = enum.auto()
             graphics = enum.auto()
             events = enum.auto()
 
-        state: State = State.unknow
-        new_unknow_data: Unknow_data | None = None
+        state: State = State.unknown
+        new_unknown_data: Unknown_data | None = None
 
         for line in read_text(path).splitlines():
             line = line.strip()
@@ -618,9 +618,9 @@ class Ass:
                 continue
 
             if line.startswith("[") and line.endswith("]"):
-                if new_unknow_data is not None:
-                    self.unknow_data.append(new_unknow_data)
-                    new_unknow_data = None
+                if new_unknown_data is not None:
+                    self.unknown_data.append(new_unknown_data)
+                    new_unknown_data = None
 
                 match head := line[1:-1]:
                     case "Script Info":
@@ -635,8 +635,8 @@ class Ass:
                         state = State.events
                     case _:
                         if bool(re.search(r"[a-z]", head)):
-                            state = State.unknow
-                            new_unknow_data = Unknow_data(head)
+                            state = State.unknown
+                            new_unknown_data = Unknown_data(head)
 
             elif line.startswith("Format:"):
                 formats_generator = (v.strip() for v in line[7:].split(","))
@@ -685,7 +685,7 @@ class Ass:
                             )
                         else:
                             if self.attachments.data[-1].data is None:
-                                log.error("Unknow error", deep=True)
+                                log.error("Unknown error", deep=True)
                                 continue
                             self.attachments.data[-1].data += line + "\n"
 
@@ -700,7 +700,7 @@ class Ass:
                             )
                         else:
                             if self.attachments.data[-1].data is None:
-                                log.error("Unknow error", deep=True)
+                                log.error("Unknown error", deep=True)
                                 continue
                             self.attachments.data[-1].data += line + "\n"
 
@@ -730,18 +730,18 @@ class Ass:
                             self.events.new_data(event_tuple, event_type)
                         )
 
-                    case State.unknow:
-                        if new_unknow_data is None:
+                    case State.unknown:
+                        if new_unknown_data is None:
                             log.error(
                                 "Unknown error occurred when read line: {}",
                                 line,
                                 deep=True,
                             )
                             raise Ass_generation_failed()
-                        new_unknow_data.data.append(line)
+                        new_unknown_data.data.append(line)
 
-        if new_unknow_data is not None:
-            self.unknow_data.append(new_unknow_data)
+        if new_unknown_data is not None:
+            self.unknown_data.append(new_unknown_data)
 
     def __str__(
         self,
@@ -759,7 +759,7 @@ class Ass:
             self.events.to_ass_str(drop_non_render=drop_non_render),
             *(
                 data.to_ass_str()
-                for data in (() if drop_unkow_data else self.unknow_data)
+                for data in (() if drop_unkow_data else self.unknown_data)
             ),
         )
         return "\n\n".join(v for v in generator if v) + "\n"

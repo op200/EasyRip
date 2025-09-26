@@ -18,14 +18,14 @@ def run():
             command = input(get_input_prompt(is_color=True))
             sys.stdout.flush()
             sys.stderr.flush()
-        except Exception:
-            log.info("Manually force exit")
-            sys.exit()
         except KeyboardInterrupt:
             print(
                 f"\033[{91 if log.default_background_color == 41 else 31}m^C\033[{log.default_foreground_color}m"
             )
             continue
+        except EOFError:
+            log.debug("Manually force exit")
+            sys.exit()
 
         if not run_command(command):
             log.warning("Stop run command")

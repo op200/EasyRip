@@ -94,5 +94,7 @@ def gettext(org_text: str | Extra_text_index, *vals, is_format: bool = True):
             new_text = new_text.format(*vals)
         except IndexError:
             Event.log.error("IndexError in gettext when str.format", deep=True)
+        except ValueError:
+            Event.log.error("ValueError in gettext when str.format", deep=True)
 
     return new_text
