@@ -339,4 +339,5 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "此等级及以上的日志会写入日志文件，若值为 'none' 则不写入，支持: {}",
     # 通用
     "Run {} failed": "执行 {} 失败",
+    "Unknown error": "未知错误",
 }

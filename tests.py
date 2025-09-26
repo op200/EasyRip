@@ -50,6 +50,10 @@ class TestBasic(unittest.TestCase):
         log.error("error {}")
         log.info("info {}", "deep", deep=True)
 
+        log.debug("{}")
+        log.debug("{{}{}}")
+        log.debug("{{}}")
+
     def test_run_cmd(self):
         easyrip.init(True)
 
