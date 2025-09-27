@@ -438,8 +438,6 @@ class Ripper:
                             if muxer == Ripper.Muxer.mp4
                             else 'mkvmerge -o "{output}" "{input}"'
                         )
-                    case _ as param:
-                        log.error("Unsupported param: {}", f"-c:a {param}")
 
             case Ripper.PresetName.flac:
                 _ff_encode_str: str = ""

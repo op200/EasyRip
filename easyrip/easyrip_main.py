@@ -484,7 +484,8 @@ def run_command(command: list[str] | str) -> bool:
                             "Will shutdown in {}s after run finished", _shutdown_sec_str
                         )
                 case _ as param:
-                    log.error("Unsupported param: {}", f"run {param}")
+                    log.error("Unsupported param: {}", param)
+                    return False
 
             run_ripper_list(is_run_exit)
 
@@ -552,13 +553,15 @@ def run_command(command: list[str] | str) -> bool:
                         case "false" | "False":
                             _val = False
                         case _ as param:
-                            log.error("Unsupported param: {}", f"run {param}")
+                            log.error("Unsupported param: {}", param)
+                            return False
                     config.set_user_profile(cmd_list[2], _val)
                     init()
                 case "list":
                     config.show_config_list()
                 case _ as param:
-                    log.error("Unsupported param: {}", f"run {param}")
+                    log.error("Unsupported param: {}", param)
+                    return False
 
         case "translate":
             if not (_infix := cmd_list[1]):
