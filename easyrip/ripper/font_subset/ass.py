@@ -38,13 +38,13 @@ class Style_fmt_it(enum.Enum):
 #     Data = "Dialogue"
 
 
-@dataclass
+@dataclass(slots=True)
 class Script_info_data:
     # type: Script_info_type
     raw_str: str
 
 
-@dataclass
+@dataclass(slots=True)
 class Script_info:
     data: list[Script_info_data] = field(default_factory=list)
 
@@ -57,7 +57,7 @@ class Script_info:
         )
 
 
-@dataclass
+@dataclass(slots=True)
 class Style_data:
     Name: str
     Fontname: str
@@ -111,7 +111,7 @@ DEFAULT_STYLE_FMT_ORDER = (
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class Styles:
     fmt_order: tuple[
         Style_fmt_it,
@@ -282,7 +282,7 @@ class Event_type(enum.Enum):
     Comment = "Comment"
 
 
-@dataclass
+@dataclass(slots=True)
 class Event_data:
     type: Event_type
 
@@ -387,7 +387,7 @@ DEFAULT_EVENT_FMT_ORDER = (
 )
 
 
-@dataclass
+@dataclass(slots=True)
 class Events:
     fmt_order: tuple[
         Event_fmt_it,
@@ -504,7 +504,7 @@ class Attach_type(enum.Enum):
     Graphics = "Graphics"
 
 
-@dataclass
+@dataclass(slots=True)
 class Attachment_data:
     type: Attach_type
     name: str
@@ -537,7 +537,7 @@ class Attachment_data:
             self.org_data = new_data
 
 
-@dataclass
+@dataclass(slots=True)
 class Attachments:
     data: list[Attachment_data] = field(default_factory=list)
 
@@ -570,7 +570,7 @@ class Attachments:
         return res[1:] if len(res) else ""  # 去除头部的 \n
 
 
-@dataclass
+@dataclass(slots=True)
 class Unknown_data:
     head: str
     data: list[str] = field(default_factory=list)

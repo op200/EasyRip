@@ -20,11 +20,11 @@ class Font_type(enum.Enum):
     Bold_Italic = (True, True)
 
 
-@dataclass
+@dataclass(slots=True)
 class Font:
     pathname: str
     font: TTFont
-    familys: list[str] = field(default_factory=list)
+    familys: set[str] = field(default_factory=set)
     font_type: Font_type = Font_type.Regular
 
     def __hash__(self) -> int:
@@ -82,7 +82,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
 
                     match name_id:
                         case 1:  # Font Family Name
-                            res_font.familys.append(name_str)
+                            res_font.familys.add(name_str)
 
                         case 2:  # Font Subfamily Name
                             if record.langID not in {0, 1033}:

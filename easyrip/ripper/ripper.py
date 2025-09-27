@@ -116,7 +116,7 @@ class Ripper:
             )
             return default
 
-    @dataclass
+    @dataclass(slots=True)
     class Option:
         preset_name: "Ripper.PresetName"
         encoder_format_str: str
@@ -256,7 +256,7 @@ class Ripper:
             )
             _bitrate_str = (
                 ""
-                if audio_encoder == Ripper.AudioCodec.copy
+                if audio_encoder in {Ripper.AudioCodec.copy, Ripper.AudioCodec.flac}
                 else f"-b:a {self.option_map.get('b:a') or '160k'}"
             )
             audio_option = f"{_encoder_str}{_bitrate_str} "
@@ -1241,16 +1241,20 @@ class Ripper:
                     [_flac_basename],
                     self.output_dir,
                     Ripper.PresetName.flac,
-                    (
-                        self.option_map
-                        | {
-                            "_sub_ripper_num": str(
-                                int(self.option_map.get("_sub_ripper_num", 0)) + 1
-                            ),
-                            "_sub_ripper_title": "FLAC Enc",
-                            "muxer": "mkv",
-                        }
-                    ),
+                    {
+                        k: v
+                        for k, v in (
+                            self.option_map
+                            | {
+                                "_sub_ripper_num": str(
+                                    int(self.option_map.get("_sub_ripper_num", 0)) + 1
+                                ),
+                                "_sub_ripper_title": "FLAC Enc",
+                                "muxer": "mkv",
+                            }
+                        ).items()
+                        if k not in {"soft-sub", "sub", "translate-sub"}
+                    },
                 )
                 _flac_ripper.run()
 
@@ -1298,7 +1302,7 @@ class Ripper:
             # 内封字幕合成
             if soft_sub := self.option_map.get("soft-sub"):
                 # 处理 soft-sub
-                soft_sub_list: list[str]
+                soft_sub_list: list[Path]
                 soft_sub_map_list: list[str] = soft_sub.split(":")
                 if soft_sub_map_list[0] == "auto":
                     soft_sub_list = []
@@ -1331,40 +1335,54 @@ class Ripper:
                             )
                         ):
                             soft_sub_list.append(
-                                os.path.join(self.output_dir, _file_basename)
+                                Path(os.path.join(self.output_dir, _file_basename))
                             )
                 else:
-                    soft_sub_list = soft_sub.split("?")
+                    soft_sub_list = [Path(s) for s in soft_sub.split("?")]
 
-                # 子集化
                 subset_folder = Path(self.output_dir) / f"subset_temp_{temp_name}"
                 log.info("-soft-sub list = {}", soft_sub_list)
+
+                # 临时翻译
+                add_tr_files = list[Path]()
+                if translate_sub := self.option_map.get("translate-sub"):
+                    _tr = translate_sub.split(":")
+                    if not len(_tr) == 2:
+                        log.error("{} param illegal", "-translate-sub")
+                    else:
+                        try:
+                            _file_list = translate_subtitles(
+                                Path(self.output_dir),
+                                _tr[0],
+                                _tr[1],
+                                file_intersection_selector=(
+                                    Path(s) for s in soft_sub_list
+                                ),
+                            )
+                        except Exception as e:
+                            log.error(e, is_format=False)
+                        else:
+                            for f_and_s in _file_list:
+                                if f_and_s[0].is_file():
+                                    log.warning(
+                                        'The file "{}" already exists, skip translating it',
+                                        f_and_s[0],
+                                    )
+                                    continue
+                                with f_and_s[0].open(
+                                    "wt", encoding="utf-8-sig", newline="\n"
+                                ) as f:
+                                    f.write(f_and_s[1])
+                                    add_tr_files.append(f_and_s[0])
+
+                # 子集化
                 if Ripper(
-                    soft_sub_list,
+                    soft_sub_list + add_tr_files,
                     (subset_folder.name,),
                     self.output_dir,
                     Ripper.PresetName.subset,
                     self.option_map,
                 ).run():
-                    # 翻译
-                    if translate_sub := self.option_map.get("translate-sub"):
-                        _tr = translate_sub.split(":")
-                        if not len(_tr) == 2:
-                            log.error("{} param illegal", "-translate-sub")
-                        else:
-                            try:
-                                _file_list = translate_subtitles(
-                                    subset_folder, _tr[0], _tr[1]
-                                )
-                            except Exception as e:
-                                log.error(e, is_format=False)
-                            else:
-                                for f_and_s in _file_list:
-                                    with f_and_s[0].open(
-                                        "wt", encoding="utf-8-sig", newline="\n"
-                                    ) as f:
-                                        f.write(f_and_s[1])
-
                     # 合成 MKV
                     org_full_name: str = os.path.join(self.output_dir, temp_name)
                     new_full_name: str = os.path.join(
@@ -1399,7 +1417,13 @@ class Ripper:
                 else:
                     log.error("Subset faild, cancel mux")
 
+                # 清理临时文件
                 shutil.rmtree(subset_folder)
+                for f in add_tr_files:
+                    try:
+                        f.unlink()
+                    except Exception as e:
+                        log.error(f"{repr(e)} {e}", deep=True, is_format=False)
 
         # 获取 ffmpeg report 中的报错
         if FF_REPORT_LOG_FILE.is_file():

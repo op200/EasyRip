@@ -4,9 +4,10 @@ import re
 import shutil
 import subprocess
 import unittest
+import timeit
 
 import easyrip
-from easyrip import gettext, log, run_command
+from easyrip import gettext, log, run_command, Ass
 
 
 class TestBasic(unittest.TestCase):
@@ -200,3 +201,11 @@ class TestRip(unittest.TestCase):
                 f"-i {TestRip.test_va_basename}.{TestRip.test_va_suffix} -preset flac -o {TestRip.test_audio_output_basename} -run"
             )
         )
+
+
+class TestSubtitle(unittest.TestCase):
+    def test_ass_class(self):
+        def _test_ass_class_create():
+            return Ass("test.zh-Hans.ass")
+
+        log.info(timeit.timeit(_test_ass_class_create, number=100))

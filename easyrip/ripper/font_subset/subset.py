@@ -5,7 +5,14 @@ from typing import Iterable
 
 from ...global_val import Global_val
 from ...easyrip_log import log
-from .ass import Ass, Event_data, Script_info_data, Attachment_data, Attach_type
+from .ass import (
+    Ass,
+    Event_data,
+    Event_type,
+    Script_info_data,
+    Attachment_data,
+    Attach_type,
+)
 from .font import Font_type, Font, load_fonts, subset_font, get_font_path_from_registry
 from ..utils import get_base62_time
 
@@ -83,6 +90,9 @@ def subset(
 
         # Events
         for event in path_and_sub.events.data:
+            if event.type != Event_type.Dialogue:
+                continue
+
             default_font_sign: tuple[str, Font_type]
 
             # 获取每行的默认字体

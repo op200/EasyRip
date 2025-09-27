@@ -47,7 +47,13 @@ class zhconvert:
                 )
             )
 
-        log.info("Translate into {} using {}", target_lang, cls.__name__)
+        log.info(
+            gettext(
+                "Translating into '{target_lang}' using '{api_name}'",
+                is_format=False,
+            ).format(target_lang=target_lang, api_name=cls.__name__),
+            is_format=False,
+        )
 
         req = urllib.request.Request(
             url="https://api.zhconvert.org/convert",

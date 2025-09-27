@@ -7,7 +7,7 @@ from typing import Self
 from ..easyrip_log import log
 
 
-@dataclass
+@dataclass(slots=True)
 class Audio_info:
     index: int
     sample_fmt: str = ""
@@ -16,7 +16,7 @@ class Audio_info:
     bits_per_raw_sample: int = 0
 
 
-@dataclass
+@dataclass(slots=True)
 class Media_info:
     nb_frames: int = 0
     """封装帧数 (f)"""

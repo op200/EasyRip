@@ -9,7 +9,7 @@ from .easyrip_main import (
     Global_val,
     Global_lang_val,
 )
-from .ripper import Media_info
+from .ripper import Media_info, Ass
 
 __all__ = [
     "init",
@@ -22,6 +22,7 @@ __all__ = [
     "Global_val",
     "Global_lang_val",
     "Media_info",
+    "Ass",
 ]
 
 __version__ = Global_val.PROJECT_VERSION

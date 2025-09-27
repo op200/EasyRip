@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Iterable
 
 from ..easyrip_web.third_party_api import zhconvert
 from .global_lang_val import (
@@ -10,10 +11,15 @@ from .global_lang_val import (
 
 
 def translate_subtitles(
-    directory: Path, infix: str, target_lang: str | Lang_tag
+    directory: Path,
+    infix: str,
+    target_lang: str | Lang_tag,
+    *,
+    file_intersection_selector: Iterable[Path] | None = None,
 ) -> list[tuple[Path, str]]:
     """
     #### 自动搜索符合中缀的字幕文件，翻译为目标语言
+    文件交集选择器: 不为 None 时，与选择器有交集的 Path 才会选择
     Return: list[tuple[file, content]]
     """
 
@@ -25,9 +31,15 @@ def translate_subtitles(
     else:
         target_lang_tag = target_lang
 
+    if file_intersection_selector is not None:
+        file_intersection_selector = set(file_intersection_selector)
+
     file_list = list[tuple[Path, str]]()
     for f in directory.iterdir():
-        if f.suffix not in {".ass", ".ssa", ".srt"}:
+        if f.suffix not in {".ass", ".ssa", ".srt"} or (
+            file_intersection_selector is not None
+            and f not in file_intersection_selector
+        ):
             continue
 
         if len(_stems := f.stem.split(".")) < 1:
@@ -99,7 +111,7 @@ def translate_subtitles(
                     ]
 
                 case _:
-                    Exception(
+                    raise Exception(
                         gettext("Unsupported language tag: {}").format(target_lang_tag)
                     )
 
@@ -146,11 +158,11 @@ def translate_subtitles(
                     ]
 
                 case _:
-                    Exception(
+                    raise Exception(
                         gettext("Unsupported language tag: {}").format(target_lang_tag)
                     )
 
         case _:
-            Exception(gettext("Unsupported language tag: {}").format(infix))
+            raise Exception(gettext("Unsupported language tag: {}").format(infix))
 
     return file_list

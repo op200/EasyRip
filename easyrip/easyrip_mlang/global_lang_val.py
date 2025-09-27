@@ -3,7 +3,7 @@ import enum
 from typing import Self
 
 
-@dataclass
+@dataclass(slots=True)
 class Lang_tag_val:
     en_name: str
     local_name: str
@@ -72,7 +72,7 @@ class Lang_tag_region(enum.Enum):
         return cls.Unknown
 
 
-@dataclass
+@dataclass(slots=True)
 class Lang_tag:
     language: Lang_tag_language = Lang_tag_language.Unknown
     script: Lang_tag_script = Lang_tag_script.Unknown
