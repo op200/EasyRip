@@ -6,7 +6,7 @@ Self-use codec tool
 **[Easy Rip Web Panel  
 Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 
-## Get file
+## Start
 
 * If you have Python environment  
   如果你有 Python 环境
