@@ -27,7 +27,7 @@ class Media_info:
     duration: float = 0
     """时长 (s)"""
 
-    audio_info: list[Audio_info] = field(default_factory=list)
+    audio_info: list[Audio_info] = field(default_factory=list[Audio_info])
 
     @classmethod
     def from_path(cls, path: str | Path) -> Self:

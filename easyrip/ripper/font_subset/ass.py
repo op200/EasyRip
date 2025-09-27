@@ -46,7 +46,7 @@ class Script_info_data:
 
 @dataclass(slots=True)
 class Script_info:
-    data: list[Script_info_data] = field(default_factory=list)
+    data: list[Script_info_data] = field(default_factory=list[Script_info_data])
 
     def to_ass_str(self) -> str:
         return "\n".join(
@@ -165,7 +165,7 @@ class Styles:
             Style_fmt_it.Encoding: 22,
         }
     )
-    data: list[Style_data] = field(default_factory=list)
+    data: list[Style_data] = field(default_factory=list[Style_data])
 
     def flush_fmt_order_index(self):
         for it in self.fmt_order:
@@ -302,7 +302,7 @@ class Event_data:
         if not use_libass_spec:
             # 模式1: 不处理转义字符
             result: list[tuple[bool, str]] = []
-            current = []  # 当前累积的字符
+            current = list[str]()  # 当前累积的字符
             in_tag = False  # 是否在标签内
 
             for char in text:
@@ -332,7 +332,7 @@ class Event_data:
         else:
             # 模式2: 处理转义字符（libass规范）
             result = []
-            current = []  # 当前累积的字符
+            current = list[str]()  # 当前累积的字符
             in_tag = False  # 是否在标签内
             escape_next = False  # 下一个字符是否转义
 
@@ -415,7 +415,7 @@ class Events:
             Event_fmt_it.Text: 9,
         }
     )
-    data: list[Event_data] = field(default_factory=list)
+    data: list[Event_data] = field(default_factory=list[Event_data])
 
     def flush_fmt_order_index(self):
         for it in self.fmt_order:
@@ -442,7 +442,7 @@ class Events:
             str,
             str,
         ],
-        event_type,
+        event_type: Event_type,
     ) -> Event_data:
         try:
             res = Event_data(
@@ -539,7 +539,7 @@ class Attachment_data:
 
 @dataclass(slots=True)
 class Attachments:
-    data: list[Attachment_data] = field(default_factory=list)
+    data: list[Attachment_data] = field(default_factory=list[Attachment_data])
 
     def to_ass_str(
         self,
@@ -573,7 +573,7 @@ class Attachments:
 @dataclass(slots=True)
 class Unknown_data:
     head: str
-    data: list[str] = field(default_factory=list)
+    data: list[str] = field(default_factory=list[str])
 
     def to_ass_str(self) -> str:
         return "\n".join(

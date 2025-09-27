@@ -5,6 +5,7 @@ import sys
 import enum
 import datetime
 import traceback
+from typing import Literal
 
 from .easyrip_mlang import gettext, Global_lang_val
 from . import easyrip_web
@@ -126,11 +127,20 @@ class log:
 
     @staticmethod
     def _do_log(
-        log_level: LogLevel,
+        log_level: Literal[
+            LogLevel.debug,
+            LogLevel.send,
+            LogLevel.info,
+            LogLevel.warning,
+            LogLevel.error,
+        ],
         mode: LogMode,
         message: object,
-        *vals,
-        **kwargs,
+        *vals: object,
+        is_format: bool = True,
+        is_deep: bool = False,
+        is_server: bool = False,
+        http_send_header: str = "",
     ):
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
@@ -138,10 +148,10 @@ class log:
             if type(message) is Global_lang_val.Extra_text_index
             else str(message),
             *vals,
-            is_format=kwargs.get("is_format", True),
+            is_format=is_format,
         )
 
-        if kwargs.get("deep"):
+        if is_deep:
             message = f"{traceback.format_exc()}\n{message}"
 
         time_str = f"\033[{log.time_color}m{time_now}"
@@ -236,12 +246,7 @@ class log:
             case log.LogLevel.send:
                 log.send_num += 1
 
-                if (
-                    kwargs.get("is_server", False)
-                    or easyrip_web.http_server.Event.is_run_command[-1]
-                ):
-                    http_send_header = kwargs.get("http_send_header", "")
-
+                if is_server or easyrip_web.http_server.Event.is_run_command[-1]:
                     if log.print_level.value <= log.LogLevel.send.value:
                         print(
                             f"{time_str}\033[{log.send_color}m [Send] {message}\033[{log.default_foreground_color}m"
@@ -264,7 +269,7 @@ class log:
     def debug(
         message: object,
         /,
-        *vals,
+        *vals: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
@@ -275,14 +280,14 @@ class log:
             message,
             *vals,
             is_format=is_format,
-            deep=deep,
+            is_deep=deep,
         )
 
     @staticmethod
     def info(
         message: object,
         /,
-        *vals,
+        *vals: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
@@ -293,14 +298,14 @@ class log:
             message,
             *vals,
             is_format=is_format,
-            deep=deep,
+            is_deep=deep,
         )
 
     @staticmethod
     def warning(
         message: object,
         /,
-        *vals,
+        *vals: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
@@ -311,14 +316,14 @@ class log:
             message,
             *vals,
             is_format=is_format,
-            deep=deep,
+            is_deep=deep,
         )
 
     @staticmethod
     def error(
         message: object,
         /,
-        *vals,
+        *vals: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
@@ -329,7 +334,7 @@ class log:
             message,
             *vals,
             is_format=is_format,
-            deep=deep,
+            is_deep=deep,
         )
 
     @staticmethod
@@ -337,7 +342,7 @@ class log:
         header: str,
         message: object,
         /,
-        *vals,
+        *vals: object,
         is_format: bool = True,
         mode: LogMode = LogMode.normal,
         is_server: bool = False,
@@ -350,7 +355,7 @@ class log:
             http_send_header=header,
             is_format=is_format,
             is_server=is_server,
-            deep=False,
+            is_deep=False,
         )
 
     @staticmethod

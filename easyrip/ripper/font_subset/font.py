@@ -24,7 +24,7 @@ class Font_type(enum.Enum):
 class Font:
     pathname: str
     font: TTFont
-    familys: set[str] = field(default_factory=set)
+    familys: set[str] = field(default_factory=set[str])
     font_type: Font_type = Font_type.Regular
 
     def __hash__(self) -> int:
@@ -53,7 +53,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                 fonts = [TTFont(file=file, lazy=lazy)]
 
             for font in fonts:
-                table_name: table__n_a_m_e = font.get("name")  # type: ignore
+                table_name: table__n_a_m_e | None = font.get("name")  # type: ignore
 
                 if table_name is None:
                     log.warning(f"No 'name' table found in font {file}")
@@ -132,7 +132,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     return res_font_list
 
 
-def get_font_path_from_registry(font_name) -> list[str]:
+def get_font_path_from_registry(font_name: str) -> list[str]:
     """
     通过Windows注册表获取字体文件路径
     :param font_name: 字体名称（如"Arial"）

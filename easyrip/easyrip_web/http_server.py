@@ -38,26 +38,26 @@ class Event:
     """
     用于防止 server 二次运行，以及告知客户端运行状态
     """
-    progress: deque[dict] = deque([{}])
+    progress: deque[dict[str, int | float]] = deque([{}])
 
     class log:
         @staticmethod
-        def info(message: object, *vals):
+        def info(message: object, *vals: object):
             pass
 
         @staticmethod
-        def warning(message: object, *vals):
+        def warning(message: object, *vals: object):
             pass
 
         @staticmethod
-        def error(message: object, *vals):
+        def error(message: object, *vals: object):
             pass
 
         @staticmethod
         def send(
             header: str,
             message: object,
-            *vals,
+            *vals: object,
             is_format: bool = True,
             is_server: bool = False,
         ):

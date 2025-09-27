@@ -28,7 +28,9 @@ __all__ = [
 class Event:
     class log:
         @staticmethod
-        def error(message: object, *vals, is_format: bool = True, deep: bool = False):
+        def error(
+            message: object, *vals: object, is_format: bool = True, deep: bool = False
+        ):
             pass
 
 
@@ -80,7 +82,7 @@ def get_system_language() -> Lang_tag:
     )
 
 
-def gettext(org_text: str | Extra_text_index, *vals, is_format: bool = True):
+def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = True):
     new_text: str | None = None
 
     match Global_lang_val.gettext_target_lang.language:

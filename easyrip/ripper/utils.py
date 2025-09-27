@@ -12,7 +12,7 @@ BASE62 = string.digits + string.ascii_letters
 def int_to_base62(num: int) -> str:
     if num == 0:
         return "0"
-    s = []
+    s = list[str]()
     while num > 0:
         num, rem = divmod(num, 62)
         s.append(BASE62[rem])
@@ -42,11 +42,11 @@ def read_text(path: Path) -> str:
 
 
 def uuencode_ssa(data: bytes) -> str:
-    encoded = []
-    line = []
-    line_count = 0
+    encoded = list[str]()
+    line = list[str]()
+    line_count: int = 0
 
-    def append_chars(chars):
+    def append_chars(chars: list[str]):
         nonlocal line, line_count
         for c in chars:
             line.append(c)

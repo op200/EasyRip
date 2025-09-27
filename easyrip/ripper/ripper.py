@@ -8,7 +8,7 @@ import enum
 import shutil
 from time import sleep
 from threading import Thread
-from typing import Iterable
+from typing import Callable, Iterable, Self
 
 from .. import easyrip_web
 from ..easyrip_log import log
@@ -137,7 +137,7 @@ class Ripper:
 
     info: Media_info
 
-    _progress: dict
+    _progress: dict[str, int | float]
     """
     .frame_count : int 总帧数
     .frame : int 已输出帧数
@@ -186,7 +186,7 @@ class Ripper:
             self.preset_name = Ripper.PresetName.custom
             self.option = option
 
-        self._progress = {}
+        self._progress = dict[str, int | float]()
 
     def __str__(self):
         return (
@@ -438,6 +438,8 @@ class Ripper:
                             if muxer == Ripper.Muxer.mp4
                             else 'mkvmerge -o "{output}" "{input}"'
                         )
+                    case _ as param:
+                        log.error("Unsupported param: {}", f"-c:a {param}")
 
             case Ripper.PresetName.flac:
                 _ff_encode_str: str = ""
@@ -653,7 +655,7 @@ class Ripper:
                     "weightb": "1",
                     "info": "1",
                 }
-                _custom_option_map = {
+                _custom_option_map: dict[str, str | None] = {
                     "crf": self.option_map.get("crf"),
                     "qpmin": self.option_map.get("qpmin"),
                     "qpmax": self.option_map.get("qpmax"),
@@ -994,7 +996,10 @@ class Ripper:
         easyrip_web.http_server.Event.progress.append({})
         easyrip_web.http_server.Event.progress.popleft()
 
-    def run(self, prep_func=lambda _: None) -> bool:
+    def run(
+        self,
+        prep_func: Callable[[Self], None] = lambda _: None,
+    ) -> bool:
         if not self.input_path_list[0].exists():
             log.error('The file "{}" does not exist', self.input_path_list[0])
             return False
@@ -1279,17 +1284,20 @@ class Ripper:
                         Ripper.PresetName.copy,
                         {
                             k: v
-                            for k, v in {
-                                "_sub_ripper_num": str(
-                                    int(self.option_map.get("_sub_ripper_num", 0)) + 1
-                                ),
-                                "_sub_ripper_title": "FLAC Mux",
-                                "auto-infix": "0",
-                                "c:a": "copy",
-                                "muxer": _mux_muxer,
-                                "r": self.option_map.get("r"),
-                                "fps": self.option_map.get("fps"),
-                            }.items()
+                            for k, v in dict[str, str | None](
+                                {
+                                    "_sub_ripper_num": str(
+                                        int(self.option_map.get("_sub_ripper_num", 0))
+                                        + 1
+                                    ),
+                                    "_sub_ripper_title": "FLAC Mux",
+                                    "auto-infix": "0",
+                                    "c:a": "copy",
+                                    "muxer": _mux_muxer,
+                                    "r": self.option_map.get("r"),
+                                    "fps": self.option_map.get("fps"),
+                                }
+                            ).items()
                             if v
                         },
                     )
@@ -1397,18 +1405,21 @@ class Ripper:
                         Ripper.PresetName.copy,
                         {
                             k: v
-                            for k, v in {
-                                "only-mux-sub-path": str(subset_folder),
-                                "_sub_ripper_num": str(
-                                    int(self.option_map.get("_sub_ripper_num", 0)) + 1
-                                ),
-                                "_sub_ripper_title": "Soft Sub Mux",
-                                "auto-infix": "0",
-                                "c:a": self.option_map.get("c:a") and "copy",
-                                "muxer": "mkv",
-                                "r": self.option_map.get("r"),
-                                "fps": self.option_map.get("fps"),
-                            }.items()
+                            for k, v in dict[str, str | None](
+                                {
+                                    "only-mux-sub-path": str(subset_folder),
+                                    "_sub_ripper_num": str(
+                                        int(self.option_map.get("_sub_ripper_num", 0))
+                                        + 1
+                                    ),
+                                    "_sub_ripper_title": "Soft Sub Mux",
+                                    "auto-infix": "0",
+                                    "c:a": self.option_map.get("c:a") and "copy",
+                                    "muxer": "mkv",
+                                    "r": self.option_map.get("r"),
+                                    "fps": self.option_map.get("fps"),
+                                }
+                            ).items()
                             if v
                         },
                     ).run():

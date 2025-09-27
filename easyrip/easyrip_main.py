@@ -40,7 +40,7 @@ PROJECT_TITLE = Global_val.PROJECT_TITLE
 PROJECT_URL = Global_val.PROJECT_URL
 
 
-def change_title(title):
+def change_title(title: str):
     if os.name == "nt":
         os.system(f"title {title}")
     elif os.name == "posix":
@@ -336,7 +336,7 @@ def run_command(command: list[str] | str) -> bool:
     if isinstance(command, list):
         cmd_list = command
 
-    elif isinstance(command, str):
+    else:
         try:
             cmd_list = [
                 cmd.strip('"').strip("'").replace("\\\\", "\\")
@@ -483,6 +483,9 @@ def run_command(command: list[str] | str) -> bool:
                         log.info(
                             "Will shutdown in {}s after run finished", _shutdown_sec_str
                         )
+                case _ as param:
+                    log.error("Unsupported param: {}", f"run {param}")
+
             run_ripper_list(is_run_exit)
 
         case "server":
@@ -548,10 +551,14 @@ def run_command(command: list[str] | str) -> bool:
                             _val = True
                         case "false" | "False":
                             _val = False
+                        case _ as param:
+                            log.error("Unsupported param: {}", f"run {param}")
                     config.set_user_profile(cmd_list[2], _val)
                     init()
                 case "list":
                     config.show_config_list()
+                case _ as param:
+                    log.error("Unsupported param: {}", f"run {param}")
 
         case "translate":
             if not (_infix := cmd_list[1]):

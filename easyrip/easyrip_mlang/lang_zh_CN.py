@@ -290,6 +290,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     'The file "{}" does not exist': '文件 "{}" 不存在',
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",
     "Unsupported option: {}": "不支持的选项: {}",
+    "Unsupported param: {}": "不支持的参数: {}",
     "Manually force exit": "手动强制退出",
     "or run '{}' when you use pip": "或运行 '{}' 以使用 pip 更新",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误，改为默认值 60s",
