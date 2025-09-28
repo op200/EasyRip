@@ -163,7 +163,6 @@ class config:
         length_val = max(len(str(v)) for v in user_profile.values())
         for k, v in user_profile.items():
             log.send(
-                "",
                 f"{k:>{length_key}} = {str(v):<{length_val}} - {config._get_config_about(k)}",
             )
 

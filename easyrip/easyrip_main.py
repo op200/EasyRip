@@ -24,7 +24,6 @@ from .easyrip_mlang import (
     Lang_tag,
     get_system_language,
     gettext,
-    Event as MlangEvent,
     translate_subtitles,
 )
 from . import easyrip_web
@@ -355,10 +354,10 @@ def run_command(command: list[str] | str) -> bool:
 
     match cmd_list[0]:
         case "h" | "help":
-            log.send("", Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
+            log.send(Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
 
         case "v" | "ver" | "version":
-            log.send("", f"{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}")
+            log.send(f"{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}")
 
         case "log":
             msg = " ".join(cmd_list[2:])
@@ -370,7 +369,7 @@ def run_command(command: list[str] | str) -> bool:
                 case "error" | "err":
                     log.error(msg)
                 case "send":
-                    log.send("", msg)
+                    log.send(msg)
                 case "debug":
                     log.debug(msg)
                 case _:
@@ -407,7 +406,7 @@ def run_command(command: list[str] | str) -> bool:
             files = os.listdir(os.getcwd())
             for f_and_s in files:
                 print(f_and_s)
-            log.send("", " | ".join(files))
+            log.send(" | ".join(files))
 
         case "mkdir" | "makedir":
             try:
@@ -458,7 +457,7 @@ def run_command(command: list[str] | str) -> bool:
                                 for i, ripper in enumerate(Ripper.ripper_list, 1)
                             ]
                         )
-                    log.send("", msg, is_format=False)
+                    log.send(msg, is_format=False)
                 case _:
                     try:
                         i1, i2 = int(cmd_list[1]), int(cmd_list[2])
@@ -552,11 +551,19 @@ def run_command(command: list[str] | str) -> bool:
                             _val = True
                         case "false" | "False":
                             _val = False
-                        case _ as param:
-                            log.error("Unsupported param: {}", param)
-                            return False
-                    config.set_user_profile(cmd_list[2], _val)
-                    init()
+
+                    if (_old_val := config.get_user_profile(cmd_list[2])) == _val:
+                        log.info(
+                            "The new value is the same as the old value, cancel the modification",
+                        )
+                    elif config.set_user_profile(cmd_list[2], _val):
+                        init()
+                        log.info(
+                            "'config set {}' successful: {} -> {}",
+                            cmd_list[2],
+                            _old_val,
+                            _val,
+                        )
                 case "list":
                     config.show_config_list()
                 case _ as param:
@@ -880,8 +887,6 @@ def init(is_first_run: bool = False):
     if is_first_run:
         # 检测环境
         Thread(target=check_env, daemon=True).start()
-
-        MlangEvent.log = easyrip_web.http_server.Event.log = log  # type: ignore
 
         LogEvent.append_http_server_log_queue = (
             lambda message: easyrip_web.http_server.Event.log_queue.append(message)

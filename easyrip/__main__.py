@@ -1,10 +1,17 @@
 import sys
+from typing import NoReturn
+
+import Crypto
+import fontTools
 
 from .easyrip_main import init, run_command, Ripper, log, get_input_prompt
 
 
-def run():
+def run() -> NoReturn:
     init(True)
+
+    log.debug(f"pycryptodome: v{Crypto.__version__}")
+    log.debug(f"fonttools: v{fontTools.__version__}")
 
     Ripper.ripper_list = []
 

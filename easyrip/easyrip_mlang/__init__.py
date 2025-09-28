@@ -25,15 +25,6 @@ __all__ = [
 ]
 
 
-class Event:
-    class log:
-        @staticmethod
-        def error(
-            message: object, *vals: object, is_format: bool = True, deep: bool = False
-        ):
-            pass
-
-
 def get_system_language() -> Lang_tag:
     # 获取系统默认的 UI 语言
     user_default_ui_lang = ctypes.windll.kernel32.GetUserDefaultUILanguage()
@@ -92,11 +83,13 @@ def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = T
     new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
 
     if is_format:
+        from ..easyrip_log import log
+
         try:
             new_text = new_text.format(*vals)
         except IndexError:
-            Event.log.error("IndexError in gettext when str.format", deep=True)
+            log.error("IndexError in gettext when str.format", deep=True)
         except ValueError:
-            Event.log.error("ValueError in gettext when str.format", deep=True)
+            log.error("ValueError in gettext when str.format", deep=True)
 
     return new_text

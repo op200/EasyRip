@@ -5,7 +5,6 @@ import sys
 import enum
 import datetime
 import traceback
-from typing import Literal
 
 from .easyrip_mlang import gettext, Global_lang_val
 from . import easyrip_web
@@ -127,13 +126,7 @@ class log:
 
     @staticmethod
     def _do_log(
-        log_level: Literal[
-            LogLevel.debug,
-            LogLevel.send,
-            LogLevel.info,
-            LogLevel.warning,
-            LogLevel.error,
-        ],
+        log_level: LogLevel,
         mode: LogMode,
         message: object,
         *vals: object,
@@ -142,6 +135,9 @@ class log:
         is_server: bool = False,
         http_send_header: str = "",
     ):
+        if log_level == log.LogLevel.none:
+            return
+
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
             message
@@ -273,9 +269,10 @@ class log:
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
+        level: LogLevel = LogLevel.debug,
     ):
         log._do_log(
-            log.LogLevel.debug,
+            level,
             mode,
             message,
             *vals,
@@ -291,9 +288,10 @@ class log:
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
+        level: LogLevel = LogLevel.info,
     ):
         log._do_log(
-            log.LogLevel.info,
+            level,
             mode,
             message,
             *vals,
@@ -309,9 +307,10 @@ class log:
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
+        level: LogLevel = LogLevel.warning,
     ):
         log._do_log(
-            log.LogLevel.warning,
+            level,
             mode,
             message,
             *vals,
@@ -327,9 +326,10 @@ class log:
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
+        level: LogLevel = LogLevel.error,
     ):
         log._do_log(
-            log.LogLevel.error,
+            level,
             mode,
             message,
             *vals,
@@ -339,20 +339,21 @@ class log:
 
     @staticmethod
     def send(
-        header: str,
         message: object,
         /,
         *vals: object,
         is_format: bool = True,
         mode: LogMode = LogMode.normal,
         is_server: bool = False,
+        http_send_header: str = "",
+        level: LogLevel = LogLevel.send,
     ):
         log._do_log(
-            log.LogLevel.send,
+            level,
             mode,
             message,
             *vals,
-            http_send_header=header,
+            http_send_header=http_send_header,
             is_format=is_format,
             is_server=is_server,
             is_deep=False,

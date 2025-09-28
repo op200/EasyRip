@@ -44,8 +44,8 @@ class TestBasic(unittest.TestCase):
         easyrip.init(True)
         self.assertEqual(log.html_filename, gettext(html_log_file))
 
-        log.send("", "msg")
-        log.send("", "{}, {}", 1, 2)
+        log.send("msg")
+        log.send("{}, {}", 1, 2)
         log.info("info")
         log.warning("warning")
         log.error("error {}")
@@ -151,9 +151,7 @@ class TestRip(unittest.TestCase):
         nb_frames = int(_video_info_dict.get("nb_frames", 0))
         duration = float(_video_info_dict.get("duration", 0))
 
-        log.send(
-            "", f"fps: {r_frame_rate}, nb_frames: {nb_frames}, duration: {duration}"
-        )
+        log.send(f"fps: {r_frame_rate}, nb_frames: {nb_frames}, duration: {duration}")
 
         self.assertEqual(r_frame_rate[0], 24000)
         self.assertEqual(r_frame_rate[1], 1001)
@@ -186,7 +184,6 @@ class TestRip(unittest.TestCase):
             x265_options_dict[option[0]] = option[1] if len(option) == 2 else None
 
         log.send(
-            "",
             f"x265 options: \n{json.dumps(x265_options_dict, indent=3)}",
             is_format=False,
         )

@@ -40,29 +40,6 @@ class Event:
     """
     progress: deque[dict[str, int | float]] = deque([{}])
 
-    class log:
-        @staticmethod
-        def info(message: object, *vals: object):
-            pass
-
-        @staticmethod
-        def warning(message: object, *vals: object):
-            pass
-
-        @staticmethod
-        def error(message: object, *vals: object):
-            pass
-
-        @staticmethod
-        def send(
-            header: str,
-            message: object,
-            *vals: object,
-            is_format: bool = True,
-            is_server: bool = False,
-        ):
-            pass
-
     @staticmethod
     def post_run_event(cmd: str):
         pass
@@ -100,6 +77,8 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
+        from ..easyrip_log import log
+
         # 获取请求体的长度
         content_length = int(self.headers.get("Content-Length", 0))
 
@@ -156,8 +135,10 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             elif _cmd := data.get("run_command"):
                 _cmd = MainHTTPRequestHandler.aes_to_str(_cmd)
 
-                Event.log.send(
-                    f"{os.path.realpath(os.getcwd())}>", _cmd, is_server=True
+                log.send(
+                    _cmd,
+                    is_server=True,
+                    http_send_header=f"{os.path.realpath(os.getcwd())}>",
                 )
 
                 status_code = 200
@@ -170,7 +151,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                         while True:
                             sleep(1)
                     except KeyboardInterrupt:
-                        Event.log.error("Manually force exit")
+                        log.error("Manually force exit")
                         # Event.is_run_command.append(False)
                         # Event.is_run_command.popleft()
                         # sleep(1)
@@ -178,9 +159,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                         # Event.progress.popleft()
 
                 elif Event.is_run_command[-1] is True:
-                    Event.log.warning(
-                        "There is a running command, terminate this request"
-                    )
+                    log.warning("There is a running command, terminate this request")
 
                 elif Event.is_run_command[-1] is False:
                     if not MainHTTPRequestHandler.password and _cmd.startswith("$"):
@@ -241,6 +220,8 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 def run_server(host: str = "", port: int = 0, password: str | None = None):
+    from ..easyrip_log import log
+
     MainHTTPRequestHandler.token = secrets.token_urlsafe(16)
     if password:
         MainHTTPRequestHandler.password = password
@@ -250,8 +231,8 @@ def run_server(host: str = "", port: int = 0, password: str | None = None):
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
-    Event.log.info("Starting HTTP service on port {}...", httpd.server_port)
+    log.info("Starting HTTP service on port {}...", httpd.server_port)
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        Event.log.info("HTTP service stopped by ^C")
+        log.info("HTTP service stopped by ^C")
