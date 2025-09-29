@@ -22,11 +22,12 @@ class Lang_tag_language(enum.Enum):
     ru = Lang_tag_val(en_name="Russian", local_name="Русский")
     ar = Lang_tag_val(en_name="", local_name="العربية")
 
+    # 方言
     cmn = Lang_tag_val(en_name="Mandarin", local_name="普通话")
-    wuu = Lang_tag_val(en_name="Wu", local_name="")  # 吴语
-    yue = Lang_tag_val(en_name="Cantonese", local_name="")  # 粤语
-    hak = Lang_tag_val(en_name="Hakka", local_name="")  # 客家话
-    nan = Lang_tag_val(en_name="Min Nan", local_name="")  # 闽南语
+    wuu = Lang_tag_val(en_name="Wu", local_name="吴语")
+    yue = Lang_tag_val(en_name="Cantonese", local_name="粤语")
+    hak = Lang_tag_val(en_name="Hakka", local_name="客家话")
+    nan = Lang_tag_val(en_name="Min Nan", local_name="闽南语")
 
     @classmethod
     def _missing_(cls, value: object):
@@ -37,9 +38,9 @@ class Lang_tag_script(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown", local_name="Unknown")
     Hans = Lang_tag_val(en_name="Simplified Chinese", local_name="简体")
     Hant = Lang_tag_val(en_name="Traditional Chinese", local_name="繁體")
-    Latn = Lang_tag_val(en_name="Latin", local_name="")
-    Cyrl = Lang_tag_val(en_name="Cyrillic", local_name="")
-    Arab = Lang_tag_val(en_name="Arabic", local_name="")
+    Latn = Lang_tag_val(en_name="Latin", local_name="Latina")
+    Cyrl = Lang_tag_val(en_name="Cyrillic", local_name="Кириллица")
+    Arab = Lang_tag_val(en_name="Arabic", local_name="العربية")
 
     @classmethod
     def _missing_(cls, value: object):
@@ -47,22 +48,22 @@ class Lang_tag_script(enum.Enum):
 
 
 class Lang_tag_region(enum.Enum):
-    Unknown = Lang_tag_val(en_name="Unknown", local_name="")
+    Unknown = Lang_tag_val(en_name="Unknown", local_name="Unknown")
     US = Lang_tag_val(en_name="United States", local_name="United States")
     GB = Lang_tag_val(en_name="United Kingdom", local_name="United Kingdom")
-    AU = Lang_tag_val(en_name="Australia", local_name="")
-    CA = Lang_tag_val(en_name="Canada", local_name="")
-    NZ = Lang_tag_val(en_name="New Zealand", local_name="")
-    IE = Lang_tag_val(en_name="Ireland", local_name="")
-    ZA = Lang_tag_val(en_name="South Africa", local_name="")
-    JM = Lang_tag_val(en_name="Jamaica", local_name="")
-    TT = Lang_tag_val(en_name="Caribbean", local_name="")
-    BZ = Lang_tag_val(en_name="Belize", local_name="")
-    PH = Lang_tag_val(en_name="Philippines", local_name="")
-    IN = Lang_tag_val(en_name="India", local_name="")
-    MY = Lang_tag_val(en_name="Malaysia", local_name="")
-    SG = Lang_tag_val(en_name="Singapore", local_name="")
-    MO = Lang_tag_val(en_name="Macau SAR", local_name="")
+    AU = Lang_tag_val(en_name="Australia", local_name="Australia")
+    CA = Lang_tag_val(en_name="Canada", local_name="Canada")
+    NZ = Lang_tag_val(en_name="New Zealand", local_name="New Zealand")
+    IE = Lang_tag_val(en_name="Ireland", local_name="Éire")
+    ZA = Lang_tag_val(en_name="South Africa", local_name="South Africa")
+    JM = Lang_tag_val(en_name="Jamaica", local_name="Jamaica")
+    TT = Lang_tag_val(en_name="Caribbean", local_name="Caribbean")
+    BZ = Lang_tag_val(en_name="Belize", local_name="Belize")
+    PH = Lang_tag_val(en_name="Philippines", local_name="Pilipinas")
+    IN = Lang_tag_val(en_name="India", local_name="भारत")
+    MY = Lang_tag_val(en_name="Malaysia", local_name="Malaysia")
+    SG = Lang_tag_val(en_name="Singapore", local_name="Singapura")
+    MO = Lang_tag_val(en_name="Macau SAR", local_name="澳門")
     HK = Lang_tag_val(en_name="Hong Kong SAR", local_name="香港")
     TW = Lang_tag_val(en_name="Taiwan", local_name="台灣")
     CN = Lang_tag_val(en_name="China", local_name="中国大陆")
@@ -172,4 +173,6 @@ class Global_lang_val:
 
             res_str_list.append(_local_name)
 
-        return "-".join(res_str_list)
+        return (" - " if any(" " in s for s in res_str_list) else "-").join(
+            res_str_list
+        )
