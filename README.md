@@ -11,8 +11,8 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 * If you have Python environment  
   如果你有 Python 环境
 
-  1. You can `pip install -U https://github.com/op200/EasyRip.git` to pull the version from the repositoryand, or `pip install -U easyrip` to obtain the stable version.  
-     你可以 `pip install -U https://github.com/op200/EasyRip.git` 获取仓库中的版本，或者 `pip install -U easyrip` 获取稳定版。
+  1. You can `pip install -U git+https://github.com/op200/EasyRip.git` to pull the version from the repositoryand, or `pip install -U easyrip` to obtain the stable version.  
+     你可以 `pip install -U git+https://github.com/op200/EasyRip.git` 获取仓库中的版本，或者 `pip install -U easyrip` 获取稳定版。
 
   2. After installation, run `easyrip` on command.  
      安装后直接在命令行运行 `easyrip`。
@@ -71,3 +71,4 @@ Run `easyrip`, input `help` to get help doc
 * zh-CN
 
 If you want to add or modify translation, edit the `easyrip/easyrip_mlang`
+
