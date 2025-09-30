@@ -30,6 +30,9 @@ class Font:
     def __hash__(self) -> int:
         return hash(self.pathname)
 
+    def __del__(self):
+        self.font.close()
+
 
 def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     if isinstance(path, str):

@@ -475,6 +475,8 @@ def run_command(command: list[str] | str) -> bool:
         case "run":
             is_run_exit = False
             match cmd_list[1]:
+                case "":
+                    pass
                 case "exit":
                     is_run_exit = True
                 case "shutdown":
