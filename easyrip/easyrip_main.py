@@ -241,10 +241,10 @@ if os.name == "nt":
         log.warning("Windows DPI Aware failed")
 
 
-def file_dialog():
+def file_dialog(initialdir=None):
     tkRoot = tk.Tk()
     tkRoot.withdraw()
-    file_paths = filedialog.askopenfilenames()
+    file_paths = filedialog.askopenfilenames(initialdir=initialdir)
     tkRoot.destroy()
     return file_paths
 
@@ -631,15 +631,20 @@ def run_command(command: list[str] | str) -> bool:
 
                 match cmd_list[i]:
                     case "-i":
-                        if cmd_list[i + 1] == "fd":
-                            if easyrip_web.http_server.Event.is_run_command[-1]:
-                                log.error("Disable the use of 'fd' on the web")
-                                return False
-                            input_pathname_org_list += file_dialog()
-                        else:
-                            input_pathname_org_list += [
-                                s.strip() for s in cmd_list[i + 1].split("::")
-                            ]
+                        match cmd_list[i + 1]:
+                            case "fd" | "cfd" as fd_param:
+                                if easyrip_web.http_server.Event.is_run_command[-1]:
+                                    log.error(
+                                        "Disable the use of '{}' on the web", fd_param
+                                    )
+                                    return False
+                                input_pathname_org_list += file_dialog(
+                                    os.getcwd() if fd_param == "cfd" else None
+                                )
+                            case _:
+                                input_pathname_org_list += [
+                                    s.strip() for s in cmd_list[i + 1].split("::")
+                                ]
 
                     case "-o":
                         output_basename = cmd_list[i + 1]

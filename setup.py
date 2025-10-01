@@ -19,7 +19,7 @@ setup(
     python_requires=">=3.12",
     install_requires=[
         "pycryptodome>=3.21.0",
-        "fonttools>=4.60.0",
+        "fonttools>=4.60.1",
     ],
     entry_points={
         "console_scripts": [

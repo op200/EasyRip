@@ -103,8 +103,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
         "\n"
         "Easy Rip options:\n"
         "\n"
-        "  -i <string[::string[?string...]...] | 'fd'>\n"
-        "    输入文件的路径名或输入'fd'以使用文件对话框\n"
+        "  -i <string[::string[?string...]...] | 'fd' | 'cfd'>\n"
+        "    输入文件的路径名或输入 'fd' 以使用文件对话框，'cfd' 从当前目录打开\n"
         "    部分情况下允许使用 '?' 作为间隔符往一个 ripper 中输入多个，例如 '-preset subset' 允许输入多个 ASS\n"
         "\n"
         "  -o <string>\n"
@@ -282,7 +282,7 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Delete the {}th ripper success": "成功删除第 {} 个 ripper",
     "Will shutdown in {}s after run finished": "将在执行结束后的{}秒后关机",
     "Can not start multiple services": "禁止重复启用服务",
-    "Disable the use of 'fd' on the web": "禁止在 web 使用 'fd'",
+    "Disable the use of '{}' on the web": "禁止在 web 使用 '{}'",
     'Illegal char in -o "{}"': '-o "{}" 中有非法字符',
     'The directory "{}" did not exist and was created': '目录 "{}" 不存在，自动创建',
     "Missing '-preset' option, set to default value 'custom'": "缺少 '-preset' 选项，自动设为默认值 'custom'",
