@@ -1,6 +1,6 @@
-import urllib.request
-import urllib.parse
 import json
+import urllib.parse
+import urllib.request
 
 
 class zhconvert:
@@ -26,8 +26,8 @@ class zhconvert:
             * WikiTraditional  維基繁體化
         """
 
-        from ..easyrip_mlang import gettext
         from ..easyrip_log import log
+        from ..easyrip_mlang import gettext
 
         if target_lang not in {
             "Simplified",  # 簡體化

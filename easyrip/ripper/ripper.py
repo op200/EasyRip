@@ -1,22 +1,21 @@
-from dataclasses import dataclass
-from itertools import zip_longest
-import os
-from pathlib import Path
-import re
-from datetime import datetime
 import enum
+import os
+import re
 import shutil
-from time import sleep
+from dataclasses import dataclass
+from datetime import datetime
+from itertools import zip_longest
+from pathlib import Path
 from threading import Thread
+from time import sleep
 from typing import Callable, Iterable, Self
 
 from .. import easyrip_web
 from ..easyrip_log import log
-from ..easyrip_mlang import gettext, Global_lang_val, translate_subtitles
+from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
+from .font_subset import subset
 from .media_info import Media_info
 from .utils import get_base62_time
-from .font_subset import subset
-
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")

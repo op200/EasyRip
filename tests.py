@@ -3,11 +3,11 @@ import os
 import re
 import shutil
 import subprocess
-import unittest
 import timeit
+import unittest
 
 import easyrip
-from easyrip import gettext, log, run_command, Ass
+from easyrip import Ass, gettext, log, run_command
 
 
 class TestBasic(unittest.TestCase):
@@ -54,6 +54,7 @@ class TestBasic(unittest.TestCase):
         log.debug("{}")
         log.debug("{{}{}}")
         log.debug("{{}}")
+        log.debug("{'a': <A.a: 1>, 'b': <A.b: 1>}")
 
     def test_run_cmd(self):
         easyrip.init(True)

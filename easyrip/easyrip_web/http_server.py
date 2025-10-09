@@ -1,16 +1,15 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
-import json
-from threading import Thread
-import secrets
 import hashlib
-from collections import deque
+import json
 import os
+import secrets
 import signal
+from collections import deque
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from threading import Thread
 from time import sleep
 
 from Crypto.Cipher import AES as CryptoAES
 from Crypto.Util.Padding import pad, unpad
-
 
 __all__ = ["Event", "run_server"]
 

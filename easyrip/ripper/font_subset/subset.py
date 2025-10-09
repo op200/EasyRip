@@ -1,20 +1,20 @@
+import re
 from io import BytesIO
 from pathlib import Path
-import re
 from typing import Iterable
 
-from ...global_val import Global_val
 from ...easyrip_log import log
+from ...global_val import Global_val
+from ..utils import get_base62_time
 from .ass import (
     Ass,
+    Attach_type,
+    Attachment_data,
     Event_data,
     Event_type,
     Script_info_data,
-    Attachment_data,
-    Attach_type,
 )
-from .font import Font_type, Font, load_fonts, subset_font, get_font_path_from_registry
-from ..utils import get_base62_time
+from .font import Font, Font_type, get_font_path_from_registry, load_fonts, subset_font
 
 
 def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type:

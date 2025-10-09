@@ -1,6 +1,6 @@
-from .ripper import Ripper
+from .font_subset import Ass, subset
 from .media_info import Media_info
-from .font_subset import subset, Ass
+from .ripper import Ripper
 
 __all__ = [
     "Ripper",

@@ -1,14 +1,13 @@
-from ctypes import wintypes
 import ctypes
+import datetime
+import enum
 import os
 import sys
-import enum
-import datetime
 import traceback
+from ctypes import wintypes
 
-from .easyrip_mlang import gettext, Global_lang_val
 from . import easyrip_web
-
+from .easyrip_mlang import Global_lang_val, gettext
 
 __all__ = ["Event", "log"]
 

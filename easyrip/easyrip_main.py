@@ -1,24 +1,24 @@
-from datetime import datetime
-import json
-from pathlib import Path
-from time import sleep
-import tkinter as tk
-from tkinter import filedialog
 import ctypes
-import sys
+import json
 import os
-import shutil
-import shlex
 import re
-from threading import Thread
-from itertools import zip_longest
+import shlex
+import shutil
 import subprocess
+import sys
+import tkinter as tk
+from datetime import datetime
+from itertools import zip_longest
 from multiprocessing import shared_memory
+from pathlib import Path
+from threading import Thread
+from time import sleep
+from tkinter import filedialog
 
-
-from .global_val import Global_val
-from .easyrip_log import log, Event as LogEvent
-from .ripper import Ripper
+from . import easyrip_web
+from .easyrip_config import config
+from .easyrip_log import Event as LogEvent
+from .easyrip_log import log
 from .easyrip_mlang import (
     Global_lang_val,
     Lang_tag,
@@ -26,9 +26,8 @@ from .easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from . import easyrip_web
-from .easyrip_config import config
-
+from .global_val import Global_val
+from .ripper import Ripper
 
 __all__ = ["init", "run_command", "log", "Ripper"]
 

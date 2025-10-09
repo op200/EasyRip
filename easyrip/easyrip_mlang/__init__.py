@@ -1,14 +1,13 @@
 import ctypes
 
-from . import lang_en
-from . import lang_zh_CN
+from . import lang_en, lang_zh_CN
 from .global_lang_val import (
-    Lang_tag,
-    Lang_tag_val,
-    Lang_tag_language,
-    Lang_tag_script,
-    Lang_tag_region,
     Global_lang_val,
+    Lang_tag,
+    Lang_tag_language,
+    Lang_tag_region,
+    Lang_tag_script,
+    Lang_tag_val,
 )
 from .translator import translate_subtitles
 
@@ -87,9 +86,9 @@ def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = T
 
         try:
             new_text = new_text.format(*vals)
-        except IndexError:
-            log.error("IndexError in gettext when str.format", deep=True)
-        except ValueError:
-            log.error("ValueError in gettext when str.format", deep=True)
+        except Exception as e:
+            log.debug(
+                f"{repr(e)} in gettext when str.format", deep=True, is_format=False
+            )
 
     return new_text

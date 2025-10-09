@@ -4,7 +4,7 @@ from typing import NoReturn
 import Crypto
 import fontTools
 
-from .easyrip_main import init, run_command, Ripper, log, get_input_prompt
+from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
 
 
 def run() -> NoReturn:

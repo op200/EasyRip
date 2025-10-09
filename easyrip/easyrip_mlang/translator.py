@@ -5,8 +5,8 @@ from ..easyrip_web.third_party_api import zhconvert
 from .global_lang_val import (
     Lang_tag,
     Lang_tag_language,
-    Lang_tag_script,
     Lang_tag_region,
+    Lang_tag_script,
 )
 
 

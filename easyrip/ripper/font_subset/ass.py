@@ -1,10 +1,10 @@
-from dataclasses import dataclass, field
 import enum
-from pathlib import Path
 import re
+from dataclasses import dataclass, field
+from pathlib import Path
 
 from ...easyrip_log import log
-from ..utils import read_text, uuencode_ssa, uudecode_ssa
+from ..utils import read_text, uudecode_ssa, uuencode_ssa
 
 
 class Style_fmt_it(enum.Enum):

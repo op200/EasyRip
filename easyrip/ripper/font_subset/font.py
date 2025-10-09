@@ -1,14 +1,14 @@
-from copy import deepcopy
-from dataclasses import dataclass, field
 import enum
-from pathlib import Path
 import os
 import winreg
+from copy import deepcopy
+from dataclasses import dataclass, field
+from pathlib import Path
 
-from fontTools.ttLib import TTFont, TTCollection
-from fontTools.ttLib.ttFont import TTLibError
-from fontTools.ttLib.tables._n_a_m_e import table__n_a_m_e, NameRecord, makeName
 from fontTools import subset
+from fontTools.ttLib import TTCollection, TTFont
+from fontTools.ttLib.tables._n_a_m_e import NameRecord, makeName, table__n_a_m_e
+from fontTools.ttLib.ttFont import TTLibError
 
 from ...easyrip_log import log
 

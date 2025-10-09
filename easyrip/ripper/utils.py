@@ -1,10 +1,9 @@
 import codecs
-from pathlib import Path
 import string
 import time
+from pathlib import Path
 
 from ..easyrip_log import log
-
 
 BASE62 = string.digits + string.ascii_letters
 
