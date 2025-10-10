@@ -1,3 +1,4 @@
+import enum
 import json
 import urllib.parse
 import urllib.request
@@ -6,59 +7,39 @@ import urllib.request
 class zhconvert:
     """繁化姬 API"""
 
+    class Target_lang(enum.Enum):
+        Hans = Simplified = "Simplified"  # 簡體化
+        Hant = Traditional = "Traditional"  # 繁體化
+        CN = China = "China"  # 中國化
+        HK = Hongkong = "Hongkong"  # 香港化
+        TW = Taiwan = "Taiwan"  # 台灣化
+        Pinyin = "Pinyin"  # 拼音化
+        Bopomofo = "Bopomofo"  # 注音化
+        Mars = "Mars"  # 火星化
+        WikiSimplified = "WikiSimplified"  # 維基簡體化
+        WikiTraditional = "WikiTraditional"  # 維基繁體化
+
     @classmethod
     def translate(
         cls,
         org_text: str,
-        target_lang: str,
+        target_lang: Target_lang,
     ) -> str:
-        """
-        target_lang (str):
-            * Simplified  簡體化
-            * Traditional  繁體化
-            * China  中國化
-            * Hongkong  香港化
-            * Taiwan  台灣化
-            * Pinyin  拼音化
-            * Bopomofo  注音化
-            * Mars  火星化
-            * WikiSimplified  維基簡體化
-            * WikiTraditional  維基繁體化
-        """
-
         from ..easyrip_log import log
         from ..easyrip_mlang import gettext
-
-        if target_lang not in {
-            "Simplified",  # 簡體化
-            "Traditional",  # 繁體化
-            "China",  # 中國化
-            "Hongkong",  # 香港化
-            "Taiwan",  # 台灣化
-            "Pinyin",  # 拼音化
-            "Bopomofo",  # 注音化
-            "Mars",  # 火星化
-            "WikiSimplified",  # 維基簡體化
-            "WikiTraditional",  # 維基繁體化
-        }:
-            raise Exception(
-                gettext("Language not supported by {}: {}").format(
-                    cls.__name__, target_lang
-                )
-            )
 
         log.info(
             gettext(
                 "Translating into '{target_lang}' using '{api_name}'",
                 is_format=False,
-            ).format(target_lang=target_lang, api_name=cls.__name__),
+            ).format(target_lang=target_lang.value, api_name=cls.__name__),
             is_format=False,
         )
 
         req = urllib.request.Request(
             url="https://api.zhconvert.org/convert",
             data=urllib.parse.urlencode(
-                {"text": org_text, "converter": target_lang}
+                {"text": org_text, "converter": target_lang.value}
             ).encode("utf-8"),
         )
 
@@ -73,7 +54,7 @@ class zhconvert:
 
                 text = res_data.get("text")
                 if not isinstance(text, str):
-                    raise Exception("The 'text' in response is not a 'str'")
+                    raise TypeError("The 'text' in response is not a 'str'")
                 return text
 
             else:

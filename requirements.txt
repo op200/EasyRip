@@ -1,3 +1,6 @@
+# Only used for Github Actions
+
 nuitka
+
 pycryptodome
 fonttools

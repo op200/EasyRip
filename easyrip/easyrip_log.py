@@ -241,7 +241,7 @@ class log:
             case log.LogLevel.send:
                 log.send_num += 1
 
-                if is_server or easyrip_web.http_server.Event.is_run_command[-1]:
+                if is_server or easyrip_web.http_server.Event.is_run_command:
                     if log.print_level.value <= log.LogLevel.send.value:
                         print(
                             f"{time_str}\033[{log.send_color}m [Send] {message}\033[{log.default_foreground_color}m"
@@ -366,5 +366,5 @@ class log:
         except Exception as e:
             _level = log.write_level
             log.write_level = log.LogLevel.none
-            log.error(f"{repr(e)} {e}", deep=True)
+            log.error(f"{e!r} {e}", deep=True)
             log.write_level = _level

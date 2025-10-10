@@ -211,7 +211,7 @@ class Ripper:
                 elif 59.939 < force_fps < 59.941:
                     force_fps = "60000/1001"
             except Exception as e:
-                log.error(f"{repr(e)} {e}", deep=True)
+                log.error(f"{e!r} {e}", deep=True)
 
         # Path
         vpy_pathname = self.option_map.get("pipe")
@@ -939,7 +939,7 @@ class Ripper:
         while True:
             sleep(sleep_sec)
 
-            if easyrip_web.http_server.Event.is_run_command[-1] is False:
+            if easyrip_web.http_server.Event.is_run_command is False:
                 break
 
             try:
@@ -1028,12 +1028,7 @@ class Ripper:
                 if self.option.muxer is not None or len(self.info.audio_info) > 1:
                     suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
-                    cmd = " ".join(
-                        (
-                            self.option.encoder_format_str,
-                            self.option.muxer_format_str,
-                        )
-                    ).format_map(
+                    cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
                         {
                             "input": str(self.input_path_list[0]),
                             "output": os.path.join(self.output_dir, temp_name),
@@ -1123,12 +1118,7 @@ class Ripper:
                                 ".va.mp4" if self.option.audio_encoder else ".v.mp4"
                             )
                         temp_name = temp_name + suffix
-                        cmd = " ".join(
-                            (
-                                self.option.encoder_format_str,
-                                self.option.muxer_format_str,
-                            )
-                        ).format_map(
+                        cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
                             {
                                 "input": str(self.input_path_list[0]),
                                 "output": os.path.join(self.output_dir, temp_name),
@@ -1143,12 +1133,7 @@ class Ripper:
                                 ".va.mkv" if self.option.audio_encoder else ".v.mkv"
                             )
                         temp_name = temp_name + suffix
-                        cmd = " ".join(
-                            (
-                                self.option.encoder_format_str,
-                                self.option.muxer_format_str,
-                            )
-                        ).format_map(
+                        cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
                             {
                                 "input": str(self.input_path_list[0]),
                                 "output": os.path.join(self.output_dir, temp_name),
@@ -1431,7 +1416,7 @@ class Ripper:
                     try:
                         f.unlink()
                     except Exception as e:
-                        log.error(f"{repr(e)} {e}", deep=True, is_format=False)
+                        log.error(f"{e!r} {e}", deep=True, is_format=False)
 
         # 获取 ffmpeg report 中的报错
         if FF_REPORT_LOG_FILE.is_file():

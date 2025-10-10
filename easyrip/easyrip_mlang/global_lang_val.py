@@ -1,16 +1,44 @@
 import enum
 from dataclasses import dataclass
-from typing import Self
+from typing import Iterable, Self
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, init=False, eq=False)
 class Lang_tag_val:
     en_name: str
-    local_name: str
+    _local_name: str | None
+
+    @property
+    def local_name(self):
+        return self.en_name if self._local_name is None else self._local_name
+
+    @local_name.setter
+    def local_name(self, val: str | None):
+        if val is not None and len(val) == 0:
+            raise ValueError("The length of the name cannot be 0")
+
+        self._local_name = val
+
+    def __init__(self, *, en_name: str, local_name: str | None = None):
+        if len(en_name) == 0:
+            raise ValueError("The length of the name cannot be 0")
+
+        self.en_name = en_name
+        self.local_name = local_name
+
+    def __str__(self) -> str:
+        return f"{self.__class__.__name__}(en_name={self.en_name}, local_name={self._local_name})"
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Lang_tag_val):
+            return self.en_name == other.en_name
+        return False
 
 
 class Lang_tag_language(enum.Enum):
-    Unknown = Lang_tag_val(en_name="Unknown", local_name="Unknown")
+    Unknown = Lang_tag_val(en_name="Unknown")
+
+    # ISO 639-1
     en = Lang_tag_val(en_name="English", local_name="English")
     zh = Lang_tag_val(en_name="Chinese", local_name="中文")
     fr = Lang_tag_val(en_name="French", local_name="Français")
@@ -20,22 +48,47 @@ class Lang_tag_language(enum.Enum):
     ja = Lang_tag_val(en_name="Japanese", local_name="日本語")
     ko = Lang_tag_val(en_name="Korean", local_name="한국어")
     ru = Lang_tag_val(en_name="Russian", local_name="Русский")
-    ar = Lang_tag_val(en_name="", local_name="العربية")
+    ar = Lang_tag_val(en_name="Arabic", local_name="العربية")
 
-    # 方言
-    cmn = Lang_tag_val(en_name="Mandarin", local_name="普通话")
-    wuu = Lang_tag_val(en_name="Wu", local_name="吴语")
-    yue = Lang_tag_val(en_name="Cantonese", local_name="粤语")
-    hak = Lang_tag_val(en_name="Hakka", local_name="客家话")
-    nan = Lang_tag_val(en_name="Min Nan", local_name="闽南语")
+    # ISO 639-2
+    eng = en
+    zho = chi = zh
+    fra = fre = fr
+    deu = ger = de
+    spa = es
+    ita = it
+    jpn = ja
+    kor = ko
+    rus = ru
+    ara = ar
+
+    # ISO 639-3
+    # 与 p2 重叠的放在 p2
+    cdo = Lang_tag_val(en_name="Min Dong Chinese", local_name="闽东语")
+    cjy = Lang_tag_val(en_name="Jinyu Chinese", local_name="晋语")
+    cmn = Lang_tag_val(en_name="Mandarin Chinese", local_name="普通话")
+    cnp = Lang_tag_val(en_name="Northern Ping Chinese", local_name="北平语")
+    wuu = Lang_tag_val(en_name="Wu Chinese", local_name="吴语")
+    yue = Lang_tag_val(en_name="Yue Chinese", local_name="粤语")
+    hak = Lang_tag_val(en_name="Hakka Chinese", local_name="客家话")
+    nan = Lang_tag_val(en_name="Min Nan Chinese", local_name="闽南语")
+    och = Lang_tag_val(en_name="Old Chinese", local_name="古汉语")
 
     @classmethod
     def _missing_(cls, value: object):
         return cls.Unknown
 
+    @classmethod
+    def from_name(cls, name: str):
+        try:
+            return cls[name]
+        except KeyError:
+            return cls.Unknown
+
 
 class Lang_tag_script(enum.Enum):
-    Unknown = Lang_tag_val(en_name="Unknown", local_name="Unknown")
+    Unknown = Lang_tag_val(en_name="Unknown")
+
     Hans = Lang_tag_val(en_name="Simplified Chinese", local_name="简体")
     Hant = Lang_tag_val(en_name="Traditional Chinese", local_name="繁體")
     Latn = Lang_tag_val(en_name="Latin", local_name="Latina")
@@ -46,9 +99,17 @@ class Lang_tag_script(enum.Enum):
     def _missing_(cls, value: object):
         return cls.Unknown
 
+    @classmethod
+    def from_name(cls, name: str):
+        try:
+            return cls[name]
+        except KeyError:
+            return cls.Unknown
+
 
 class Lang_tag_region(enum.Enum):
-    Unknown = Lang_tag_val(en_name="Unknown", local_name="Unknown")
+    Unknown = Lang_tag_val(en_name="Unknown")
+
     US = Lang_tag_val(en_name="United States", local_name="United States")
     GB = Lang_tag_val(en_name="United Kingdom", local_name="United Kingdom")
     AU = Lang_tag_val(en_name="Australia", local_name="Australia")
@@ -72,12 +133,41 @@ class Lang_tag_region(enum.Enum):
     def _missing_(cls, value: object):
         return cls.Unknown
 
+    @classmethod
+    def from_name(cls, name: str):
+        try:
+            return cls[name]
+        except KeyError:
+            return cls.Unknown
+
 
 @dataclass(slots=True)
 class Lang_tag:
     language: Lang_tag_language = Lang_tag_language.Unknown
     script: Lang_tag_script = Lang_tag_script.Unknown
     region: Lang_tag_region = Lang_tag_region.Unknown
+
+    def match(self, target_tags: Iterable[Self]) -> Self | None:
+        target_tags_tuple = tuple(
+            tag for tag in target_tags if tag.language is self.language
+        )
+        if not target_tags_tuple:
+            return None
+
+        if self in target_tags_tuple:
+            return self
+
+        if same_region := tuple(
+            tag for tag in target_tags_tuple if tag.region is self.region
+        ):
+            return same_region[0]
+
+        if same_script := tuple(
+            tag for tag in target_tags_tuple if tag.script is self.script
+        ):
+            return same_script[0]
+
+        return target_tags_tuple[0]
 
     @classmethod
     def from_str(
@@ -93,7 +183,7 @@ class Lang_tag:
 
         str_tag_tuple = tuple(s for s in str_tag.split("-"))
 
-        language = Lang_tag_language[str_tag_tuple[0]]
+        language = Lang_tag_language.from_name(str_tag_tuple[0])
         script: Lang_tag_script = Lang_tag_script.Unknown
         region: Lang_tag_region = Lang_tag_region.Unknown
 
@@ -116,7 +206,7 @@ class Lang_tag:
     def __str__(self) -> str:
         """返回语言标签字符串"""
         if self.language == Lang_tag_language.Unknown:
-            Exception("The Language is Unknown")
+            raise Exception("The Language is Unknown")
 
         res_str: str = self.language.name
         if self.script != Lang_tag_script.Unknown:
@@ -125,6 +215,9 @@ class Lang_tag:
             res_str += f"-{self.region.name}"
 
         return res_str
+
+    def __hash__(self) -> int:
+        return hash((self.language, self.script, self.region))
 
 
 class Global_lang_val:

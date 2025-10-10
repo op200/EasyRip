@@ -77,7 +77,10 @@ def translate_subtitles(
                     file_list = [
                         (
                             f[0],
-                            zhconvert.translate(org_text=f[1], target_lang="Hongkong"),
+                            zhconvert.translate(
+                                org_text=f[1],
+                                target_lang=zhconvert.Target_lang.HK,
+                            ),
                         )
                         for f in file_list
                     ]
@@ -90,7 +93,10 @@ def translate_subtitles(
                     file_list = [
                         (
                             f[0],
-                            zhconvert.translate(org_text=f[1], target_lang="Taiwan"),
+                            zhconvert.translate(
+                                org_text=f[1],
+                                target_lang=zhconvert.Target_lang.TW,
+                            ),
                         )
                         for f in file_list
                     ]
@@ -104,7 +110,8 @@ def translate_subtitles(
                         (
                             f[0],
                             zhconvert.translate(
-                                org_text=f[1], target_lang="Traditional"
+                                org_text=f[1],
+                                target_lang=zhconvert.Target_lang.Hant,
                             ),
                         )
                         for f in file_list
@@ -137,7 +144,9 @@ def translate_subtitles(
                     file_list = [
                         (
                             f[0],
-                            zhconvert.translate(org_text=f[1], target_lang="China"),
+                            zhconvert.translate(
+                                org_text=f[1], target_lang=zhconvert.Target_lang.CN
+                            ),
                         )
                         for f in file_list
                     ]
@@ -151,7 +160,8 @@ def translate_subtitles(
                         (
                             f[0],
                             zhconvert.translate(
-                                org_text=f[1], target_lang="Simplified"
+                                org_text=f[1],
+                                target_lang=zhconvert.Target_lang.Hans,
                             ),
                         )
                         for f in file_list

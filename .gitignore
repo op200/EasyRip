@@ -10,5 +10,6 @@
 !requirements.txt
 !tests.py
 !setup.py
+!ruff.toml
 
 __pycache__

@@ -33,7 +33,7 @@ class AES:
 
 class Event:
     log_queue: deque[tuple[str, str, str]] = deque()
-    is_run_command: deque[bool] = deque([False])
+    is_run_command: bool = False
     """
     用于防止 server 二次运行，以及告知客户端运行状态
     """
@@ -157,18 +157,17 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                         # Event.progress.append({})
                         # Event.progress.popleft()
 
-                elif Event.is_run_command[-1] is True:
+                elif Event.is_run_command is True:
                     log.warning("There is a running command, terminate this request")
 
-                elif Event.is_run_command[-1] is False:
+                elif Event.is_run_command is False:
                     if not MainHTTPRequestHandler.password and _cmd.startswith("$"):
                         _cmd = "$log.error('Prohibited from use $ <code> in web service when no password')"
 
                     post_run = Thread(
                         target=Event.post_run_event, args=(_cmd,), daemon=True
                     )
-                    Event.is_run_command.append(True)
-                    Event.is_run_command.popleft()
+                    Event.is_run_command = True
                     post_run.start()
 
             elif data.get("clear_log_queue") == "clear":
@@ -209,7 +208,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                     "log_queue": MainHTTPRequestHandler.str_to_aes(
                         json.dumps(list(Event.log_queue))
                     ),
-                    "is_run_command": Event.is_run_command[-1],
+                    "is_run_command": Event.is_run_command,
                     "progress": MainHTTPRequestHandler.str_to_aes(
                         json.dumps(Event.progress[-1])
                     ),

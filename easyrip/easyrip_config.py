@@ -2,11 +2,11 @@ import json
 import os
 import sys
 
+from . import global_val
 from .easyrip_log import log
-from .easyrip_mlang import gettext
-from .global_val import Global_val
+from .easyrip_mlang import ALL_SUPPORTED_LANG_MAP, gettext
 
-PROJECT_NAME = Global_val.PROJECT_NAME
+PROJECT_NAME = global_val.PROJECT_NAME
 CONFIG_VERSION = "2.9.4"
 
 
@@ -48,8 +48,8 @@ class config:
                             "check_dependent": True,
                             "startup_directory": "",
                             "force_log_file_path": "",
-                            "log_print_level": "send",
-                            "log_write_level": "send",
+                            "log_print_level": log.LogLevel.send.name,
+                            "log_write_level": log.LogLevel.send.name,
                         },
                     },
                     f,
@@ -66,7 +66,7 @@ class config:
                             "config clear",
                         )
                 except json.JSONDecodeError as e:
-                    log.error(f"{repr(e)} {e}", deep=True)
+                    log.error(f"{e!r} {e}", deep=True)
 
         config._read_config()
 
@@ -82,7 +82,7 @@ class config:
             try:
                 os.remove(config._config_pathname)
             except Exception as e:
-                log.error(f"{repr(e)} {e}", deep=True)
+                log.error(f"{e!r} {e}", deep=True)
         config.init()
         log.info("Regenerate config file")
 
@@ -93,10 +93,10 @@ class config:
         with open(config._config_pathname, "r", encoding="utf-8") as f:
             try:
                 config._config = json.load(f)
-                return True
             except json.JSONDecodeError as e:
-                log.error(f"{repr(e)} {e}", deep=True)
+                log.error(f"{e!r} {e}", deep=True)
                 return False
+            return True
 
     @staticmethod
     def _write_config(new_config: dict | None = None) -> bool:
@@ -109,10 +109,10 @@ class config:
         with open(config._config_pathname, "wt", encoding="utf-8", newline="\n") as f:
             try:
                 json.dump(config._config, f, ensure_ascii=False, indent=3)
-                return True
             except json.JSONDecodeError as e:
-                log.error(f"{repr(e)} {e}", deep=True)
+                log.error(f"{e!r} {e}", deep=True)
                 return False
+            return True
 
     @staticmethod
     def set_user_profile(key: str, val: str | int | float | bool) -> bool:
@@ -162,7 +162,7 @@ class config:
         length_val = max(len(str(v)) for v in user_profile.values())
         for k, v in user_profile.items():
             log.send(
-                f"{k:>{length_key}} = {str(v):<{length_val}} - {config._get_config_about(k)}",
+                f"{k:>{length_key}} = {v!s:<{length_val}} - {config._get_config_about(k)}",
             )
 
     @staticmethod
@@ -170,7 +170,10 @@ class config:
         return (
             {
                 "language": gettext(
-                    "Easy Rip's language, support: {}", "auto, en, zh-CN"
+                    "Easy Rip's language, support: {}",
+                    ", ".join(
+                        ("auto", *(str(tag) for tag in ALL_SUPPORTED_LANG_MAP.keys()))
+                    ),
                 ),
                 "check_update": gettext("Auto check the update of Easy Rip"),
                 "check_dependent": gettext(
@@ -183,12 +186,15 @@ class config:
                     "Force change of log file path, when the value is empty, it is the working directory"
                 ),
                 "log_print_level": gettext(
-                    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}",
-                    "none, error, warning, info, send, debug",
+                    "Logs this level and above will be printed, and if the value is '{}', they will not be printed, support: {}",
+                    log.LogLevel.none.name,
+                    ", ".join(log.LogLevel._member_names_),
                 ),
                 "log_write_level": gettext(
-                    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}",
-                    "none, error, warning, info, send, debug",
+                    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written, support: {}",
+                    log.LogLevel.none.name,
+                    log.LogLevel.send.name,
+                    ", ".join(log.LogLevel._member_names_),
                 ),
             }
             | (config._config or dict())

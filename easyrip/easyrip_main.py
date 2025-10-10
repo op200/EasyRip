@@ -15,7 +15,7 @@ from threading import Thread
 from time import sleep
 from tkinter import filedialog
 
-from . import easyrip_web
+from . import easyrip_web, global_val
 from .easyrip_config import config
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
@@ -26,16 +26,15 @@ from .easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from .global_val import Global_val
 from .ripper import Ripper
 
-__all__ = ["init", "run_command", "log", "Ripper"]
+__all__ = ["init", "run_command"]
 
 
-PROJECT_NAME = Global_val.PROJECT_NAME
-__version__ = PROJECT_VERSION = Global_val.PROJECT_VERSION
-PROJECT_TITLE = Global_val.PROJECT_TITLE
-PROJECT_URL = Global_val.PROJECT_URL
+PROJECT_NAME = global_val.PROJECT_NAME
+__version__ = PROJECT_VERSION = global_val.PROJECT_VERSION
+PROJECT_TITLE = global_val.PROJECT_TITLE
+PROJECT_URL = global_val.PROJECT_URL
 
 
 def change_title(title: str):
@@ -210,10 +209,10 @@ def check_env():
 
         if config.get_user_profile("check_update"):
             log_new_ver(
-                easyrip_web.get_github_api_ver(Global_val.PROJECT_RELEASE_API),
+                easyrip_web.get_github_api_ver(global_val.PROJECT_RELEASE_API),
                 PROJECT_VERSION,
                 PROJECT_NAME,
-                f"{Global_val.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
+                f"{global_val.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
             )
 
         sys.stdout.flush()
@@ -221,7 +220,7 @@ def check_env():
         change_title(PROJECT_TITLE)
 
     except Exception as e:
-        log.error(f"The def check_env error: {repr(e)} {e}", deep=True)
+        log.error(f"The def check_env error: {e!r} {e}", deep=True)
 
 
 def get_input_prompt(is_color: bool = False) -> str:
@@ -469,7 +468,7 @@ def run_command(command: list[str] | str) -> bool:
                             Ripper.ripper_list[i1],
                         )
                     except Exception as e:
-                        log.error(f"{repr(e)} {e}", deep=True)
+                        log.error(f"{e!r} {e}", deep=True)
 
         case "run":
             is_run_exit = False
@@ -490,7 +489,7 @@ def run_command(command: list[str] | str) -> bool:
             run_ripper_list(is_run_exit)
 
         case "server":
-            if easyrip_web.http_server.Event.is_run_command[-1]:
+            if easyrip_web.http_server.Event.is_run_command:
                 log.error("Can not start multiple services")
                 return False
 
@@ -621,7 +620,7 @@ def run_command(command: list[str] | str) -> bool:
             shutdown_sec_str: str | None = None
 
             _skip: bool = False
-            for i in range(0, len(cmd_list)):
+            for i in range(len(cmd_list)):
                 if _skip:
                     _skip = False
                     continue
@@ -632,7 +631,7 @@ def run_command(command: list[str] | str) -> bool:
                     case "-i":
                         match cmd_list[i + 1]:
                             case "fd" | "cfd" as fd_param:
-                                if easyrip_web.http_server.Event.is_run_command[-1]:
+                                if easyrip_web.http_server.Event.is_run_command:
                                     log.error(
                                         "Disable the use of '{}' on the web", fd_param
                                     )
@@ -668,7 +667,7 @@ def run_command(command: list[str] | str) -> bool:
                                     output_dir,
                                 )
                             except Exception as e:
-                                log.error(f"{repr(e)} {e}", deep=True)
+                                log.error(f"{e!r} {e}", deep=True)
                                 return False
 
                     case "-preset" | "-p":
@@ -709,7 +708,7 @@ def run_command(command: list[str] | str) -> bool:
                                 try:
                                     return _time.strftime(s[5:])
                                 except Exception as e:
-                                    log.error(f"{repr(e)} {e}", deep=True)
+                                    log.error(f"{e!r} {e}", deep=True)
                                     return ""
                             case _:
                                 try:
@@ -723,7 +722,7 @@ def run_command(command: list[str] | str) -> bool:
                                     increment = int(d.get("increment", 1))
                                     return str(start + i * increment).zfill(padding)
                                 except Exception as e:
-                                    log.error(f"{repr(e)} {e}", deep=True)
+                                    log.error(f"{e!r} {e}", deep=True)
                                     return ""
 
                     if output_basename is None:
@@ -877,7 +876,7 @@ def init(is_first_run: bool = False):
             log.LogLevel, str(config.get_user_profile("log_write_level"))
         )
     except Exception as e:
-        log.error(f"{repr(e)} {e}", deep=True)
+        log.error(f"{e!r} {e}", deep=True)
 
     if is_first_run:
         # 设置启动目录
@@ -885,7 +884,7 @@ def init(is_first_run: bool = False):
             if _path := str(config.get_user_profile("startup_directory")):
                 os.chdir(_path)
         except Exception as e:
-            log.error(f"{repr(e)} {e}", deep=True)
+            log.error(f"{e!r} {e}", deep=True)
 
     # 获取终端颜色
     log.init()
@@ -900,7 +899,6 @@ def init(is_first_run: bool = False):
 
         def _post_run_event(cmd: str):
             run_command(cmd)
-            easyrip_web.http_server.Event.is_run_command.append(False)
-            easyrip_web.http_server.Event.is_run_command.popleft()
+            easyrip_web.http_server.Event.is_run_command = False
 
         easyrip_web.http_server.Event.post_run_event = _post_run_event

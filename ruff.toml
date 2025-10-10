@@ -1,0 +1,2 @@
+select = ["PIE", "RUF", "FLY", "A", "I"]
+ignore = ["RUF001", "RUF002", "RUF003", "RUF005", "RUF012"]

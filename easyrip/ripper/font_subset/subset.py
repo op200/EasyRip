@@ -3,8 +3,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import Iterable
 
+from ... import global_val
 from ...easyrip_log import log
-from ...global_val import Global_val
 from ..utils import get_base62_time
 from .ass import (
     Ass,
@@ -227,7 +227,7 @@ def subset(
         # 修改子集化后的字幕
         path_and_sub.script_info.data = [
             Script_info_data(
-                raw_str=f"; ---------- Font Subset by {Global_val.PROJECT_TITLE} ----------"
+                raw_str=f"; ---------- Font Subset by {global_val.PROJECT_TITLE} ----------"
             ),
             *(
                 Script_info_data(raw_str=f'Font Subset Mapping: "{v}{k}"   ->   "{k}"')
@@ -249,7 +249,7 @@ def subset(
                 }"
             ),
             Script_info_data(
-                raw_str=f"; ---------- {'Font Subset End':^{len(Global_val.PROJECT_TITLE) + 20}} ----------"
+                raw_str=f"; ---------- {'Font Subset End':^{len(global_val.PROJECT_TITLE) + 20}} ----------"
             ),
         ] + path_and_sub.script_info.data
         subset_sub_dict[_ass_path_abs] = (output_dir / _ass_path.name, path_and_sub)

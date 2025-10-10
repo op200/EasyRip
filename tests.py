@@ -7,7 +7,18 @@ import timeit
 import unittest
 
 import easyrip
-from easyrip import Ass, gettext, log, run_command
+from easyrip import (
+    Ass,
+    Global_lang_val,
+    Lang_tag,
+    Lang_tag_language,
+    Lang_tag_region,
+    Lang_tag_script,
+    gettext,
+    log,
+    run_command,
+)
+from easyrip.easyrip_mlang.global_lang_val import Lang_tag_val
 
 
 class TestBasic(unittest.TestCase):
@@ -32,7 +43,7 @@ class TestBasic(unittest.TestCase):
         self.assertFalse(easyrip.check_ver("1.2", "1.2.1"))
         self.assertFalse(easyrip.check_ver("1.2+2", "1.2.1"))
         self.assertFalse(
-            easyrip.check_ver("2.9.4+4", easyrip.Global_val.PROJECT_VERSION)
+            easyrip.check_ver("2.9.4+4", easyrip.global_val.PROJECT_VERSION)
         )
 
     def test_log(self):
@@ -207,3 +218,49 @@ class TestSubtitle(unittest.TestCase):
             return Ass("test.zh-Hans.ass")
 
         log.info(timeit.timeit(_test_ass_class_create, number=100))
+
+
+class TestLanguage(unittest.TestCase):
+    def test_str_to_lang_tag(self):
+        self.assertIs(Lang_tag.from_str("").language, Lang_tag_language.Unknown)
+        self.assertIs(Lang_tag.from_str("-").language, Lang_tag_language.Unknown)
+        self.assertIs(Lang_tag.from_str("---").language, Lang_tag_language.Unknown)
+        self.assertIs(Lang_tag.from_str("-2-3-").language, Lang_tag_language.Unknown)
+
+        self.assertTrue(
+            Lang_tag.from_str("zh"),
+            Lang_tag(
+                language=Lang_tag_language.zh,
+                script=Lang_tag_script.Unknown,
+                region=Lang_tag_region.Unknown,
+            ),
+        )
+        self.assertTrue(
+            Lang_tag.from_str("chi"),
+            Lang_tag(
+                language=Lang_tag_language.zh,
+                script=Lang_tag_script.Unknown,
+                region=Lang_tag_region.Unknown,
+            ),
+        )
+        self.assertTrue(
+            Lang_tag.from_str("zho"),
+            Lang_tag(
+                language=Lang_tag_language.zh,
+                script=Lang_tag_script.Unknown,
+                region=Lang_tag_region.Unknown,
+            ),
+        )
+        self.assertTrue(
+            Lang_tag.from_str("zh-Hans-CN"),
+            Lang_tag(
+                language=Lang_tag_language.zh,
+                script=Lang_tag_script.Hans,
+                region=Lang_tag_region.CN,
+            ),
+        )
+
+    def test_lang_val_to_lang_tag(self):
+        self.assertTrue(
+            Lang_tag_language.zh, Lang_tag_language(Lang_tag_val(en_name="Chinese"))
+        )

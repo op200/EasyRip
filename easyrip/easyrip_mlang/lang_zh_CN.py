@@ -1,9 +1,21 @@
-from ..global_val import Global_val
-from .global_lang_val import Global_lang_val
+from .. import global_val
+from .global_lang_val import (
+    Global_lang_val,
+    Lang_tag,
+    Lang_tag_language,
+    Lang_tag_region,
+    Lang_tag_script,
+)
+
+LANG_TAG = Lang_tag(
+    language=Lang_tag_language.zh,
+    script=Lang_tag_script.Hans,
+    region=Lang_tag_region.CN,
+)
 
 lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     Global_lang_val.Extra_text_index.HELP_DOC: (
-        f"{Global_val.PROJECT_NAME}\n版本: {Global_val.PROJECT_VERSION}\n{Global_val.PROJECT_URL}\n"
+        f"{global_val.PROJECT_NAME}\n版本: {global_val.PROJECT_VERSION}\n{global_val.PROJECT_URL}\n"
         "\n"
         "\n"
         "帮助:\n"
@@ -339,8 +351,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Program startup directory, when the value is empty, starts in the working directory": "程序启动目录，值为空时在工作目录启动",
     "Force change of log file path, when the value is empty, it is the working directory": "强制更改日志文件所在路径，值为空时为工作目录",
     "Do not write to log file": "不写入日志文件",
-    "Logs this level and above will be printed, and if the value is 'none', they will not be printed, support: {}": "此等级及以上的日志会打印到控制台，若值为 'none' 则不打印，支持: {}",
-    "Logs this level and above will be written, and if the value is 'none', they will not be written, support: {}": "此等级及以上的日志会写入日志文件，若值为 'none' 则不写入，支持: {}",
+    "Logs this level and above will be printed, and if the value is '{}', they will not be printed, support: {}": "此等级及以上的日志会打印到控制台，若值为 '{}' 则不打印，支持: {}",
+    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written, support: {}": "此等级及以上的日志会写入日志文件，若值为 '{}' 则不写入，'{}' 仅在 'server' 时写入，支持: {}",
     # 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
     # 通用

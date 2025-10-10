@@ -14,14 +14,20 @@ from .translator import translate_subtitles
 Extra_text_index = Global_lang_val.Extra_text_index
 
 __all__ = [
-    "Lang_tag",
-    "Lang_tag_val",
-    "Lang_tag_language",
-    "Lang_tag_script",
-    "Lang_tag_region",
     "Global_lang_val",
+    "Lang_tag",
+    "Lang_tag_language",
+    "Lang_tag_region",
+    "Lang_tag_script",
+    "Lang_tag_val",
     "translate_subtitles",
 ]
+
+
+ALL_SUPPORTED_LANG_MAP = {
+    lang_en.LANG_TAG: lang_en.lang_map,
+    lang_zh_CN.LANG_TAG: lang_zh_CN.lang_map,
+}
 
 
 def get_system_language() -> Lang_tag:
@@ -75,11 +81,12 @@ def get_system_language() -> Lang_tag:
 def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = True):
     new_text: str | None = None
 
-    match Global_lang_val.gettext_target_lang.language:
-        case Lang_tag_language.zh:
-            new_text = lang_zh_CN.lang_map.get(org_text)
+    new_text = ALL_SUPPORTED_LANG_MAP[
+        Global_lang_val.gettext_target_lang.match(ALL_SUPPORTED_LANG_MAP)
+        or lang_en.LANG_TAG
+    ].get(org_text)
 
-    new_text = new_text or lang_en.lang_map.get(org_text) or str(org_text)
+    new_text = new_text or str(org_text)
 
     if is_format:
         from ..easyrip_log import log
@@ -87,8 +94,6 @@ def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = T
         try:
             new_text = new_text.format(*vals)
         except Exception as e:
-            log.debug(
-                f"{repr(e)} in gettext when str.format", deep=True, is_format=False
-            )
+            log.debug(f"{e!r} in gettext when str.format", deep=True, is_format=False)
 
     return new_text
