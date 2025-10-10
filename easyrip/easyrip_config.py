@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+from pathlib import Path
 
 from . import global_val
 from .easyrip_log import log
@@ -11,34 +12,29 @@ CONFIG_VERSION = "2.9.4"
 
 
 class config:
-    _config_dir: str = ""
-    _config_pathname: str = ""
+    _config_dir: Path
+    _config_file: Path
     _config: dict | None = None
 
-    @staticmethod
-    def init():
+    @classmethod
+    def init(cls):
         if sys.platform == "win32":
             # Windows: C:\Users\<用户名>\AppData\Roaming\<app_name>
-            config._config_dir = os.getenv("APPDATA", "")
+            cls._config_dir = Path(os.getenv("APPDATA", ""))
         elif sys.platform == "darwin":
             # macOS: ~/Library/Application Support/<app_name>
-            config._config_dir = (
-                os.path.expanduser("~"),
-                "Library",
-                "Application Support",
-                PROJECT_NAME,
+            cls._config_dir = (
+                Path(os.path.expanduser("~")) / "Library" / "Application Support"
             )
         else:
             # Linux: ~/.config/<app_name>
-            config._config_dir = os.path.expanduser("~"), ".config"
-        config._config_dir = os.path.join(config._config_dir, PROJECT_NAME)
-        config._config_pathname = os.path.join(config._config_dir, "config.json")
+            cls._config_dir = Path(os.path.expanduser("~")) / ".config"
+        cls._config_dir = Path(cls._config_dir) / PROJECT_NAME
+        cls._config_file = Path(cls._config_dir) / "config.json"
 
-        if not os.path.exists(config._config_pathname):
-            os.makedirs(config._config_dir, exist_ok=True)
-            with open(
-                config._config_pathname, "wt", encoding="utf-8", newline="\n"
-            ) as f:
+        if not cls._config_file.is_file():
+            cls._config_dir.mkdir(exist_ok=True)
+            with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
                 json.dump(
                     {
                         "version": CONFIG_VERSION,
@@ -57,7 +53,7 @@ class config:
                     indent=3,
                 )
         else:
-            with open(config._config_pathname, "r", encoding="utf-8") as f:
+            with cls._config_file.open("rt", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
                     if data.get("version") != CONFIG_VERSION:
@@ -68,109 +64,110 @@ class config:
                 except json.JSONDecodeError as e:
                     log.error(f"{e!r} {e}", deep=True)
 
-        config._read_config()
+        cls._read_config()
 
-    @staticmethod
-    def open_config_dir():
-        if not os.path.exists(config._config_dir):
-            config.init()
-        os.startfile(config._config_dir)
+    @classmethod
+    def open_config_dir(cls):
+        if not cls._config_dir.is_dir():
+            cls.init()
+        os.startfile(cls._config_dir)
 
-    @staticmethod
-    def regenerate_config():
-        if os.path.exists(config._config_pathname):
-            try:
-                os.remove(config._config_pathname)
-            except Exception as e:
-                log.error(f"{e!r} {e}", deep=True)
-        config.init()
+    @classmethod
+    def regenerate_config(cls):
+        cls._config_file.unlink(missing_ok=True)
+
+        cls.init()
         log.info("Regenerate config file")
 
-    @staticmethod
-    def _read_config() -> bool:
-        if not os.path.exists(config._config_dir):
-            config.init()
-        with open(config._config_pathname, "r", encoding="utf-8") as f:
+    @classmethod
+    def _read_config(cls) -> bool:
+        try:
+            if not cls._config_dir.is_dir():
+                raise AttributeError
+        except AttributeError:
+            cls.init()
+
+        with cls._config_file.open("rt", encoding="utf-8") as f:
             try:
-                config._config = json.load(f)
+                cls._config = json.load(f)
             except json.JSONDecodeError as e:
                 log.error(f"{e!r} {e}", deep=True)
                 return False
             return True
 
-    @staticmethod
-    def _write_config(new_config: dict | None = None) -> bool:
-        if not os.path.exists(config._config_dir):
-            config.init()
+    @classmethod
+    def _write_config(cls, new_config: dict | None = None) -> bool:
+        if not cls._config_dir.is_dir():
+            cls.init()
         if new_config is not None:
-            config._config = new_config
+            cls._config = new_config
         del new_config
 
-        with open(config._config_pathname, "wt", encoding="utf-8", newline="\n") as f:
+        with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
             try:
-                json.dump(config._config, f, ensure_ascii=False, indent=3)
+                json.dump(cls._config, f, ensure_ascii=False, indent=3)
             except json.JSONDecodeError as e:
                 log.error(f"{e!r} {e}", deep=True)
                 return False
             return True
 
-    @staticmethod
-    def set_user_profile(key: str, val: str | int | float | bool) -> bool:
-        if config._config is None:
-            if not config._read_config():
+    @classmethod
+    def set_user_profile(cls, key: str, val: str | int | float | bool) -> bool:
+        if cls._config is None:
+            if not cls._read_config():
                 return False
 
-        if config._config is None:
+        if cls._config is None:
             log.error("Config is None")
             return False
 
-        if "user_profile" not in config._config:
+        if "user_profile" not in cls._config:
             log.error("User profile is not found in config")
             return False
 
-        if key in config._config["user_profile"]:
-            config._config["user_profile"][key] = val
+        if key in cls._config["user_profile"]:
+            cls._config["user_profile"][key] = val
         else:
             log.error("Key '{}' is not found in user profile", key)
             return False
-        return config._write_config()
+        return cls._write_config()
 
-    @staticmethod
-    def get_user_profile(key: str) -> str | int | float | bool | None:
-        if config._config is None:
-            config._read_config()
-        if config._config is None:
+    @classmethod
+    def get_user_profile(cls, key: str) -> str | int | float | bool | None:
+        if cls._config is None:
+            cls._read_config()
+        if cls._config is None:
             return None
-        if not isinstance(config._config["user_profile"], dict):
+        if not isinstance(cls._config["user_profile"], dict):
             log.error("User profile is not a valid dictionary")
             return None
-        if key not in config._config["user_profile"]:
+        if key not in cls._config["user_profile"]:
             log.error("Key '{}' is not found in user profile", key)
             return None
-        return config._config["user_profile"][key]
+        return cls._config["user_profile"][key]
 
-    @staticmethod
-    def show_config_list():
-        if config._config is None:
-            config.init()
-        if config._config is None:
+    @classmethod
+    def show_config_list(cls):
+        if cls._config is None:
+            cls.init()
+        if cls._config is None:
             log.error("Config is None")
             return
 
-        user_profile: dict = config._config["user_profile"]
+        user_profile: dict = cls._config["user_profile"]
         length_key = max(len(k) for k in user_profile.keys())
         length_val = max(len(str(v)) for v in user_profile.values())
         for k, v in user_profile.items():
             log.send(
-                f"{k:>{length_key}} = {v!s:<{length_val}} - {config._get_config_about(k)}",
+                f"{k:>{length_key}} = {v!s:<{length_val}} - {cls._get_config_about(k)}",
             )
 
-    @staticmethod
-    def _get_config_about(key: str) -> str:
+    @classmethod
+    def _get_config_about(cls, key: str) -> str:
         return (
             {
                 "language": gettext(
-                    "Easy Rip's language, support: {}",
+                    "Easy Rip's language, support incomplete matching. Support: {}",
                     ", ".join(
                         ("auto", *(str(tag) for tag in ALL_SUPPORTED_LANG_MAP.keys()))
                     ),
@@ -186,16 +183,16 @@ class config:
                     "Force change of log file path, when the value is empty, it is the working directory"
                 ),
                 "log_print_level": gettext(
-                    "Logs this level and above will be printed, and if the value is '{}', they will not be printed, support: {}",
+                    "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Support: {}",
                     log.LogLevel.none.name,
                     ", ".join(log.LogLevel._member_names_),
                 ),
                 "log_write_level": gettext(
-                    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written, support: {}",
+                    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Support: {}",
                     log.LogLevel.none.name,
                     log.LogLevel.send.name,
                     ", ".join(log.LogLevel._member_names_),
                 ),
             }
-            | (config._config or dict())
+            | (cls._config or dict())
         ).get(key, "None about")

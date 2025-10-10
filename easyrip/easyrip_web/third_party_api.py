@@ -57,5 +57,4 @@ class zhconvert:
                     raise TypeError("The 'text' in response is not a 'str'")
                 return text
 
-            else:
-                raise Exception(f"HTTP error: {response.getcode()}")
+            raise Exception(f"HTTP error: {response.getcode()}")

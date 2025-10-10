@@ -9,7 +9,6 @@ import unittest
 import easyrip
 from easyrip import (
     Ass,
-    Global_lang_val,
     Lang_tag,
     Lang_tag_language,
     Lang_tag_region,
@@ -260,7 +259,20 @@ class TestLanguage(unittest.TestCase):
             ),
         )
 
+    def test_lang_tag_val(self):
+        self.assertIsNotNone(Lang_tag_val.__eq__)
+        self.assertIsNotNone(Lang_tag_val.__hash__)
+        self.assertEqual(
+            {
+                Lang_tag_val(en_name="1"),
+                Lang_tag_val(en_name="2"),
+                Lang_tag_val(en_name="1"),
+                Lang_tag_val(en_name="2", local_name="3"),
+            }.__len__(),
+            2,
+        )
+
     def test_lang_val_to_lang_tag(self):
-        self.assertTrue(
+        self.assertIs(
             Lang_tag_language.zh, Lang_tag_language(Lang_tag_val(en_name="Chinese"))
         )

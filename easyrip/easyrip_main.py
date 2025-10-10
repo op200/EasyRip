@@ -97,7 +97,7 @@ def check_env():
 
         if config.get_user_profile("check_dependent"):
             _url = "https://ffmpeg.org/download.html"
-            for _name in {"FFmpeg", "FFprobe"}:
+            for _name in ("FFmpeg", "FFprobe"):
                 if not shutil.which(_name):
                     print()
                     log.error(
@@ -184,7 +184,7 @@ def check_env():
                 )
 
             _url = "https://mkvtoolnix.download/downloads.html"
-            for _name in {"mkvpropedit", "mkvmerge"}:
+            for _name in ("mkvpropedit", "mkvmerge"):
                 if not shutil.which(_name):
                     print()
                     log.warning("{} not found, download it: {}", _name, _url)

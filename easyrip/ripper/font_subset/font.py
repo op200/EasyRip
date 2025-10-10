@@ -4,6 +4,7 @@ import winreg
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Final
 
 from fontTools import subset
 from fontTools.ttLib import TTCollection, TTFont
@@ -38,7 +39,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     if isinstance(path, str):
         path = Path(path)
 
-    res_font_list: list[Font] = []
+    res_font_list: Final = list[Font]()
 
     for file in path.iterdir() if path.is_dir() else (path,):
         if not (
@@ -68,7 +69,6 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                 is_italic: bool = False
 
                 for record in table_name.names:
-                    record: NameRecord = record
                     name_id = int(record.nameID)
 
                     if name_id not in {1, 2}:
@@ -141,7 +141,7 @@ def get_font_path_from_registry(font_name: str) -> list[str]:
     :param font_name: 字体名称（如"Arial"）
     :return: 字体文件完整路径，如果找不到返回None
     """
-    res: list[str] = []
+    res: Final = list[str]()
     try:
         # 打开字体注册表键
         with winreg.OpenKey(
@@ -220,9 +220,8 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
     affix_utf16be = afffix.encode("utf-16-be")
     table_name: table__n_a_m_e = font.font.get("name")  # type: ignore
     subset_table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
-    subset_table_name.names = []  # 重写 name table
+    subset_table_name.names = list[NameRecord]()  # 重写 name table
     for record in table_name.names:
-        record: NameRecord = record
         name_id = int(record.nameID)
 
         if name_id not in {0, 1, 2, 3, 4, 5, 6}:

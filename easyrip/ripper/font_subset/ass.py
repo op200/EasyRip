@@ -479,9 +479,9 @@ class Events:
                                 or (
                                     k == Event_fmt_it.Effect
                                     and not (
-                                        v.startswith("Banner;")
-                                        or v.startswith("Scroll up;")
-                                        or v.startswith("Scroll down;")
+                                        v.startswith(
+                                            ("Banner;", "Scroll up;", "Scroll down;")
+                                        )
                                     )
                                 )
                             )
@@ -611,12 +611,7 @@ class Ass:
         state: State = State.unknown
         new_unknown_data: Unknown_data | None = None
 
-        for line in read_text(path).splitlines():
-            line = line.strip()
-
-            if not line:
-                continue
-
+        for line in filter(bool, map(str.strip, read_text(path).splitlines())):
             if line.startswith("[") and line.endswith("]"):
                 if new_unknown_data is not None:
                     self.unknown_data.append(new_unknown_data)

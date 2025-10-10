@@ -34,6 +34,9 @@ class Lang_tag_val:
             return self.en_name == other.en_name
         return False
 
+    def __hash__(self) -> int:
+        return hash(self.en_name)
+
 
 class Lang_tag_language(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
@@ -147,27 +150,53 @@ class Lang_tag:
     script: Lang_tag_script = Lang_tag_script.Unknown
     region: Lang_tag_region = Lang_tag_region.Unknown
 
-    def match(self, target_tags: Iterable[Self]) -> Self | None:
-        target_tags_tuple = tuple(
-            tag for tag in target_tags if tag.language is self.language
+    class Match_priority(enum.Enum):
+        script = enum.auto()
+        region = enum.auto()
+
+    def match(
+        self,
+        target_tags: Iterable[Self],
+        *,
+        is_incomplete_match: bool = True,
+        priority: Match_priority = Match_priority.script,
+        is_allow_mismatch_language: bool = False,
+    ) -> Self | None:
+        """启用不完整匹配时，找到最匹配的第一项"""
+
+        target_tags_tuple = tuple(target_tags)
+        del target_tags
+
+        matching_tags_tuple = tuple(
+            tag for tag in target_tags_tuple if tag.language is self.language
         )
-        if not target_tags_tuple:
+        if not matching_tags_tuple:
+            if is_allow_mismatch_language:
+                matching_tags_tuple = target_tags_tuple
+            else:
+                return None
+
+        if self in matching_tags_tuple:
+            return self
+        elif not is_incomplete_match:
             return None
 
-        if self in target_tags_tuple:
-            return self
+        same_region_tuple = tuple(
+            tag for tag in matching_tags_tuple if tag.region is self.region
+        )
 
-        if same_region := tuple(
-            tag for tag in target_tags_tuple if tag.region is self.region
+        same_script_tuple = tuple(
+            tag for tag in matching_tags_tuple if tag.script is self.script
+        )
+
+        if priority_same_tuple := (
+            same_script_tuple + same_region_tuple
+            if priority is Lang_tag.Match_priority.script
+            else same_region_tuple + same_script_tuple
         ):
-            return same_region[0]
+            return priority_same_tuple[0]
 
-        if same_script := tuple(
-            tag for tag in target_tags_tuple if tag.script is self.script
-        ):
-            return same_script[0]
-
-        return target_tags_tuple[0]
+        return matching_tags_tuple[0]
 
     @classmethod
     def from_str(
@@ -176,7 +205,7 @@ class Lang_tag:
     ) -> Self:
         """
         #### 输入语言标签字符串，输出标签对象
-        e.g. zh-Hans-CN -> (Language.zh, Script.Hans, Region.CN)
+        e.g. zh-Hans-CN -> Self(Language.zh, Script.Hans, Region.CN)
         """
 
         from ..easyrip_mlang import gettext
@@ -190,7 +219,7 @@ class Lang_tag:
         for i, s in enumerate(str_tag_tuple[1:]):
             if s in Lang_tag_script._member_names_:
                 if i != 0:
-                    Exception(
+                    raise Exception(
                         gettext("The input language tag string format is illegal")
                     )
                 script = Lang_tag_script[s]
@@ -235,7 +264,7 @@ class Global_lang_val:
         tag_list_len = len(tag_list)
 
         if tag_list_len == 0:
-            Exception(gettext("The input language tag string format is illegal"))
+            raise Exception(gettext("The input language tag string format is illegal"))
 
         res_str_list: list[str] = [
             _local_name

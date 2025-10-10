@@ -1,2 +1,18 @@
-select = ["PIE", "RUF", "FLY", "A", "I"]
-ignore = ["RUF001", "RUF002", "RUF003", "RUF005", "RUF012"]
+[lint]
+select = ["PIE", "RUF", "FLY", "A", "I", "W", "F", "E", "PL"]
+ignore = [
+    "RUF001",
+    "RUF002",
+    "RUF003",
+    "RUF005",
+    "RUF012",
+    "E501",
+    "PLC0415",
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR2004",
+    "PLW1510",
+    "PLW2901",
+]
