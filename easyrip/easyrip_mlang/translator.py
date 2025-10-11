@@ -1,5 +1,7 @@
 from pathlib import Path
-from typing import Iterable
+from threading import Thread
+from time import sleep
+from typing import Final, Iterable
 
 from ..easyrip_web.third_party_api import zhconvert
 from .global_lang_val import (
@@ -16,6 +18,7 @@ def translate_subtitles(
     target_lang: str | Lang_tag,
     *,
     file_intersection_selector: Iterable[Path] | None = None,
+    enable_multithreading: bool = True,
 ) -> list[tuple[Path, str]]:
     """
     #### 自动搜索符合中缀的字幕文件，翻译为目标语言
@@ -23,6 +26,7 @@ def translate_subtitles(
     Return: list[tuple[file, content]]
     """
 
+    from ..easyrip_log import log
     from ..easyrip_mlang import gettext
     from ..ripper.utils import read_text
 
@@ -34,7 +38,7 @@ def translate_subtitles(
     if file_intersection_selector is not None:
         file_intersection_selector = set(file_intersection_selector)
 
-    file_list = list[tuple[Path, str]]()
+    file_list: Final = list[tuple[Path, str]]()
     for f in directory.iterdir():
         if f.suffix not in {".ass", ".ssa", ".srt"} or (
             file_intersection_selector is not None
@@ -54,6 +58,7 @@ def translate_subtitles(
                 )
             )
 
+    zhconvert_target_lang: zhconvert.Target_lang
     match Lang_tag.from_str(infix):
         case (
             Lang_tag(
@@ -74,48 +79,21 @@ def translate_subtitles(
                     script=_,
                     region=Lang_tag_region.HK,
                 ):
-                    file_list = [
-                        (
-                            f[0],
-                            zhconvert.translate(
-                                org_text=f[1],
-                                target_lang=zhconvert.Target_lang.HK,
-                            ),
-                        )
-                        for f in file_list
-                    ]
+                    zhconvert_target_lang = zhconvert.Target_lang.HK
 
                 case Lang_tag(
                     language=Lang_tag_language.zh,
                     script=_,
                     region=Lang_tag_region.TW,
                 ):
-                    file_list = [
-                        (
-                            f[0],
-                            zhconvert.translate(
-                                org_text=f[1],
-                                target_lang=zhconvert.Target_lang.TW,
-                            ),
-                        )
-                        for f in file_list
-                    ]
+                    zhconvert_target_lang = zhconvert.Target_lang.TW
 
                 case Lang_tag(
                     language=Lang_tag_language.zh,
                     script=Lang_tag_script.Hant,
                     region=_,
                 ):
-                    file_list = [
-                        (
-                            f[0],
-                            zhconvert.translate(
-                                org_text=f[1],
-                                target_lang=zhconvert.Target_lang.Hant,
-                            ),
-                        )
-                        for f in file_list
-                    ]
+                    zhconvert_target_lang = zhconvert.Target_lang.Hant
 
                 case _:
                     raise Exception(
@@ -141,31 +119,14 @@ def translate_subtitles(
                     script=_,
                     region=Lang_tag_region.CN,
                 ):
-                    file_list = [
-                        (
-                            f[0],
-                            zhconvert.translate(
-                                org_text=f[1], target_lang=zhconvert.Target_lang.CN
-                            ),
-                        )
-                        for f in file_list
-                    ]
+                    zhconvert_target_lang = zhconvert.Target_lang.CN
 
                 case Lang_tag(
                     language=Lang_tag_language.zh,
                     script=Lang_tag_script.Hans,
                     region=_,
                 ):
-                    file_list = [
-                        (
-                            f[0],
-                            zhconvert.translate(
-                                org_text=f[1],
-                                target_lang=zhconvert.Target_lang.Hans,
-                            ),
-                        )
-                        for f in file_list
-                    ]
+                    zhconvert_target_lang = zhconvert.Target_lang.Hans
 
                 case _:
                     raise Exception(
@@ -175,4 +136,37 @@ def translate_subtitles(
         case _:
             raise Exception(gettext("Unsupported language tag: {}").format(infix))
 
-    return file_list
+    res_file_list: Final = list[tuple[Path, str]]()
+    res_file_dict: Final = dict[int, tuple[Path, str]]()
+
+    def _tr(index: int, path: Path, org_text: str):
+        log.info('Start translating file "{}"', path)
+        res_file_dict[index] = (
+            path,
+            zhconvert.translate(
+                org_text=org_text,
+                target_lang=zhconvert_target_lang,
+            ),
+        )
+
+    threads = list[Thread]()
+
+    for i, f in enumerate(file_list):
+        t = Thread(target=_tr, args=(i, f[0], f[1]))
+        threads.append(t)
+        t.start()
+        if not enable_multithreading:
+            t.join()
+        else:
+            sleep(0.1)
+
+    for t in threads:
+        t.join()
+
+    if len(res_file_dict) != len(file_list):
+        raise RuntimeError
+
+    for _, f in sorted(res_file_dict.items()):
+        res_file_list.append(f)
+
+    return res_file_list

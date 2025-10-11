@@ -355,6 +355,8 @@ lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
     "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Support: {}": "此等级及以上的日志会写入日志文件，若值为 '{}' 则不写入，'{}' 仅在 'server' 时写入。支持: {}",
     # 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
+    # mlang
+    'Start translating file "{}"': '开始翻译文件 "{}"',
     # 通用
     "Run {} failed": "执行 {} 失败",
     "Unknown error": "未知错误",
