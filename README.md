@@ -72,3 +72,4 @@ Run `easyrip`, input `help` to get help doc
 
 If you want to add or modify translation, edit the `easyrip/easyrip_mlang`
 
+Or add translate file, see [Wiki](https://github.com/op200/EasyRip/wiki/Language-file) for details

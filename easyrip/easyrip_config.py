@@ -5,7 +5,7 @@ from pathlib import Path
 
 from . import global_val
 from .easyrip_log import log
-from .easyrip_mlang import ALL_SUPPORTED_LANG_MAP, gettext
+from .easyrip_mlang import all_supported_lang_map, gettext
 
 PROJECT_NAME = global_val.PROJECT_NAME
 CONFIG_VERSION = "2.9.4"
@@ -169,7 +169,7 @@ class config:
                 "language": gettext(
                     "Easy Rip's language, support incomplete matching. Support: {}",
                     ", ".join(
-                        ("auto", *(str(tag) for tag in ALL_SUPPORTED_LANG_MAP.keys()))
+                        ("auto", *(str(tag) for tag in all_supported_lang_map.keys()))
                     ),
                 ),
                 "check_update": gettext("Auto check the update of Easy Rip"),

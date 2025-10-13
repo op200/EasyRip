@@ -13,7 +13,7 @@ LANG_TAG = Lang_tag(
     region=Lang_tag_region.CN,
 )
 
-lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
+LANG_MAP: dict[str | Global_lang_val.Extra_text_index, str] = {
     Global_lang_val.Extra_text_index.HELP_DOC: (
         f"{global_val.PROJECT_NAME}\n版本: {global_val.PROJECT_VERSION}\n{global_val.PROJECT_URL}\n"
         "\n"

@@ -20,13 +20,15 @@ __all__ = [
     "Lang_tag_region",
     "Lang_tag_script",
     "Lang_tag_val",
+    "get_system_language",
+    "gettext",
     "translate_subtitles",
 ]
 
 
-ALL_SUPPORTED_LANG_MAP = {
-    lang_en.LANG_TAG: lang_en.lang_map,
-    lang_zh_CN.LANG_TAG: lang_zh_CN.lang_map,
+all_supported_lang_map: dict[Lang_tag, dict[str | Extra_text_index, str]] = {
+    lang_en.LANG_TAG: lang_en.LANG_MAP,
+    lang_zh_CN.LANG_TAG: lang_zh_CN.LANG_MAP,
 }
 
 
@@ -78,15 +80,19 @@ def get_system_language() -> Lang_tag:
     )
 
 
-def gettext(org_text: str | Extra_text_index, *vals: object, is_format: bool = True):
+def gettext(
+    org_text: str | Extra_text_index,
+    *vals: object,
+    is_format: bool = True,
+) -> str:
     new_text: str | None = None
 
-    new_text = ALL_SUPPORTED_LANG_MAP[
-        Global_lang_val.gettext_target_lang.match(ALL_SUPPORTED_LANG_MAP)
+    new_text = all_supported_lang_map[
+        Global_lang_val.gettext_target_lang.match(all_supported_lang_map)
         or lang_en.LANG_TAG
     ].get(org_text)
 
-    new_text = new_text or str(org_text)
+    new_text = str(org_text) if new_text is None else str(new_text)
 
     if is_format:
         from ..easyrip_log import log

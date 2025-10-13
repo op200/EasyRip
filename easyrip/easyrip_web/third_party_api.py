@@ -1,5 +1,6 @@
 import enum
 import json
+import urllib.error
 import urllib.parse
 import urllib.request
 
@@ -58,3 +59,18 @@ class zhconvert:
                 return text
 
             raise Exception(f"HTTP error: {response.getcode()}")
+
+
+class github:
+    @staticmethod
+    def get_release_ver(release_api_url: str) -> str | None:
+        req = urllib.request.Request(release_api_url)
+
+        try:
+            with urllib.request.urlopen(req) as response:
+                data = json.loads(response.read().decode("utf-8"))
+                return data.get("tag_name")
+        except Exception:
+            pass
+
+        return None

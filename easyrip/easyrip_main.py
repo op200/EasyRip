@@ -1,4 +1,5 @@
 import ctypes
+import itertools
 import json
 import os
 import re
@@ -15,7 +16,9 @@ from threading import Thread
 from time import sleep
 from tkinter import filedialog
 
-from . import easyrip_web, global_val
+import tomllib
+
+from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_config import config
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
@@ -27,6 +30,7 @@ from .easyrip_mlang import (
     translate_subtitles,
 )
 from .ripper import Ripper
+from .ripper.utils import read_text
 
 __all__ = ["init", "run_command"]
 
@@ -142,7 +146,7 @@ def check_env():
 
             else:
                 log_new_ver(
-                    easyrip_web.get_github_api_ver(
+                    easyrip_web.github.get_release_ver(
                         "https://api.github.com/repos/xiph/flac/releases/latest"
                     ),
                     old_ver_str,
@@ -157,7 +161,7 @@ def check_env():
                 print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
-                    easyrip_web.get_github_api_ver(
+                    easyrip_web.github.get_release_ver(
                         "https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"
                     ),
                     subprocess.run(_name, capture_output=True, text=True).stderr.split(
@@ -209,7 +213,7 @@ def check_env():
 
         if config.get_user_profile("check_update"):
             log_new_ver(
-                easyrip_web.get_github_api_ver(global_val.PROJECT_RELEASE_API),
+                easyrip_web.github.get_release_ver(global_val.PROJECT_RELEASE_API),
                 PROJECT_VERSION,
                 PROJECT_NAME,
                 f"{global_val.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
@@ -356,6 +360,9 @@ def run_command(command: list[str] | str) -> bool:
 
         case "v" | "ver" | "version":
             log.send(f"{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}")
+
+        case "init":
+            init()
 
         case "log":
             msg = " ".join(cmd_list[2:])
@@ -861,6 +868,29 @@ def init(is_first_run: bool = False):
     Global_lang_val.gettext_target_lang = _sys_lang
     if (_lang_config := config.get_user_profile("language")) not in {"auto", None}:
         Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
+
+    # 扫描额外的翻译文件
+    for file in (
+        f
+        for f in itertools.chain(Path(".").iterdir(), config._config_dir.iterdir())
+        if f.stem.startswith("lang_")
+    ):
+        match file.suffix:
+            case ".json":
+                lang_map = dict[str, str](json.loads(read_text(file)))
+            case ".toml":
+                lang_map = dict[str, str](tomllib.loads(read_text(file)))
+            case _:
+                continue
+
+        easyrip_mlang.all_supported_lang_map[Lang_tag.from_str(file.stem[5:])] = {
+            (
+                k
+                if k not in Global_lang_val.Extra_text_index._member_names_
+                else Global_lang_val.Extra_text_index[k]
+            ): v
+            for k, v in lang_map.items()
+        }
 
     # 设置日志文件路径名
     log.html_filename = gettext("encoding_log.html")

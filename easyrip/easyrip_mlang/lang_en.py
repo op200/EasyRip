@@ -3,7 +3,7 @@ from .global_lang_val import Global_lang_val, Lang_tag, Lang_tag_language
 
 LANG_TAG = Lang_tag(language=Lang_tag_language.en)
 
-lang_map: dict[str | Global_lang_val.Extra_text_index, str] = {
+LANG_MAP: dict[str | Global_lang_val.Extra_text_index, str] = {
     Global_lang_val.Extra_text_index.HELP_DOC: (
         f"{global_val.PROJECT_NAME}\nVersion: {global_val.PROJECT_VERSION}\n{global_val.PROJECT_URL}\n"
         "\n"
