@@ -1,4 +1,5 @@
 import enum
+import itertools
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -745,14 +746,16 @@ class Ass:
         drop_fonts: bool = False,
         drop_graphics: bool = False,
     ) -> str:
-        generator = (
-            self.script_info.to_ass_str(),
-            self.styles.to_ass_str(),
-            self.attachments.to_ass_str(
-                drop_fonts=drop_fonts, drop_graphics=drop_graphics
+        generator = itertools.chain(
+            (
+                self.script_info.to_ass_str(),
+                self.styles.to_ass_str(),
+                self.attachments.to_ass_str(
+                    drop_fonts=drop_fonts, drop_graphics=drop_graphics
+                ),
+                self.events.to_ass_str(drop_non_render=drop_non_render),
             ),
-            self.events.to_ass_str(drop_non_render=drop_non_render),
-            *(
+            (
                 data.to_ass_str()
                 for data in (() if drop_unkow_data else self.unknown_data)
             ),

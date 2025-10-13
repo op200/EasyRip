@@ -3,6 +3,7 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
+from time import sleep
 
 
 class zhconvert:
@@ -44,21 +45,32 @@ class zhconvert:
             ).encode("utf-8"),
         )
 
-        with urllib.request.urlopen(req) as response:
-            for _ in range(5):  # 尝试重连
-                if response.getcode() != 200:
-                    continue
+        for retry_num in range(5):
+            try:
+                with urllib.request.urlopen(req) as response:
+                    for _ in range(5):  # 尝试重连
+                        if response.getcode() != 200:
+                            log.debug("response.getcode() != 200")
+                            continue
 
-                res = json.loads(response.read().decode("utf-8"))
+                        res = json.loads(response.read().decode("utf-8"))
 
-                res_data: dict = res.get("data", {})
+                        res_data: dict = res.get("data", {})
 
-                text = res_data.get("text")
-                if not isinstance(text, str):
-                    raise TypeError("The 'text' in response is not a 'str'")
-                return text
+                        text = res_data.get("text")
+                        if not isinstance(text, str):
+                            raise TypeError("The 'text' in response is not a 'str'")
+                        return text
 
-            raise Exception(f"HTTP error: {response.getcode()}")
+                    raise Exception(f"HTTP error: {response.getcode()}")
+            except urllib.error.HTTPError as e:
+                sleep(0.5)
+                if retry_num == 4:
+                    raise e
+                log.debug("Attempt to reconnect")
+                continue
+
+        raise Exception
 
 
 class github:
