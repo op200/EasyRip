@@ -25,6 +25,7 @@ from .easyrip_log import log
 from .easyrip_mlang import (
     Global_lang_val,
     Lang_tag,
+    Lang_tag_language,
     get_system_language,
     gettext,
     translate_subtitles,
@@ -869,29 +870,6 @@ def init(is_first_run: bool = False):
     if (_lang_config := config.get_user_profile("language")) not in {"auto", None}:
         Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
 
-    # 扫描额外的翻译文件
-    for file in (
-        f
-        for f in itertools.chain(Path(".").iterdir(), config._config_dir.iterdir())
-        if f.stem.startswith("lang_")
-    ):
-        match file.suffix:
-            case ".json":
-                lang_map = dict[str, str](json.loads(read_text(file)))
-            case ".toml":
-                lang_map = dict[str, str](tomllib.loads(read_text(file)))
-            case _:
-                continue
-
-        easyrip_mlang.all_supported_lang_map[Lang_tag.from_str(file.stem[5:])] = {
-            (
-                k
-                if k not in Global_lang_val.Extra_text_index._member_names_
-                else Global_lang_val.Extra_text_index[k]
-            ): v
-            for k, v in lang_map.items()
-        }
-
     # 设置日志文件路径名
     log.html_filename = gettext("encoding_log.html")
     if _path := str(config.get_user_profile("force_log_file_path") or ""):
@@ -918,6 +896,34 @@ def init(is_first_run: bool = False):
 
     # 获取终端颜色
     log.init()
+
+    # 扫描额外的翻译文件
+    for file in (
+        f
+        for f in itertools.chain(Path(".").iterdir(), config._config_dir.iterdir())
+        if f.stem.startswith("lang_")
+    ):
+        match file.suffix:
+            case ".json":
+                lang_map = dict[str, str](json.loads(read_text(file)))
+            case ".toml":
+                lang_map = dict[str, str](tomllib.loads(read_text(file)))
+            case _:
+                continue
+
+        if (
+            lang_tag := Lang_tag.from_str(file.stem[5:])
+        ).language is not Lang_tag_language.Unknown:
+            easyrip_mlang.all_supported_lang_map[lang_tag] = {
+                (
+                    k
+                    if k not in Global_lang_val.Extra_text_index._member_names_
+                    else Global_lang_val.Extra_text_index[k]
+                ): v
+                for k, v in lang_map.items()
+            }
+
+            log.debug("Loading \"{}\" as '{}' language successfully", file, lang_tag)
 
     if is_first_run:
         # 检测环境

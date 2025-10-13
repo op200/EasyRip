@@ -152,7 +152,7 @@ def translate_subtitles(
     threads = list[Thread]()
 
     for i, f in enumerate(file_list):
-        t = Thread(target=_tr, args=(i, f[0], f[1]))
+        t = Thread(target=_tr, args=(i, f[0], f[1]), daemon=False)
         threads.append(t)
         t.start()
         if not enable_multithreading:

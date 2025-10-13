@@ -3,57 +3,56 @@ name: Build
 on:
   push:
     paths:
-      - 'easyrip.py'
-      - 'easyrip/**'
-      - 'resources/*.ico'
-      - '.github/workflows/*'
-    branches: [ "main" ]
+      - "easyrip.py"
+      - "easyrip/**"
+      - "resources/*.ico"
+      - ".github/workflows/*"
+    branches: ["main"]
   pull_request:
     paths:
-      - 'easyrip.py'
-      - 'easyrip/**'
-      - 'resources/*.ico'
-      - '.github/workflows/*'
-    branches: [ "main" ]
+      - "easyrip.py"
+      - "easyrip/**"
+      - "resources/*.ico"
+      - ".github/workflows/*"
+    branches: ["main"]
 
 permissions:
   contents: read
 
 jobs:
   build:
-
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Cache nuitka output
-      uses: actions/cache@v4
-      with:
-        path: easyrip_nuitka_output
-        # 使用一个基于文件内容的键来确保当src目录下的文件发生变化时，可以触发新的缓存
-        key: ${{ runner.os }}-nuitka-output
-        # 如果主键没有命中，尝试使用旧版本的键来恢复缓存
-        restore-keys: |
-          ${{ runner.os }}-nuitka-output
+      - name: Cache nuitka output
+        uses: actions/cache@v4
+        with:
+          path: easyrip_nuitka_output
+          # 使用一个基于文件内容的键来确保当src目录下的文件发生变化时，可以触发新的缓存
+          key: ${{ runner.os }}-nuitka-output
+          # 如果主键没有命中，尝试使用旧版本的键来恢复缓存
+          restore-keys: |
+            ${{ runner.os }}-nuitka-output
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13.5"
-        cache: "pip"
-    - run: pip install -U -r requirements.txt
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - run: pip install -U -r requirements.txt
 
-    - name: Building the application
-      run: |
-        python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico --output-dir=./easyrip_nuitka_output easyrip.py
+      - name: Building the application
+        run: |
+          python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico --output-dir=./easyrip_nuitka_output easyrip.py
 
-    - name: Create 7z archive
-      run: |
-        7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z ./easyrip_nuitka_output/*.exe
+      - name: Create 7z archive
+        run: |
+          7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z ./easyrip_nuitka_output/*.exe
 
-    - name: Upload artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: easyrip_x64
-        path: ./easyrip.7z
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: easyrip_x64
+          path: ./easyrip.7z
