@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ...easyrip_log import log
-from ..utils import read_text, uudecode_ssa, uuencode_ssa
+from ...utils import read_text, uudecode_ssa, uuencode_ssa
 
 
 class Style_fmt_it(enum.Enum):
@@ -515,8 +515,7 @@ class Attachment_data:
     def data_to_bytes(self) -> bytes:
         """返回 org_data, 若无 org_data 则从 data 生成"""
         if self.org_data is None:
-            if self.data is None:
-                raise Exception()
+            assert self.data is not None
             self.org_data = uudecode_ssa(self.data)
 
         return self.org_data
@@ -524,8 +523,7 @@ class Attachment_data:
     def data_to_str(self) -> str:
         """返回 data, 若无 data 则从 org_data 生成"""
         if self.data is None:
-            if self.org_data is None:
-                raise Exception()
+            assert self.org_data is not None
             self.data = uuencode_ssa(self.org_data)
 
         return self.data

@@ -28,7 +28,7 @@ def translate_subtitles(
 
     from ..easyrip_log import log
     from ..easyrip_mlang import gettext
-    from ..ripper.utils import read_text
+    from ..utils import read_text
 
     if isinstance(target_lang, str):
         target_lang_tag: Lang_tag = Lang_tag.from_str(target_lang)
@@ -163,8 +163,7 @@ def translate_subtitles(
     for t in threads:
         t.join()
 
-    if len(res_file_dict) != len(file_list):
-        raise RuntimeError
+    assert len(res_file_dict) == len(file_list)
 
     for _, f in sorted(res_file_dict.items()):
         res_file_list.append(f)

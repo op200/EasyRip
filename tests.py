@@ -48,7 +48,6 @@ class TestBasic(unittest.TestCase):
     def test_log(self):
         self.assertEqual(gettext(""), "")
         self.assertEqual(gettext("{}"), "{}")
-        gettext(easyrip.Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
 
         html_log_file = log.html_filename
         easyrip.init(True)

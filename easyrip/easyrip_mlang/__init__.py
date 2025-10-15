@@ -1,6 +1,6 @@
 import ctypes
 
-from . import lang_en, lang_zh_CN
+from . import lang_en, lang_zh_Hans_CN
 from .global_lang_val import (
     Global_lang_val,
     Lang_tag,
@@ -10,8 +10,6 @@ from .global_lang_val import (
     Lang_tag_val,
 )
 from .translator import translate_subtitles
-
-Extra_text_index = Global_lang_val.Extra_text_index
 
 __all__ = [
     "Global_lang_val",
@@ -26,9 +24,9 @@ __all__ = [
 ]
 
 
-all_supported_lang_map: dict[Lang_tag, dict[str | Extra_text_index, str]] = {
+all_supported_lang_map: dict[Lang_tag, dict[str, str]] = {
     lang_en.LANG_TAG: lang_en.LANG_MAP,
-    lang_zh_CN.LANG_TAG: lang_zh_CN.LANG_MAP,
+    lang_zh_Hans_CN.LANG_TAG: lang_zh_Hans_CN.LANG_MAP,
 }
 
 
@@ -81,7 +79,7 @@ def get_system_language() -> Lang_tag:
 
 
 def gettext(
-    org_text: str | Extra_text_index,
+    org_text: str,
     *vals: object,
     is_format: bool = True,
 ) -> str:

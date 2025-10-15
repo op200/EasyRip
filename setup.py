@@ -14,10 +14,9 @@ def get_version():
         re.M,
     )
 
-    if version_match is None:
-        raise RuntimeError(
-            f"Cannot find '{PROJECT_VERSION_VAR_NAME}' in \"{GLOBAL_VAL_PY_FILE_PATH_STR}\""
-        )
+    assert version_match is not None, (
+        f"Cannot find '{PROJECT_VERSION_VAR_NAME}' in \"{GLOBAL_VAL_PY_FILE_PATH_STR}\""
+    )
 
     return version_match.group(1) if version_match else "0.0.0"
 

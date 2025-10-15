@@ -9,7 +9,6 @@ import subprocess
 import sys
 import tkinter as tk
 from datetime import datetime
-from itertools import zip_longest
 from multiprocessing import shared_memory
 from pathlib import Path
 from threading import Thread
@@ -19,6 +18,7 @@ from tkinter import filedialog
 import tomllib
 
 from . import easyrip_mlang, easyrip_web, global_val
+from .easyrip_command import Cmd_type, Opt_type, get_help_doc
 from .easyrip_config import config
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
@@ -31,7 +31,7 @@ from .easyrip_mlang import (
     translate_subtitles,
 )
 from .ripper import Ripper
-from .ripper.utils import read_text
+from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
 
@@ -42,41 +42,6 @@ PROJECT_TITLE = global_val.PROJECT_TITLE
 PROJECT_URL = global_val.PROJECT_URL
 
 
-def change_title(title: str):
-    if os.name == "nt":
-        os.system(f"title {title}")
-    elif os.name == "posix":
-        sys.stdout.write(f"\x1b]2;{title}\x07")
-        sys.stdout.flush()
-
-
-def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
-    new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
-    new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
-    new_ver = (
-        [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
-        [int(v) for v in new_ver_add_num[1:]],
-    )
-
-    old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split(".")]
-    old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
-    old_ver = (
-        [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
-        [int(v) for v in old_ver_add_num[1:]],
-    )
-
-    for i in range(2):
-        for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
-            if new > old:
-                return True
-            elif new < old:
-                break
-        else:
-            continue
-        break
-    return False
-
-
 def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: str):
     if new_ver is None:
         return
@@ -84,7 +49,7 @@ def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: st
         if check_ver(new_ver, old_ver):
             print()
             log.info(
-                Global_lang_val.Extra_text_index.NEW_VER_TIP,
+                "{} has new version {}. You can download it: {}",
                 program_name,
                 new_ver,
                 dl_url,
@@ -302,10 +267,10 @@ def run_ripper_list(
         change_title(progress)
         try:
             if ripper.run() is False:
-                log.error("Run {} failed", "ripper")
+                log.error("Run {} failed", "Ripper")
         except Exception as e:
             log.error(e, deep=True)
-            log.warning("Stop run ripper")
+            log.warning("Stop run Ripper")
         sleep(1)
     if log.warning_num > warning_num:
         log.warning(
@@ -355,17 +320,32 @@ def run_command(command: list[str] | str) -> bool:
 
     cmd_list.append("")
 
-    match cmd_list[0]:
-        case "h" | "help":
-            log.send(Global_lang_val.Extra_text_index.HELP_DOC, is_format=False)
+    cmd_type: Cmd_type | None = None
+    if cmd_list[0] in Cmd_type._member_map_.keys():
+        cmd_type = Cmd_type[cmd_list[0]]
+    elif len(cmd_list[0]) > 0 and cmd_list[0].startswith("$"):
+        cmd_type = Cmd_type._run_any
 
-        case "v" | "ver" | "version":
+    match cmd_type or cmd_list[0]:
+        case Cmd_type.help:
+            if cmd_list[1]:
+                _want_doc_cmd_type: Cmd_type | Opt_type | None = Cmd_type.from_str(
+                    cmd_list[1]
+                ) or Opt_type.from_str(cmd_list[1])
+                if _want_doc_cmd_type is None:
+                    log.error("'{}' does not exist", cmd_list[1])
+                else:
+                    log.send(_want_doc_cmd_type.value.to_doc())
+            else:
+                log.send(get_help_doc(), is_format=False)
+
+        case Cmd_type.version:
             log.send(f"{PROJECT_NAME} version {PROJECT_VERSION}\n{PROJECT_URL}")
 
-        case "init":
+        case Cmd_type.init:
             init()
 
-        case "log":
+        case Cmd_type.log:
             msg = " ".join(cmd_list[2:])
             match cmd_list[1]:
                 case "info":
@@ -381,16 +361,16 @@ def run_command(command: list[str] | str) -> bool:
                 case _:
                     log.info(f"{cmd_list[1]} {msg}")
 
-        case str() as s if len(s) > 0 and s.startswith("$"):
+        case Cmd_type._run_any:
             try:
                 exec(" ".join(cmd_list)[1:].lstrip().replace(r"\N", "\n"))
             except Exception as e:
                 log.error("Your input command has error:\n{}", e)
 
-        case "exit":
+        case Cmd_type.exit:
             sys.exit()
 
-        case "cd":
+        case Cmd_type.cd:
             try:
                 _path = None
 
@@ -408,25 +388,22 @@ def run_command(command: list[str] | str) -> bool:
             except OSError as e:
                 log.error(e)
 
-        case "dir":
+        case Cmd_type.dir:
             files = os.listdir(os.getcwd())
             for f_and_s in files:
                 print(f_and_s)
             log.send(" | ".join(files))
 
-        case "mkdir" | "makedir":
+        case Cmd_type.mkdir:
             try:
                 os.makedirs(cmd_list[1])
             except Exception as e:
                 log.warning(e)
 
-        case "cls" | "clear":
-            if os.name == "nt":
-                os.system("cls")
-            else:
-                os.system("clear")
+        case Cmd_type.cls:
+            os.system("cls") if os.name == "nt" else os.system("clear")
 
-        case "list":
+        case Cmd_type.list:
             match cmd_list[1]:
                 case "clear" | "clean":
                     Ripper.ripper_list = []
@@ -436,7 +413,7 @@ def run_command(command: list[str] | str) -> bool:
                     except Exception as e:
                         log.error(e)
                     else:
-                        log.info("Delete the {}th ripper success", cmd_list[2])
+                        log.info("Delete the {}th Ripper success", cmd_list[2])
                 case "sort":
                     reverse = "r" in cmd_list[2]
                     if "n" in cmd_list[2]:
@@ -455,7 +432,7 @@ def run_command(command: list[str] | str) -> bool:
                             reverse=reverse,
                         )
                 case "":
-                    msg = f"ripper list ({len(Ripper.ripper_list)}):"
+                    msg = f"Ripper list ({len(Ripper.ripper_list)}):"
                     if Ripper.ripper_list:
                         msg += "\n" + f"\n  {log.hr}\n".join(
                             [
@@ -478,7 +455,7 @@ def run_command(command: list[str] | str) -> bool:
                     except Exception as e:
                         log.error(f"{e!r} {e}", deep=True)
 
-        case "run":
+        case Cmd_type.run:
             is_run_exit = False
             match cmd_list[1]:
                 case "":
@@ -496,7 +473,7 @@ def run_command(command: list[str] | str) -> bool:
 
             run_ripper_list(is_run_exit)
 
-        case "server":
+        case Cmd_type.server:
             if easyrip_web.http_server.Event.is_run_command:
                 log.error("Can not start multiple services")
                 return False
@@ -507,7 +484,7 @@ def run_command(command: list[str] | str) -> bool:
                 match cmd_list[i]:
                     case "-a" | "-address":
                         address = cmd_list[i + 1]
-                    case "-p" | "password":
+                    case "-p" | "-password":
                         password = cmd_list[i + 1]
                     case _:
                         if address is None:
@@ -537,7 +514,7 @@ def run_command(command: list[str] | str) -> bool:
 
             easyrip_web.run_server(host=host or "", port=port or 0, password=password)
 
-        case "config":
+        case Cmd_type.config:
             match cmd_list[1]:
                 case "clear" | "clean" | "reset" | "regenerate":
                     config.regenerate_config()
@@ -578,7 +555,7 @@ def run_command(command: list[str] | str) -> bool:
                     log.error("Unsupported param: {}", param)
                     return False
 
-        case "translate":
+        case Cmd_type.translate:
             if not (_infix := cmd_list[1]):
                 log.error("Need target infix")
                 return False
@@ -915,12 +892,7 @@ def init(is_first_run: bool = False):
             lang_tag := Lang_tag.from_str(file.stem[5:])
         ).language is not Lang_tag_language.Unknown:
             easyrip_mlang.all_supported_lang_map[lang_tag] = {
-                (
-                    k
-                    if k not in Global_lang_val.Extra_text_index._member_names_
-                    else Global_lang_val.Extra_text_index[k]
-                ): v
-                for k, v in lang_map.items()
+                k: v for k, v in lang_map.items()
             }
 
             log.debug("Loading \"{}\" as '{}' language successfully", file, lang_tag)

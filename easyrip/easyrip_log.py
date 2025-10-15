@@ -7,7 +7,7 @@ import traceback
 from ctypes import wintypes
 
 from . import easyrip_web
-from .easyrip_mlang import Global_lang_val, gettext
+from .easyrip_mlang import gettext
 
 __all__ = ["Event", "log"]
 
@@ -139,9 +139,7 @@ class log:
 
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
-            message
-            if type(message) is Global_lang_val.Extra_text_index
-            else str(message),
+            str(message),
             *vals,
             is_format=is_format,
         )

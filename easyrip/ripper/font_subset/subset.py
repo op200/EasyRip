@@ -5,7 +5,7 @@ from typing import Iterable
 
 from ... import global_val
 from ...easyrip_log import log
-from ..utils import get_base62_time
+from ...utils import get_base62_time
 from .ass import (
     Ass,
     Attach_type,
@@ -368,9 +368,8 @@ def subset(
                 _suffix = "otf" if key.font.sfntVersion == "OTTO" else "ttf"
                 break
         else:
-            log.error("No font name", deep=True)
-            return_res = False
-            raise Exception()
+            # return_res = False
+            raise RuntimeError("No font name")
 
         if font_in_sub:
             for org_path_abs, s in val.items():

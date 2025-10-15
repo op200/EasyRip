@@ -13,9 +13,9 @@ from typing import Callable, Iterable, Self
 from .. import easyrip_web
 from ..easyrip_log import log
 from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
+from ..utils import get_base62_time
 from .font_subset import subset
 from .media_info import Media_info
-from .utils import get_base62_time
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
@@ -37,7 +37,7 @@ class Ripper:
                 Ripper(input_path, output_prefix, output_dir, option, option_map)
             )
         except Exception as e:
-            log.error("Failed to add ripper: {}", e, deep=True)
+            log.error("Failed to add Ripper: {}", e, deep=True)
 
     class PresetName(enum.Enum):
         custom = "custom"
@@ -485,7 +485,7 @@ class Ripper:
 
                 match len(_mux_flac_input_list):
                     case 0:
-                        raise Exception(f'No audio in "{self.input_path_list[0]}"')
+                        raise RuntimeError(f'No audio in "{self.input_path_list[0]}"')
 
                     case 1 if muxer is None:
                         encoder_format_str = (

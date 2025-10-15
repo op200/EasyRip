@@ -9,7 +9,7 @@ class Lang_tag_val:
     _local_name: str | None
 
     @property
-    def local_name(self):
+    def local_name(self) -> str:
         return self.en_name if self._local_name is None else self._local_name
 
     @local_name.setter
@@ -217,13 +217,13 @@ class Lang_tag:
         region: Lang_tag_region = Lang_tag_region.Unknown
 
         for i, s in enumerate(str_tag_tuple[1:]):
-            if s in Lang_tag_script._member_names_:
+            if s in Lang_tag_script._member_map_.keys():
                 if i != 0:
-                    raise Exception(
+                    raise ValueError(
                         gettext("The input language tag string format is illegal")
                     )
                 script = Lang_tag_script[s]
-            elif s in Lang_tag_region._member_names_:
+            elif s in Lang_tag_region._member_map_.keys():
                 region = Lang_tag_region[s]
 
         return cls(
@@ -250,10 +250,6 @@ class Lang_tag:
 
 
 class Global_lang_val:
-    class Extra_text_index(enum.Enum):
-        HELP_DOC = enum.auto()
-        NEW_VER_TIP = enum.auto()
-
     gettext_target_lang: Lang_tag = Lang_tag()
 
     @staticmethod
@@ -268,7 +264,7 @@ class Global_lang_val:
 
         res_str_list: list[str] = [
             _local_name
-            if (_org_name := tag_list[0]) in Lang_tag_language._member_names_
+            if (_org_name := tag_list[0]) in Lang_tag_language._member_map_.keys()
             and (_local_name := Lang_tag_language[_org_name].value.local_name)
             else _org_name
         ]
@@ -276,9 +272,9 @@ class Global_lang_val:
         if tag_list_len >= 2:
             _org_name = tag_list[1]
 
-            if _org_name in Lang_tag_script._member_names_:
+            if _org_name in Lang_tag_script._member_map_.keys():
                 _local_name = Lang_tag_script[_org_name].value.local_name
-            elif _org_name in Lang_tag_region._member_names_:
+            elif _org_name in Lang_tag_region._member_map_.keys():
                 _local_name = Lang_tag_region[_org_name].value.local_name
             else:
                 _local_name = _org_name
@@ -288,7 +284,7 @@ class Global_lang_val:
         if tag_list_len >= 3:
             _org_name = tag_list[2]
 
-            if _org_name in Lang_tag_region._member_names_:
+            if _org_name in Lang_tag_region._member_map_.keys():
                 _local_name = Lang_tag_region[_org_name].value.local_name
             else:
                 _local_name = _org_name

@@ -91,7 +91,7 @@ class Media_info:
 
             index = _audio_info_dict.get("index")
             if index is None:
-                raise Exception()
+                raise RuntimeWarning
 
             sample_fmt = _audio_info_dict.get("sample_fmt")
             if sample_fmt is None:

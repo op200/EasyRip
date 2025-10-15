@@ -1,11 +1,50 @@
 import codecs
+import os
+import re
 import string
+import sys
 import time
+from itertools import zip_longest
 from pathlib import Path
 
-from ..easyrip_log import log
+from .easyrip_log import log
 
 BASE62 = string.digits + string.ascii_letters
+
+
+def change_title(title: str):
+    if os.name == "nt":
+        os.system(f"title {title}")
+    elif os.name == "posix":
+        sys.stdout.write(f"\x1b]2;{title}\x07")
+        sys.stdout.flush()
+
+
+def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
+    new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
+    new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
+    new_ver = (
+        [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
+        [int(v) for v in new_ver_add_num[1:]],
+    )
+
+    old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split(".")]
+    old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
+    old_ver = (
+        [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
+        [int(v) for v in old_ver_add_num[1:]],
+    )
+
+    for i in range(2):
+        for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
+            if new > old:
+                return True
+            elif new < old:
+                break
+        else:
+            continue
+        break
+    return False
 
 
 def int_to_base62(num: int) -> str:
