@@ -983,7 +983,7 @@ class Ripper:
                 encoder_format_str = (
                     f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
-                    + f" -c:v {preset_name.value} "
+                    + " -c:v libsvtav1 "
                     + f" {_param} {ffparams_out} "
                     + (f' -vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
                     + ' "{output}"'
