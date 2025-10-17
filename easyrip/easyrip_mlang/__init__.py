@@ -80,8 +80,9 @@ def get_system_language() -> Lang_tag:
 
 def gettext(
     org_text: str,
-    *vals: object,
+    *fmt_args: object,
     is_format: bool = True,
+    **fmt_kwargs: object,
 ) -> str:
     new_text: str | None = None
 
@@ -92,11 +93,11 @@ def gettext(
 
     new_text = str(org_text) if new_text is None else str(new_text)
 
-    if is_format:
+    if is_format and (fmt_args or fmt_kwargs):
         from ..easyrip_log import log
 
         try:
-            new_text = new_text.format(*vals)
+            new_text = new_text.format(*fmt_args, **fmt_kwargs)
         except Exception as e:
             log.debug(f"{e!r} in gettext when str.format", deep=True, is_format=False)
 

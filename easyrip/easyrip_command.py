@@ -191,6 +191,11 @@ class Cmd_type(enum.Enum):
             "e.g. 'translate zh-Hans zh-Hant' will translate all '*.zh-Hans.ass' files into zh-Hant"
         ),
     )
+    mediainfo = Cmd_type_val(
+        "mediainfo",
+        opt_str="mediainfo <path>",
+        description="Get the media info by the Media_info class",
+    )
     Option = Cmd_type_val(
         "Option",
         opt_str="<Option> ...",
@@ -232,7 +237,7 @@ class Opt_type(enum.Enum):
         opt_str="-o <string>",
         description=(
             "Output file basename's prefix\n"
-            "Allow iterators and time formatting for multiple inputs:\n"
+            "Allow iterators and time formatting for multiple inputs\n"
             '  e.g. "name--?{start=6,padding=4,increment=2}--?{time:%Y.%m.%S}"'
         ),
     )

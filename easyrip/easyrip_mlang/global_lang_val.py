@@ -144,7 +144,7 @@ class Lang_tag_region(enum.Enum):
             return cls.Unknown
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Lang_tag:
     language: Lang_tag_language = Lang_tag_language.Unknown
     script: Lang_tag_script = Lang_tag_script.Unknown

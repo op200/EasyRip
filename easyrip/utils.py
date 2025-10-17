@@ -180,3 +180,7 @@ def uudecode_ssa(s: str) -> bytes:
         decoded.extend([b0, b1])
 
     return bytes(decoded)
+
+
+def time_str_to_sec(s: str) -> float:
+    return sum(float(t) * 60**i for i, t in enumerate(s.split(":")[::-1]))

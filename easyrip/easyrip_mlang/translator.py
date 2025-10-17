@@ -148,6 +148,7 @@ def translate_subtitles(
                 target_lang=zhconvert_target_lang,
             ),
         )
+        log.info("Successfully translated: {}", path)
 
     threads = list[Thread]()
 

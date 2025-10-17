@@ -116,7 +116,7 @@ LANG_MAP: dict[str, str] = {
     Opt_type._o_dir.value.description: "输出文件的目标目录",
     Opt_type._o.value.description: (
         "输出文件的文件名前缀\n"
-        "多个输入时允许有迭代器和时间格式化:\n"
+        "多个输入时允许有迭代器和时间格式化\n"
         '  e.g. "name--?{start=6,padding=4,increment=2}--?{time:%Y.%m.%S}"'
     ),
     Opt_type._auto_infix.value.description: (
@@ -341,6 +341,8 @@ LANG_MAP: dict[str, str] = {
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
     # mlang
     'Start translating file "{}"': '开始翻译文件 "{}"',
+    "Successfully translated: {}": "翻译完成: {}",
+    "{num} file{s} in total": "总共 {num} 个文件",
     # 通用
     "Run {} failed": "执行 {} 失败",
     "Unknown error": "未知错误",

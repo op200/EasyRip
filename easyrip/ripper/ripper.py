@@ -58,6 +58,8 @@ class Ripper:
         x265slow = "x265slow"
         x265full = "x265full"
 
+        svtav1 = "svtav1"
+
         h264_amf = "h264_amf"
         h264_nvenc = "h264_nvenc"
         h264_qsv = "h264_qsv"
@@ -134,10 +136,12 @@ class Ripper:
 
     preset_name: PresetName
 
-    info: Media_info
+    media_info: Media_info
 
     _progress: dict[str, int | float]
     """
+    server 模式的进度条数据
+
     .frame_count : int 总帧数
     .frame : int 已输出帧数
     .fps : float 当前输出帧率
@@ -158,7 +162,7 @@ class Ripper:
     ):
         self.input_path_list = [Path(path) for path in input_path]
 
-        self.info = Media_info.from_path(self.input_path_list[0])
+        self.media_info = Media_info.from_path(self.input_path_list[0])
 
         self.output_prefix_list = [
             path[0] or (path[1] or self.input_path_list[-1]).stem
@@ -201,7 +205,9 @@ class Ripper:
             force_fps := self.option_map.get("r") or self.option_map.get("fps")
         ) == "auto":
             try:
-                force_fps = self.info.r_frame_rate[0] / self.info.r_frame_rate[1]
+                force_fps = (
+                    self.media_info.r_frame_rate[0] / self.media_info.r_frame_rate[1]
+                )
                 if 23.975 < force_fps < 23.977:
                     force_fps = "24000/1001"
                 elif 29.969 < force_fps < 29.971:
@@ -425,7 +431,7 @@ class Ripper:
                     case None | "flac":
                         if muxer == Ripper.Muxer.mp4:
                             encoder_format_str = 'mp4box -add "{input}" -new "{output}"'
-                            for _audio_info in self.info.audio_info:
+                            for _audio_info in self.media_info.audio_info:
                                 encoder_format_str += f" -rem {_audio_info.index + 1}"
                         else:
                             encoder_format_str = (
@@ -445,7 +451,7 @@ class Ripper:
                 # _mux_flac_map_str: str = ""
                 _del_flac_str: str = ""
 
-                for _audio_info in self.info.audio_info:
+                for _audio_info in self.media_info.audio_info:
                     _encoder: str = (
                         "pcm_s24le"
                         if (
@@ -875,6 +881,32 @@ class Ripper:
 
                 _option_map = _default_option_map | _option_map | _custom_option_map
 
+                # HEVC 规范
+                if self.option_map.get("hevc-strict", "1") == "1":
+                    if self.media_info.width * self.media_info.height >= (
+                        _RESOLUTION := 1920 * 1080 * 4
+                    ):
+                        if _option_map.get("hme", "0") == "1":
+                            _option_map["hme"] = "0"
+                            log.warning(
+                                "The resolution {} * {} >= {}, auto close HME",
+                                self.media_info.width,
+                                self.media_info.height,
+                                _RESOLUTION,
+                            )
+
+                        if int(_option_map.get("ref") or "3") > (_NEW_REF := 6):
+                            _option_map["ref"] = str(_NEW_REF)
+                            log.warning(
+                                "The resolution {} * {} >= {}, auto reduce {} to {}",
+                                self.media_info.width,
+                                self.media_info.height,
+                                _RESOLUTION,
+                                _option_map.get("ref"),
+                                _NEW_REF,
+                            )
+
+                # 低版本 x265 不支持 -hme 0 主动关闭 HME
                 if _option_map.get("hme", "0") == "0":
                     _option_map.pop("hme-search")
                     _option_map.pop("hme-range")
@@ -913,6 +945,35 @@ class Ripper:
                     "q:v": self.option_map.get("q:v"),
                     "pix_fmt": self.option_map.get("pix_fmt"),
                     "preset:v": self.option_map.get("preset:v"),
+                }
+                match preset_name:
+                    case (
+                        Ripper.PresetName.h264_qsv
+                        | Ripper.PresetName.hevc_qsv
+                        | Ripper.PresetName.av1_qsv
+                    ):
+                        _option_map["qsv_params"] = self.option_map.get("qsv_params")
+
+                _param = " ".join(
+                    (f"-{key} {val}" for key, val in _option_map.items() if val)
+                )
+
+                encoder_format_str = (
+                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + f" -c:v {preset_name.value} "
+                    + f" {_param} {ffparams_out} "
+                    + (f' -vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
+                    + ' "{output}"'
+                )
+
+            case Ripper.PresetName.svtav1:
+                _option_map = {
+                    "crf": self.option_map.get("crf"),
+                    "qp": self.option_map.get("qp"),
+                    "pix_fmt": self.option_map.get("pix_fmt"),
+                    "preset:v": self.option_map.get("preset:v"),
+                    "svtav1-params": self.option_map.get("svtav1-params"),
                 }
 
                 _param = " ".join(
@@ -1025,7 +1086,7 @@ class Ripper:
                 )
 
             case Ripper.PresetName.flac:
-                if self.option.muxer is not None or len(self.info.audio_info) > 1:
+                if self.option.muxer is not None or len(self.media_info.audio_info) > 1:
                     suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
                     cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
@@ -1189,8 +1250,8 @@ class Ripper:
         self._progress["frame_count"] = 0
         self._progress["duration"] = 0
         if not self.input_path_list[0].suffix == ".vpy":
-            self._progress["frame_count"] = self.info.nb_frames
-            self._progress["duration"] = self.info.duration
+            self._progress["frame_count"] = self.media_info.nb_frames
+            self._progress["duration"] = self.media_info.duration
 
         Thread(target=self._flush_progress, args=(1,), daemon=True).start()
 

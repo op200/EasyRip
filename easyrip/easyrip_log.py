@@ -19,8 +19,8 @@ class Event:
 
 
 class log:
-    @staticmethod
-    def init():
+    @classmethod
+    def init(cls):
         """
         1. 获取终端颜色
         2. 写入 \\</div>
@@ -54,40 +54,40 @@ class log:
                 7: 7,  # 白色
             }
 
-            log.default_foreground_color = (
+            cls.default_foreground_color = (
                 30
                 + color_map.get(attributes & 0x0007, 9)
                 + 60 * ((attributes & 0x0008) != 0)
             )
-            log.default_background_color = (
+            cls.default_background_color = (
                 40
                 + color_map.get((attributes >> 4) & 0x0007, 9)
                 + 60 * ((attributes & 0x0080) != 0)
             )
 
-            if log.default_foreground_color == 37:
-                log.default_foreground_color = 39
-            if log.default_background_color == 40:
-                log.default_background_color = 49
+            if cls.default_foreground_color == 37:
+                cls.default_foreground_color = 39
+            if cls.default_background_color == 40:
+                cls.default_background_color = 49
 
-            if log.default_background_color == 42:
-                log.debug_color = log.time_color = 92
+            if cls.default_background_color == 42:
+                cls.debug_color = cls.time_color = 92
 
-            if log.default_background_color == 44 or log.default_foreground_color == 34:
-                log.info_color = 96
+            if cls.default_background_color == 44 or cls.default_foreground_color == 34:
+                cls.info_color = 96
 
-            if log.default_background_color == 43 or log.default_foreground_color == 33:
-                log.warning_color = 93
+            if cls.default_background_color == 43 or cls.default_foreground_color == 33:
+                cls.warning_color = 93
 
-            if log.default_background_color == 41 or log.default_foreground_color == 31:
-                log.error_color = 91
+            if cls.default_background_color == 41 or cls.default_foreground_color == 31:
+                cls.error_color = 91
 
-            if log.default_background_color == 45 or log.default_foreground_color == 35:
-                log.send_color = 95
+            if cls.default_background_color == 45 or cls.default_foreground_color == 35:
+                cls.send_color = 95
 
         # 写入 </div>
-        if os.path.isfile(log.html_filename) and os.path.getsize(log.html_filename):
-            log.write_html_log("</div></div></div>")
+        if os.path.isfile(cls.html_filename) and os.path.getsize(cls.html_filename):
+            cls.write_html_log("</div></div></div>")
 
     class LogLevel(enum.Enum):
         debug = enum.auto()
@@ -123,246 +123,275 @@ class log:
 
     hr = "———————————————————————————————————"
 
-    @staticmethod
+    @classmethod
     def _do_log(
+        cls,
         log_level: LogLevel,
         mode: LogMode,
         message: object,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         is_deep: bool = False,
         is_server: bool = False,
         http_send_header: str = "",
+        **fmt_kwargs: object,
     ):
-        if log_level == log.LogLevel.none:
+        if log_level == cls.LogLevel.none:
             return
 
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
         message = gettext(
             str(message),
-            *vals,
+            *fmt_args,
+            **fmt_kwargs,
             is_format=is_format,
         )
 
         if is_deep:
             message = f"{traceback.format_exc()}\n{message}"
 
-        time_str = f"\033[{log.time_color}m{time_now}"
+        time_str = f"\033[{cls.time_color}m{time_now}"
 
         match log_level:
-            case log.LogLevel.debug:
-                log.debug_num += 1
+            case cls.LogLevel.debug:
+                cls.debug_num += 1
 
                 if (
-                    mode != log.LogMode.only_write
-                    and log.print_level.value <= log.LogLevel.debug.value
+                    mode != cls.LogMode.only_write
+                    and cls.print_level.value <= cls.LogLevel.debug.value
                 ):
                     print(
-                        f"{time_str}\033[{log.debug_color}m [DEBUG] {message}\033[{log.default_foreground_color}m"
+                        f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m"
                     )
 
                 if (
-                    mode != log.LogMode.only_print
-                    and log.write_level.value <= log.LogLevel.debug.value
+                    mode != cls.LogMode.only_print
+                    and cls.write_level.value <= cls.LogLevel.debug.value
                 ):
-                    log.write_html_log(
+                    cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:green;">[DEBUG] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
-            case log.LogLevel.info:
-                log.info_num += 1
+            case cls.LogLevel.info:
+                cls.info_num += 1
 
                 if (
-                    mode != log.LogMode.only_write
-                    and log.print_level.value <= log.LogLevel.info.value
+                    mode != cls.LogMode.only_write
+                    and cls.print_level.value <= cls.LogLevel.info.value
                 ):
                     print(
-                        f"{time_str}\033[{log.info_color}m [INFO] {message}\033[{log.default_foreground_color}m"
+                        f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m"
                     )
 
                 if (
-                    mode != log.LogMode.only_print
-                    and log.write_level.value <= log.LogLevel.info.value
+                    mode != cls.LogMode.only_print
+                    and cls.write_level.value <= cls.LogLevel.info.value
                 ):
-                    log.write_html_log(
+                    cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
-            case log.LogLevel.warning:
-                log.warning_num += 1
+            case cls.LogLevel.warning:
+                cls.warning_num += 1
 
                 if (
-                    mode != log.LogMode.only_write
-                    and log.print_level.value <= log.LogLevel.warning.value
+                    mode != cls.LogMode.only_write
+                    and cls.print_level.value <= cls.LogLevel.warning.value
                 ):
                     print(
-                        f"{time_str}\033[{log.warning_color}m [WARNING] {message}\033[{log.default_foreground_color}m",
+                        f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
                 if (
-                    mode != log.LogMode.only_print
-                    and log.write_level.value <= log.LogLevel.warning.value
+                    mode != cls.LogMode.only_print
+                    and cls.write_level.value <= cls.LogLevel.warning.value
                 ):
-                    log.write_html_log(
+                    cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
-            case log.LogLevel.error:
-                log.error_num += 1
+            case cls.LogLevel.error:
+                cls.error_num += 1
 
                 if (
-                    mode != log.LogMode.only_write
-                    and log.print_level.value <= log.LogLevel.error.value
+                    mode != cls.LogMode.only_write
+                    and cls.print_level.value <= cls.LogLevel.error.value
                 ):
                     print(
-                        f"{time_str}\033[{log.error_color}m [ERROR] {message}\033[{log.default_foreground_color}m",
+                        f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m",
                         file=sys.stderr,
                     )
 
                 if (
-                    mode != log.LogMode.only_print
-                    and log.write_level.value <= log.LogLevel.error.value
+                    mode != cls.LogMode.only_print
+                    and cls.write_level.value <= cls.LogLevel.error.value
                 ):
-                    log.write_html_log(
+                    cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
-            case log.LogLevel.send:
-                log.send_num += 1
+            case cls.LogLevel.send:
+                cls.send_num += 1
 
                 if is_server or easyrip_web.http_server.Event.is_run_command:
-                    if log.print_level.value <= log.LogLevel.send.value:
+                    if cls.print_level.value <= cls.LogLevel.send.value:
                         print(
-                            f"{time_str}\033[{log.send_color}m [Send] {message}\033[{log.default_foreground_color}m"
+                            f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m"
                         )
 
-                    if log.write_level.value <= log.LogLevel.send.value:
-                        log.write_html_log(
+                    if cls.write_level.value <= cls.LogLevel.send.value:
+                        cls.write_html_log(
                             f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
 
                     Event.append_http_server_log_queue(
                         (http_send_header, "Send", message)
                     )
-                elif log.print_level.value <= log.LogLevel.send.value:
+                elif cls.print_level.value <= cls.LogLevel.send.value:
                     print(
-                        f"\033[{log.send_color}m{message}\033[{log.default_foreground_color}m"
+                        f"\033[{cls.send_color}m{message}\033[{cls.default_foreground_color}m"
                     )
 
-    @staticmethod
+    @classmethod
     def debug(
+        cls,
         message: object,
         /,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.debug,
+        **fmt_kwargs: object,
     ):
-        log._do_log(
+        cls._do_log(
             level,
             mode,
             message,
-            *vals,
+            *fmt_args,
             is_format=is_format,
             is_deep=deep,
+            is_server=False,
+            http_send_header="",
+            **fmt_kwargs,
         )
 
-    @staticmethod
+    @classmethod
     def info(
+        cls,
         message: object,
         /,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.info,
+        **fmt_kwargs: object,
     ):
-        log._do_log(
+        cls._do_log(
             level,
             mode,
             message,
-            *vals,
+            *fmt_args,
             is_format=is_format,
             is_deep=deep,
+            is_server=False,
+            http_send_header="",
+            **fmt_kwargs,
         )
 
-    @staticmethod
+    @classmethod
     def warning(
+        cls,
         message: object,
         /,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.warning,
+        **fmt_kwargs: object,
     ):
-        log._do_log(
+        cls._do_log(
             level,
             mode,
             message,
-            *vals,
+            *fmt_args,
             is_format=is_format,
             is_deep=deep,
+            is_server=False,
+            http_send_header="",
+            **fmt_kwargs,
         )
 
-    @staticmethod
+    @classmethod
     def error(
+        cls,
         message: object,
         /,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.error,
+        **fmt_kwargs: object,
     ):
-        log._do_log(
+        cls._do_log(
             level,
             mode,
             message,
-            *vals,
+            *fmt_args,
             is_format=is_format,
             is_deep=deep,
+            is_server=False,
+            http_send_header="",
+            **fmt_kwargs,
         )
 
-    @staticmethod
+    @classmethod
     def send(
+        cls,
         message: object,
         /,
-        *vals: object,
+        *fmt_args: object,
         is_format: bool = True,
         mode: LogMode = LogMode.normal,
         is_server: bool = False,
         http_send_header: str = "",
         level: LogLevel = LogLevel.send,
+        **fmt_kwargs: object,
     ):
-        log._do_log(
+        cls._do_log(
             level,
             mode,
             message,
-            *vals,
-            http_send_header=http_send_header,
+            *fmt_args,
             is_format=is_format,
-            is_server=is_server,
             is_deep=False,
+            is_server=is_server,
+            http_send_header=http_send_header,
+            **fmt_kwargs,
         )
 
-    @staticmethod
-    def write_html_log(message: str):
+    @classmethod
+    def write_html_log(
+        cls,
+        message: str,
+    ):
         try:
-            with open(log.html_filename, "at", encoding="utf-8") as f:
+            with open(cls.html_filename, "at", encoding="utf-8") as f:
                 f.write(message)
         except Exception as e:
-            _level = log.write_level
-            log.write_level = log.LogLevel.none
-            log.error(f"{e!r} {e}", deep=True)
-            log.write_level = _level
+            _level = cls.write_level
+            cls.write_level = cls.LogLevel.none
+            cls.error(f"{e!r} {e}", deep=True)
+            cls.write_level = _level

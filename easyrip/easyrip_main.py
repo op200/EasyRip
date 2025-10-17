@@ -30,7 +30,7 @@ from .easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from .ripper import Ripper
+from .ripper import Media_info, Ripper
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -326,7 +326,7 @@ def run_command(command: list[str] | str) -> bool:
     elif len(cmd_list[0]) > 0 and cmd_list[0].startswith("$"):
         cmd_type = Cmd_type._run_any
 
-    match cmd_type or cmd_list[0]:
+    match cmd_type:
         case Cmd_type.help:
             if cmd_list[1]:
                 _want_doc_cmd_type: Cmd_type | Opt_type | None = Cmd_type.from_str(
@@ -335,7 +335,7 @@ def run_command(command: list[str] | str) -> bool:
                 if _want_doc_cmd_type is None:
                     log.error("'{}' does not exist", cmd_list[1])
                 else:
-                    log.send(_want_doc_cmd_type.value.to_doc())
+                    log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
             else:
                 log.send(get_help_doc(), is_format=False)
 
@@ -370,23 +370,28 @@ def run_command(command: list[str] | str) -> bool:
         case Cmd_type.exit:
             sys.exit()
 
-        case Cmd_type.cd:
-            try:
-                _path = None
+        case Cmd_type.cd | Cmd_type.mediainfo:
+            _path = None
 
-                if isinstance(command, str):
-                    _path = command.split(" ", maxsplit=1)
-                    if len(_path) <= 1:
-                        _path = None
-                    else:
-                        _path = _path[1].strip('"').strip("'")
+            if isinstance(command, str):
+                _path = command.split(" ", maxsplit=1)
+                if len(_path) <= 1:
+                    _path = None
+                else:
+                    _path = _path[1].strip('"').strip("'")
 
-                if _path is None:
-                    _path = cmd_list[1]
+            if _path is None:
+                _path = cmd_list[1]
 
-                os.chdir(_path)
-            except OSError as e:
-                log.error(e)
+            match cmd_type:
+                case Cmd_type.cd:
+                    try:
+                        os.chdir(_path)
+                    except OSError as e:
+                        log.error(e)
+                case Cmd_type.mediainfo:
+                    mediainfo = Media_info.from_path(_path)
+                    log.send(mediainfo)
 
         case Cmd_type.dir:
             files = os.listdir(os.getcwd())
@@ -590,7 +595,11 @@ def run_command(command: list[str] | str) -> bool:
 
             log.info(
                 "Successfully translated: {}",
-                f"{(_len := len(_file_list))} file{'s' if _len > 1 else ''}",
+                gettext(
+                    "{num} file{s} in total",
+                    num=(_len := len(_file_list)),
+                    s="s" if _len > 1 else "",
+                ),
             )
             return True
 

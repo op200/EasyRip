@@ -1,8 +1,11 @@
+import io
+import itertools
 import json
 import os
 import re
 import shutil
 import subprocess
+import sys
 import timeit
 import unittest
 
@@ -17,7 +20,13 @@ from easyrip import (
     log,
     run_command,
 )
-from easyrip.easyrip_mlang.global_lang_val import Lang_tag_val
+from easyrip.easyrip_command import Cmd_type, Opt_type
+from easyrip.easyrip_mlang import Lang_tag_val, all_supported_lang_map
+from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
+
+if sys.stdout.encoding != "UTF-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 
 class TestBasic(unittest.TestCase):
@@ -53,6 +62,7 @@ class TestBasic(unittest.TestCase):
         easyrip.init(True)
         self.assertEqual(log.html_filename, gettext(html_log_file))
 
+        # the *val format
         log.send("msg")
         log.send("{}, {}", 1, 2)
         log.info("info")
@@ -60,10 +70,28 @@ class TestBasic(unittest.TestCase):
         log.error("error {}")
         log.info("info {}", "deep", deep=True)
 
+        # the **kw format
+        log.send("{a} - {b} - {a}", a=111, b=222)
+        log.send("{a} - {b} - {c}", a=1, b=2)
+
+        # auto close format
         log.debug("{}")
         log.debug("{{}{}}")
         log.debug("{{}}")
         log.debug("{'a': <A.a: 1>, 'b': <A.b: 1>}")
+
+    def test_cmd_doc_gettext_format(self):
+        for lang_tag in all_supported_lang_map:
+            Global_lang_val.gettext_target_lang = lang_tag
+
+            for v in itertools.chain(
+                ("",),
+                Cmd_type._member_names_,
+                Opt_type._member_names_,
+            ):
+                run_command(["help", v])
+
+                self.assertEqual(log.debug_num, 0)
 
     def test_run_cmd(self):
         easyrip.init(True)

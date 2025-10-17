@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Self
 
 from ..easyrip_log import log
+from ..utils import time_str_to_sec
 
 
 @dataclass(slots=True)
@@ -18,6 +19,9 @@ class Audio_info:
 
 @dataclass(slots=True)
 class Media_info:
+    width: int = 0
+    height: int = 0
+
     nb_frames: int = 0
     """封装帧数 (f)"""
 
@@ -57,12 +61,25 @@ class Media_info:
 
         _video_info_dict: dict = _info_list[0] if _info_list else dict()
 
+        media_info.width = int(_video_info_dict.get("width", "0"))
+        media_info.height = int(_video_info_dict.get("height", "0"))
+
         _fps_str: str = _video_info_dict.get("r_frame_rate", "0") + "/1"
         _fps = [int(s) for s in _fps_str.split("/")]
         media_info.r_frame_rate = (_fps[0], _fps[1])
 
         media_info.nb_frames = int(_video_info_dict.get("nb_frames", 0))
-        media_info.duration = float(_video_info_dict.get("duration", 0))
+
+        if (_duration := _video_info_dict.get("duration")) is None:
+            _duration = _video_info_dict.get("tags")
+            if isinstance(_duration, dict):
+                _duration = _duration.get("DURATION", "0")
+                _duration = time_str_to_sec(_duration)
+            else:
+                _duration = 0
+        else:
+            _duration = float(_duration)
+        media_info.duration = _duration
 
         # 遍历所有音频轨
         _info: dict = json.loads(

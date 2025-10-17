@@ -28,14 +28,11 @@ class zhconvert:
         target_lang: Target_lang,
     ) -> str:
         from ..easyrip_log import log
-        from ..easyrip_mlang import gettext
 
         log.info(
-            gettext(
-                "Translating into '{target_lang}' using '{api_name}'",
-                is_format=False,
-            ).format(target_lang=target_lang.value, api_name=cls.__name__),
-            is_format=False,
+            "Translating into '{target_lang}' using '{api_name}'",
+            target_lang=target_lang.value,
+            api_name=cls.__name__,
         )
 
         req = urllib.request.Request(
