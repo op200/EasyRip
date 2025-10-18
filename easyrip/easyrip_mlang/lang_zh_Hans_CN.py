@@ -340,6 +340,7 @@ LANG_MAP: dict[str, str] = {
     # 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
     # mlang
+    "Unsupported language tag: {}": "不支持的语言标签: {}",
     'Start translating file "{}"': '开始翻译文件 "{}"',
     "Successfully translated: {}": "翻译完成: {}",
     "{num} file{s} in total": "总共 {num} 个文件",

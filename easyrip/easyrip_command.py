@@ -503,6 +503,15 @@ class Opt_type(enum.Enum):
             "Same as ffmpeg -i ... -t <time> ..."
         ),
     )
+    _hevc_strict = Cmd_type_val(
+        "-hevc-strict",
+        opt_str="-hevc-strict <0 | 1>",
+        description=(
+            "Auto reduce the --ref\n"  # .
+            "When the resolution >= 4k, close HME\n"
+            "Default: 1"
+        ),
+    )
 
     @classmethod
     def from_str(cls, s: str) -> Self | None:

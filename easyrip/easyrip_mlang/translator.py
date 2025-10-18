@@ -72,7 +72,7 @@ def translate_subtitles(
                 region=Lang_tag_region.CN,
             )
         ):
-            # 简体 -> 繁体
+            # 简体 -> 繁体 or 非 CN 简体 CN 化
             match target_lang_tag:
                 case Lang_tag(
                     language=Lang_tag_language.zh,
@@ -95,9 +95,25 @@ def translate_subtitles(
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.Hant
 
+                case Lang_tag(
+                    language=Lang_tag_language.zh,
+                    script=Lang_tag_script.Hant,
+                    region=Lang_tag_region.CN,
+                ):  # 特殊情况
+                    raise Exception(
+                        gettext("Unsupported language tag: {}", target_lang_tag)
+                    )
+
+                case Lang_tag(
+                    language=Lang_tag_language.zh,
+                    script=_,
+                    region=Lang_tag_region.CN,
+                ):
+                    zhconvert_target_lang = zhconvert.Target_lang.CN
+
                 case _:
                     raise Exception(
-                        gettext("Unsupported language tag: {}").format(target_lang_tag)
+                        gettext("Unsupported language tag: {}", target_lang_tag)
                     )
 
         case (
@@ -130,11 +146,11 @@ def translate_subtitles(
 
                 case _:
                     raise Exception(
-                        gettext("Unsupported language tag: {}").format(target_lang_tag)
+                        gettext("Unsupported language tag: {}", target_lang_tag)
                     )
 
         case _:
-            raise Exception(gettext("Unsupported language tag: {}").format(infix))
+            raise Exception(gettext("Unsupported language tag: {}", infix))
 
     res_file_list: Final = list[tuple[Path, str]]()
     res_file_dict: Final = dict[int, tuple[Path, str]]()
