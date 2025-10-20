@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ...easyrip_log import log
+from ...easyrip_log import gettext, log
 from ...utils import read_text, uudecode_ssa, uuencode_ssa
 
 
@@ -39,13 +39,13 @@ class Style_fmt_it(enum.Enum):
 #     Data = "Dialogue"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Script_info_data:
     # type: Script_info_type
     raw_str: str
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Script_info:
     data: list[Script_info_data] = field(default_factory=list[Script_info_data])
 
@@ -58,7 +58,7 @@ class Script_info:
         )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Style_data:
     Name: str
     Fontname: str
@@ -112,7 +112,7 @@ DEFAULT_STYLE_FMT_ORDER = (
 )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Styles:
     fmt_order: tuple[
         Style_fmt_it,
@@ -175,7 +175,7 @@ class Styles:
             ):
                 self.fmt_index[it] = index
             else:
-                raise Ass_generation_failed(
+                raise Ass_generate_error(
                     f"Style Format flush order index err: can not find {it}"
                 )
 
@@ -236,7 +236,7 @@ class Styles:
                 Encoding=int(style_tuple[self.fmt_index[Style_fmt_it.Encoding]]),
             )
         except ValueError as e:
-            raise Ass_generation_failed(e)
+            raise Ass_generate_error(e)
 
         return res
 
@@ -277,13 +277,17 @@ class Event_fmt_it(enum.Enum):
     Effect = "Effect"
     Text = "Text"
 
+    # 兼容旧版和不规范格式
+    Marked = Layer
+    Actor = Name
+
 
 class Event_type(enum.Enum):
     Dialogue = "Dialogue"
     Comment = "Comment"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Event_data:
     type: Event_type
 
@@ -300,21 +304,64 @@ class Event_data:
 
     @staticmethod
     def parse_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
-        if not use_libass_spec:
-            # 模式1: 不处理转义字符
-            result: list[tuple[bool, str]] = []
+        result = list[tuple[bool, str]]()
+
+        if use_libass_spec:
+            # 模式2: 处理转义字符（libass规范）
             current = list[str]()  # 当前累积的字符
-            in_tag = False  # 是否在标签内
+            is_in_tag = False  # 是否在标签内
+            is_escape_next = False  # 下一个字符是否转义
 
             for char in text:
-                if in_tag is False:
+                if is_escape_next:
+                    # 处理转义字符（任何字符直接作为普通字符）
+                    current.append(char)
+                    is_escape_next = False
+                elif char == "\\":
+                    # 标记下一个字符为转义
+                    current.append(char)
+                    is_escape_next = True
+                elif char == "{":
+                    if not is_in_tag:
+                        # 开始新标签（非转义的{）
+                        if current:
+                            result.append((False, "".join(current)))
+                            current = []
+                        current.append(char)
+                        is_in_tag = True
+                    else:
+                        current.append(char)  # 标签内的{
+                elif char == "}":
+                    if is_in_tag:
+                        # 非转义的}结束标签
+                        current.append(char)
+                        result.append((True, "".join(current)))
+                        current = []
+                        is_in_tag = False
+                    else:
+                        current.append(char)  # 普通文本的}
+                else:
+                    current.append(char)  # 普通字符
+
+            # 处理剩余部分
+            if current:
+                result.append((False, "".join(current)))
+            return result
+
+        else:
+            # 模式1: 不处理转义字符
+            current = list[str]()  # 当前累积的字符
+            is_in_tag = False  # 是否在标签内
+
+            for char in text:
+                if is_in_tag is False:
                     if char == "{":
                         # 开始新标签，先保存当前累积的普通文本
                         if current:
                             result.append((False, "".join(current)))
                             current = []
                         current.append(char)
-                        in_tag = True
+                        is_in_tag = True
                     else:
                         current.append(char)  # 普通文本
                 else:
@@ -323,50 +370,7 @@ class Event_data:
                         # 标签结束
                         result.append((True, "".join(current)))
                         current = []
-                        in_tag = False
-
-            # 处理剩余部分
-            if current:
-                result.append((False, "".join(current)))
-            return result
-
-        else:
-            # 模式2: 处理转义字符（libass规范）
-            result = []
-            current = list[str]()  # 当前累积的字符
-            in_tag = False  # 是否在标签内
-            escape_next = False  # 下一个字符是否转义
-
-            for char in text:
-                if escape_next:
-                    # 处理转义字符（任何字符直接作为普通字符）
-                    current.append(char)
-                    escape_next = False
-                elif char == "\\":
-                    # 标记下一个字符为转义
-                    current.append(char)
-                    escape_next = True
-                elif char == "{":
-                    if not in_tag:
-                        # 开始新标签（非转义的{）
-                        if current:
-                            result.append((False, "".join(current)))
-                            current = []
-                        current.append(char)
-                        in_tag = True
-                    else:
-                        current.append(char)  # 标签内的{
-                elif char == "}":
-                    if in_tag:
-                        # 非转义的}结束标签
-                        current.append(char)
-                        result.append((True, "".join(current)))
-                        current = []
-                        in_tag = False
-                    else:
-                        current.append(char)  # 普通文本的}
-                else:
-                    current.append(char)  # 普通字符
+                        is_in_tag = False
 
             # 处理剩余部分
             if current:
@@ -388,7 +392,7 @@ DEFAULT_EVENT_FMT_ORDER = (
 )
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Events:
     fmt_order: tuple[
         Event_fmt_it,
@@ -425,7 +429,7 @@ class Events:
             ):
                 self.fmt_index[it] = index
             else:
-                raise Ass_generation_failed(
+                raise Ass_generate_error(
                     f"Event Format flush order index err: can not find {it}"
                 )
 
@@ -460,7 +464,7 @@ class Events:
                 Text=event_tuple[self.fmt_index[Event_fmt_it.Text]],
             )
         except ValueError as e:
-            raise Ass_generation_failed(e)
+            raise Ass_generate_error(e)
 
         return res
 
@@ -505,7 +509,7 @@ class Attach_type(enum.Enum):
     Graphics = "Graphics"
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Attachment_data:
     type: Attach_type
     name: str
@@ -536,7 +540,7 @@ class Attachment_data:
             self.org_data = new_data
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Attachments:
     data: list[Attachment_data] = field(default_factory=list[Attachment_data])
 
@@ -569,7 +573,7 @@ class Attachments:
         return res[1:] if len(res) else ""  # 去除头部的 \n
 
 
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Unknown_data:
     head: str
     data: list[str] = field(default_factory=list[str])
@@ -583,15 +587,25 @@ class Unknown_data:
         )
 
 
-class Ass_generation_failed(Exception):
-    pass
+class Ass_generate_error(Exception):
+    def __init__(
+        self,
+        msg: str | object,
+        *args: object,
+        **kwargs: object,
+    ) -> None:
+        if isinstance(msg, str):
+            new_msg: str = gettext(msg, *args, is_format=True, **kwargs)
+            super().__init__(new_msg)
+        else:
+            super().__init__(msg, *args)
 
 
 class Ass:
     def __init__(self, path: str | Path):
         path = Path(path)
         if not path.is_file():
-            log.error("Not a file: {}", path)
+            raise Ass_generate_error("Not a file: {}", path)
 
         self.script_info: Script_info = Script_info()
         self.styles: Styles = Styles()
@@ -630,22 +644,34 @@ class Ass:
                     case _:
                         if bool(re.search(r"[a-z]", head)):
                             state = State.unknown
-                            new_unknown_data = Unknown_data(head)
+                            new_unknown_data = Unknown_data(head=head)
 
             elif line.startswith("Format:"):
-                formats_generator = (v.strip() for v in line[7:].split(","))
+                formats_tuple = tuple(map(str.strip, line[7:].split(",")))
                 match state:
                     case State.styles:
-                        format_order = tuple(Style_fmt_it(v) for v in formats_generator)
+                        format_order = tuple(map(Style_fmt_it, formats_tuple))
                         if len(format_order) != 23:
-                            raise Ass_generation_failed("Style Format len != 23")
+                            raise Ass_generate_error("Style Format len != 23")
 
                         self.styles.fmt_order = format_order
 
                     case State.events:
-                        format_order = tuple(Event_fmt_it(v) for v in formats_generator)
+                        try:
+                            format_order = tuple(
+                                map(Event_fmt_it.__getitem__, formats_tuple)
+                            )
+                        except ValueError as e:
+                            raise Ass_generate_error(e)
+
                         if len(format_order) != 10:
-                            raise Ass_generation_failed("Event Format != 10")
+                            raise Ass_generate_error("Event Format len != 10")
+
+                        if "Marked" in formats_tuple:
+                            log.error(
+                                "The ASS Events Format version too old: {}",
+                                "It used 'Marked' instead of 'Layer'. 'Marked' has been replaced with 'Layer', which will result in irreversible info loss",
+                            )
 
                         self.events.fmt_order = format_order
 
@@ -659,7 +685,7 @@ class Ass:
                             log.warning("Skip a Style line (illegal format): {}", line)
                             continue
 
-                        style_tuple = tuple(v.strip() for v in line[6:].split(","))
+                        style_tuple = tuple(map(str.strip, line[6:].split(",")))
                         if len(style_tuple) != 23:
                             log.warning(
                                 "Skip a Style line (Style Format len != 23): {}", line
@@ -709,9 +735,9 @@ class Ass:
                             continue
 
                         event_tuple = tuple(
-                            v.strip()
-                            for v in line.split(":", maxsplit=1)[1].split(
-                                ",", maxsplit=9
+                            map(
+                                str.strip,
+                                line.split(":", maxsplit=1)[1].split(",", maxsplit=9),
                             )
                         )
                         if len(event_tuple) != 10:
@@ -726,12 +752,9 @@ class Ass:
 
                     case State.unknown:
                         if new_unknown_data is None:
-                            log.error(
-                                "Unknown error occurred when read line: {}",
-                                line,
-                                deep=True,
+                            raise Ass_generate_error(
+                                "Unknown error occurred when read line: {}", line
                             )
-                            raise Ass_generation_failed()
                         new_unknown_data.data.append(line)
 
         if new_unknown_data is not None:
@@ -758,4 +781,4 @@ class Ass:
                 for data in (() if drop_unkow_data else self.unknown_data)
             ),
         )
-        return "\n\n".join(v for v in generator if v) + "\n"
+        return "\n\n".join(filter(bool, generator)) + "\n"

@@ -89,6 +89,9 @@ class Ripper:
         libopus = "libopus"
         flac = "flac"
 
+        # 别名
+        opus = libopus
+
         @classmethod
         def _missing_(cls, value: object):
             default = cls.copy
@@ -251,20 +254,36 @@ class Ripper:
             else:
                 ff_stream_option.append("0:a")
 
-            _encoder_str = (
-                ""
-                if audio_encoder == Ripper.AudioCodec.copy
-                and self.preset_name == Ripper.PresetName.copy
-                else "-an "
-                if audio_encoder == Ripper.AudioCodec.flac
-                else f"-c:a {_audio_encoder_str} "
-            )
+            match audio_encoder:
+                case Ripper.AudioCodec.copy:
+                    _encoder_str = (
+                        ""
+                        if self.preset_name == Ripper.PresetName.copy
+                        else "-c:a copy "
+                    )
+                case Ripper.AudioCodec.flac:
+                    _encoder_str = "-an "
+                case Ripper.AudioCodec.libopus:
+                    _encoder_str = "-c:a libopus "
+                    for opt in (
+                        "application",
+                        "frame_duration",
+                        "packet_loss",
+                        "fec",
+                        "vbr",
+                        "mapping_family",
+                        "apply_phase_inv",
+                    ):
+                        if (val := self.option_map.get(opt)) is not None:
+                            _encoder_str += f"-{opt} {val} "
+
             _bitrate_str = (
                 ""
                 if audio_encoder in {Ripper.AudioCodec.copy, Ripper.AudioCodec.flac}
-                else f"-b:a {self.option_map.get('b:a') or '160k'}"
+                else f"-b:a {self.option_map.get('b:a') or '160k'} "
             )
-            audio_option = f"{_encoder_str}{_bitrate_str} "
+
+            audio_option = _encoder_str + _bitrate_str
 
         else:
             audio_encoder = None
