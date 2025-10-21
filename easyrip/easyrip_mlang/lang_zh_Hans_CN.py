@@ -19,7 +19,11 @@ LANG_MAP: dict[str, str] = {
     "You can input command or use command-line arguments to run.": "输入命令或使用命令行传参以运行。",
     "Commands": "命令",
     "Ripper options": "Ripper 选项",
-    Cmd_type.help.value.description: "展示全部帮助文档或展示 <cmd> 的帮助文档",
+    Cmd_type.help.value.description: (
+        "展示全部帮助文档或展示 <cmd> 的帮助文档\n"
+        "例如 help list\n"  # .
+        "例如 h -p x265slow"
+    ),
     Cmd_type.version.value.description: "展示版本信息",
     Cmd_type.init.value.description: (
         "执行初始化函数\n"  # .
@@ -287,6 +291,7 @@ LANG_MAP: dict[str, str] = {
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",
     "Unsupported option: {}": "不支持的选项: {}",
     "Unsupported param: {}": "不支持的参数: {}",
+    "Unsupported '{}' param: {}": "'{}' 不支持此参数: {}",
     "Manually force exit": "手动强制退出",
     "or run '{}' when you use pip": "或运行 '{}' 以使用 pip 更新",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误，改为默认值 60s",

@@ -2,12 +2,13 @@ import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Self
+from typing import Self, final
 
 from ..easyrip_log import log
 from ..utils import time_str_to_sec
 
 
+@final
 @dataclass(slots=True)
 class Audio_info:
     index: int
@@ -17,6 +18,7 @@ class Audio_info:
     bits_per_raw_sample: int = 0
 
 
+@final
 @dataclass(slots=True)
 class Media_info:
     width: int = 0

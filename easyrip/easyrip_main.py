@@ -31,6 +31,7 @@ from .easyrip_mlang import (
     translate_subtitles,
 )
 from .ripper import Media_info, Ripper
+from .ripper.ripper import DEFAULT_PRESET_PARAMS
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -332,10 +333,31 @@ def run_command(command: list[str] | str) -> bool:
                 _want_doc_cmd_type: Cmd_type | Opt_type | None = Cmd_type.from_str(
                     cmd_list[1]
                 ) or Opt_type.from_str(cmd_list[1])
-                if _want_doc_cmd_type is None:
-                    log.error("'{}' does not exist", cmd_list[1])
-                else:
-                    log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
+                match _want_doc_cmd_type:
+                    case Opt_type._preset:
+                        if not cmd_list[2]:
+                            log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
+                        elif cmd_list[2] in Ripper.PresetName._value2member_map_:
+                            _preset = Ripper.PresetName(cmd_list[2])
+                            if _preset in DEFAULT_PRESET_PARAMS:
+                                log.send(
+                                    json.dumps(
+                                        DEFAULT_PRESET_PARAMS[_preset], indent=2
+                                    ),
+                                    is_format=False,
+                                )
+                            else:
+                                log.send(
+                                    "The preset '{}' has no default val", cmd_list[2]
+                                )
+                        else:
+                            log.error("'{}' is not a preset", cmd_list[2])
+
+                    case None:
+                        log.error("'{}' does not exist", cmd_list[1])
+
+                    case _:
+                        log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
             else:
                 log.send(get_help_doc(), is_format=False)
 
@@ -457,8 +479,10 @@ def run_command(command: list[str] | str) -> bool:
                             Ripper.ripper_list[i2],
                             Ripper.ripper_list[i1],
                         )
-                    except Exception as e:
-                        log.error(f"{e!r} {e}", deep=True)
+                    except ValueError:
+                        log.error("2 int must be inputed")
+                    except IndexError:
+                        log.error("list index out of range")
 
         case Cmd_type.run:
             is_run_exit = False

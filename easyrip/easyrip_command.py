@@ -1,11 +1,12 @@
 import enum
 import textwrap
 from dataclasses import dataclass
-from typing import Self
+from typing import Self, final
 
 from . import global_val
 
 
+@final
 @dataclass(slots=True, init=False, eq=False)
 class Cmd_type_val:
     name: str
@@ -51,11 +52,16 @@ class Cmd_type_val:
         )
 
 
+@final
 class Cmd_type(enum.Enum):
     help = h = Cmd_type_val(
         "help",
-        opt_str="h / help [<cmd>]",
-        description="Show full help or show the <cmd> help",
+        opt_str="h / help [<cmd> [<cmd param>]]",
+        description=(
+            "Show full help or show the <cmd> help.\n"
+            "e.g. help list\n"  # .
+            "e.g. h -p x265slow"
+        ),
     )
     version = v = ver = Cmd_type_val(
         "version",
@@ -218,6 +224,7 @@ class Cmd_type(enum.Enum):
         return "\n\n".join(ct.value.to_doc() for ct in cls)
 
 
+@final
 class Opt_type(enum.Enum):
     _i = Cmd_type_val(
         "-i",
@@ -507,8 +514,7 @@ class Opt_type(enum.Enum):
         "-hevc-strict",
         opt_str="-hevc-strict <0 | 1>",
         description=(
-            "Auto reduce the --ref\n"  # .
-            "When the resolution >= 4k, close HME\n"
+            "When the resolution >= 4k, close HME, and auto reduce the --ref\n"  # .
             "Default: 1"
         ),
     )

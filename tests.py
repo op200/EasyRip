@@ -215,7 +215,7 @@ class TestRip(unittest.TestCase):
         else:
             self.fail("x265 options not found")
 
-        x265_options_dict: dict[str, str | None] = dict()
+        x265_options_dict = dict[str, str | None]()
 
         for s in x265_options_str.split(" "):
             option = s.split("=")
@@ -229,10 +229,8 @@ class TestRip(unittest.TestCase):
         self.assertTrue("no-hme" in x265_options_dict)
 
     def test_flac(self):
-        run = run_command
-
         self.assertTrue(
-            run(
+            run_command(
                 f"-i {TestRip.test_va_basename}.{TestRip.test_va_suffix} -preset flac -o {TestRip.test_audio_output_basename} -run"
             )
         )
@@ -240,10 +238,10 @@ class TestRip(unittest.TestCase):
 
 class TestSubtitle(unittest.TestCase):
     def test_ass_class(self):
-        def _test_ass_class_create():
-            return Ass("test.zh-Hans.ass")
-
-        log.info(timeit.timeit(_test_ass_class_create, number=100))
+        TEST_ASS_NUMBER = 100
+        log.info(
+            f"Test ASS class {TEST_ASS_NUMBER} times: {timeit.timeit(lambda: Ass('test.zh-Hans.ass'), number=TEST_ASS_NUMBER):.4f}sec"
+        )
 
 
 class TestLanguage(unittest.TestCase):
@@ -253,7 +251,7 @@ class TestLanguage(unittest.TestCase):
         self.assertIs(Lang_tag.from_str("---").language, Lang_tag_language.Unknown)
         self.assertIs(Lang_tag.from_str("-2-3-").language, Lang_tag_language.Unknown)
 
-        self.assertTrue(
+        self.assertEqual(
             Lang_tag.from_str("zh"),
             Lang_tag(
                 language=Lang_tag_language.zh,
@@ -261,7 +259,7 @@ class TestLanguage(unittest.TestCase):
                 region=Lang_tag_region.Unknown,
             ),
         )
-        self.assertTrue(
+        self.assertEqual(
             Lang_tag.from_str("chi"),
             Lang_tag(
                 language=Lang_tag_language.zh,
@@ -269,7 +267,7 @@ class TestLanguage(unittest.TestCase):
                 region=Lang_tag_region.Unknown,
             ),
         )
-        self.assertTrue(
+        self.assertEqual(
             Lang_tag.from_str("zho"),
             Lang_tag(
                 language=Lang_tag_language.zh,
@@ -277,7 +275,7 @@ class TestLanguage(unittest.TestCase):
                 region=Lang_tag_region.Unknown,
             ),
         )
-        self.assertTrue(
+        self.assertEqual(
             Lang_tag.from_str("zh-Hans-CN"),
             Lang_tag(
                 language=Lang_tag_language.zh,

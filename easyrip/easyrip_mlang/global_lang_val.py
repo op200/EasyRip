@@ -1,8 +1,9 @@
 import enum
 from dataclasses import dataclass
-from typing import Iterable, Self
+from typing import Iterable, Self, final
 
 
+@final
 @dataclass(slots=True, init=False, eq=False)
 class Lang_tag_val:
     en_name: str
@@ -38,6 +39,7 @@ class Lang_tag_val:
         return hash(self.en_name)
 
 
+@final
 class Lang_tag_language(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 
@@ -89,6 +91,7 @@ class Lang_tag_language(enum.Enum):
             return cls.Unknown
 
 
+@final
 class Lang_tag_script(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 
@@ -110,6 +113,7 @@ class Lang_tag_script(enum.Enum):
             return cls.Unknown
 
 
+@final
 class Lang_tag_region(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 
@@ -144,6 +148,7 @@ class Lang_tag_region(enum.Enum):
             return cls.Unknown
 
 
+@final
 @dataclass(slots=True, kw_only=True)
 class Lang_tag:
     language: Lang_tag_language = Lang_tag_language.Unknown
@@ -210,13 +215,13 @@ class Lang_tag:
 
         from ..easyrip_mlang import gettext
 
-        str_tag_tuple = tuple(s for s in str_tag.split("-"))
+        str_tag_list = str_tag.split("-")
 
-        language = Lang_tag_language.from_name(str_tag_tuple[0])
+        language = Lang_tag_language.from_name(str_tag_list[0])
         script: Lang_tag_script = Lang_tag_script.Unknown
         region: Lang_tag_region = Lang_tag_region.Unknown
 
-        for i, s in enumerate(str_tag_tuple[1:]):
+        for i, s in enumerate(str_tag_list[1:]):
             if s in Lang_tag_script._member_map_.keys():
                 if i != 0:
                     raise ValueError(
