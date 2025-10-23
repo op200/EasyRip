@@ -52,7 +52,6 @@ class Cmd_type_val:
         )
 
 
-@final
 class Cmd_type(enum.Enum):
     help = h = Cmd_type_val(
         "help",
@@ -224,7 +223,6 @@ class Cmd_type(enum.Enum):
         return "\n\n".join(ct.value.to_doc() for ct in cls)
 
 
-@final
 class Opt_type(enum.Enum):
     _i = Cmd_type_val(
         "-i",

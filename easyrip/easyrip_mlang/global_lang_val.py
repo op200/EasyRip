@@ -39,7 +39,6 @@ class Lang_tag_val:
         return hash(self.en_name)
 
 
-@final
 class Lang_tag_language(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 
@@ -91,7 +90,6 @@ class Lang_tag_language(enum.Enum):
             return cls.Unknown
 
 
-@final
 class Lang_tag_script(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 
@@ -113,7 +111,6 @@ class Lang_tag_script(enum.Enum):
             return cls.Unknown
 
 
-@final
 class Lang_tag_region(enum.Enum):
     Unknown = Lang_tag_val(en_name="Unknown")
 

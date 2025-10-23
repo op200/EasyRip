@@ -14,6 +14,7 @@ from pathlib import Path
 from threading import Thread
 from time import sleep
 from tkinter import filedialog
+from typing import Final
 
 import tomllib
 
@@ -219,7 +220,10 @@ def file_dialog(initialdir=None):
 
 
 def run_ripper_list(
-    is_exit_when_run_finished: bool = False, shutdow_sec_str: str | None = None
+    *,
+    is_exit_when_run_finished: bool = False,
+    shutdow_sec_str: str | None = None,
+    enable_multithreading: bool = False,
 ):
     shutdown_sec: int | None = None
     if shutdow_sec_str is not None:
@@ -259,20 +263,53 @@ def run_ripper_list(
         ).encode("utf-8")
         path_lock_shm.buf[: len(_data)] = _data
 
-    total = len(Ripper.ripper_list)
-    warning_num = log.warning_num
-    error_num = log.error_num
-    for i, ripper in enumerate(Ripper.ripper_list, 1):
-        progress = f"{i} / {total} - {PROJECT_TITLE}"
-        log.info(progress)
-        change_title(progress)
-        try:
-            if ripper.run() is False:
-                log.error("Run {} failed", "Ripper")
-        except Exception as e:
-            log.error(e, deep=True)
-            log.warning("Stop run Ripper")
-        sleep(1)
+    total: Final[int] = len(Ripper.ripper_list)
+    warning_num: Final[int] = log.warning_num
+    error_num: Final[int] = log.error_num
+
+    if enable_multithreading:
+        threads = list[Thread]()
+        threads_return = dict[int, bool]()
+        progress_num: list[int] = [0]
+
+        def _run_ripper_thread_target(key: int, ripper: Ripper, /):
+            threads_return[key] = ripper.run()
+            progress_num[0] += 1
+
+        for i, ripper in enumerate(Ripper.ripper_list, 1):
+            thread = Thread(
+                target=_run_ripper_thread_target,
+                args=(i, ripper),
+                daemon=True,
+            )
+            log.info("Start Ripper thread {} / {}", i, total)
+            thread.start()
+            threads.append(thread)
+
+        # 进度打印线程
+        def _run_ripper_thread_progress():
+            progress = f"{len(threads_return)} / {total} - {PROJECT_TITLE}"
+            log.info(progress)
+            change_title(progress)
+
+        Thread(target=_run_ripper_thread_progress, daemon=True)
+
+        for thread in threads:
+            thread.join()
+
+    else:
+        for i, ripper in enumerate(Ripper.ripper_list, 1):
+            progress = f"{i} / {total} - {PROJECT_TITLE}"
+            log.info(progress)
+            change_title(progress)
+            try:
+                if ripper.run() is False:
+                    log.error("Run {} failed", "Ripper")
+            except Exception as e:
+                log.error(e, deep=True)
+                log.warning("Stop run Ripper")
+            sleep(0.5)
+
     if log.warning_num > warning_num:
         log.warning(
             "There are {} {} during run", log.warning_num - warning_num, "warning"
@@ -486,21 +523,52 @@ def run_command(command: list[str] | str) -> bool:
 
         case Cmd_type.run:
             is_run_exit = False
-            match cmd_list[1]:
-                case "":
-                    pass
-                case "exit":
-                    is_run_exit = True
-                case "shutdown":
-                    if _shutdown_sec_str := cmd_list[2] or "60":
-                        log.info(
-                            "Will shutdown in {}s after run finished", _shutdown_sec_str
-                        )
-                case _ as param:
-                    log.error("Unsupported param: {}", param)
-                    return False
+            _enable_multithreading: bool = False
+            _shutdown_sec_str: str | None = None
 
-            run_ripper_list(is_run_exit)
+            _skip_run_param: int = 0
+
+            for i, cmd in enumerate(cmd_list[1:]):
+                if _skip_run_param:
+                    _skip_run_param -= 1
+                    continue
+
+                match cmd:
+                    case "":
+                        pass
+
+                    case "exit":
+                        is_run_exit = True
+
+                    case "shutdown":
+                        _skip_run_param += 1
+                        if i + 1 < len(cmd_list[1:]):
+                            _shutdown_sec_str = cmd_list[i + 1] or "60"
+                            log.info(
+                                "Will shutdown in {}s after run finished",
+                                _shutdown_sec_str,
+                            )
+                        else:
+                            log.error("{} need param", cmd)
+                            return False
+
+                    case "-multithreading":
+                        _skip_run_param += 1
+                        if i + 1 < len(cmd_list[1:]):
+                            _enable_multithreading = cmd_list[i + 1] != "0"
+                        else:
+                            log.error("{} need param", cmd)
+                            return False
+
+                    case _ as param:
+                        log.error("Unsupported param: {}", param)
+                        return False
+
+            run_ripper_list(
+                is_exit_when_run_finished=is_run_exit,
+                shutdow_sec_str=_shutdown_sec_str,
+                enable_multithreading=_enable_multithreading,
+            )
 
         case Cmd_type.server:
             if easyrip_web.http_server.Event.is_run_command:
@@ -636,14 +704,15 @@ def run_command(command: list[str] | str) -> bool:
             is_run = False
             is_exit_when_run_finished = False
             shutdown_sec_str: str | None = None
+            enable_multithreading: bool = False
 
-            _skip: bool = False
+            _skip: int = 0
             for i in range(len(cmd_list)):
                 if _skip:
-                    _skip = False
+                    _skip -= 1
                     continue
 
-                _skip = True
+                _skip += 1
 
                 match cmd_list[i]:
                     case "-i":
@@ -698,14 +767,25 @@ def run_command(command: list[str] | str) -> bool:
                                 is_exit_when_run_finished = True
                             case "shutdown":
                                 shutdown_sec_str = cmd_list[i + 2] or "60"
+                                _skip += 1
                             case _:
-                                _skip = False
+                                _skip -= 1
+
+                    case "-multithreading":
+                        match cmd_list[i + 1]:
+                            case "0":
+                                enable_multithreading = False
+                            case "1":
+                                enable_multithreading = True
+                            case _:
+                                log.error("Unsupported param: {}", cmd_list[i + 1])
+                                return False
 
                     case str() as s if len(s) > 1 and s.startswith("-"):
                         option_map[s[1:]] = cmd_list[i + 1]
 
                     case _:
-                        _skip = False
+                        _skip -= 1
 
             if not preset_name:
                 log.warning("Missing '-preset' option, set to default value 'custom'")
@@ -860,7 +940,11 @@ def run_command(command: list[str] | str) -> bool:
                 return False
 
             if is_run:
-                run_ripper_list(is_exit_when_run_finished, shutdown_sec_str)
+                run_ripper_list(
+                    is_exit_when_run_finished=is_exit_when_run_finished,
+                    shutdow_sec_str=shutdown_sec_str,
+                    enable_multithreading=enable_multithreading,
+                )
 
     return True
 

@@ -161,7 +161,8 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.debug.value
                 ):
                     print(
-                        f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m"
+                        f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m\n",
+                        end="",
                     )
 
                 if (
@@ -182,7 +183,8 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.info.value
                 ):
                     print(
-                        f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m"
+                        f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m\n",
+                        end="",
                     )
 
                 if (
@@ -203,7 +205,8 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.warning.value
                 ):
                     print(
-                        f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m",
+                        f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m\n",
+                        end="",
                         file=sys.stderr,
                     )
 
@@ -225,7 +228,8 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.error.value
                 ):
                     print(
-                        f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m",
+                        f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m\n",
+                        end="",
                         file=sys.stderr,
                     )
 
@@ -245,7 +249,8 @@ class log:
                 if is_server or easyrip_web.http_server.Event.is_run_command:
                     if cls.print_level.value <= cls.LogLevel.send.value:
                         print(
-                            f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m"
+                            f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m\n",
+                            end="",
                         )
 
                     if cls.write_level.value <= cls.LogLevel.send.value:
@@ -258,7 +263,8 @@ class log:
                     )
                 elif cls.print_level.value <= cls.LogLevel.send.value:
                     print(
-                        f"\033[{cls.send_color}m{message}\033[{cls.default_foreground_color}m"
+                        f"\033[{cls.send_color}m{message}\033[{cls.default_foreground_color}m\n",
+                        end="",
                     )
 
     @classmethod
