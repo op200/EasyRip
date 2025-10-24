@@ -61,7 +61,7 @@ class Media_info:
         )
         _info_list: list = _info.get("streams", [])
 
-        _video_info_dict: dict = _info_list[0] if _info_list else dict()
+        _video_info_dict: dict = _info_list[0] if _info_list else {}
 
         media_info.width = int(_video_info_dict.get("width", "0"))
         media_info.height = int(_video_info_dict.get("height", "0"))
@@ -106,7 +106,7 @@ class Media_info:
 
         for _audio_info_dict in _info_list:
             if not isinstance(_audio_info_dict, dict):
-                _audio_info_dict = dict()
+                _audio_info_dict = {}
 
             index = _audio_info_dict.get("index")
             if index is None:

@@ -24,7 +24,7 @@ class Cmd_type_val:
             return self._description
 
     @description.setter
-    def description(self, val: str):
+    def description(self, val: str) -> None:
         self._description = val
 
     def __init__(
@@ -214,7 +214,7 @@ class Cmd_type(enum.Enum):
     @classmethod
     def from_str(cls, s: str) -> Self | None:
         guess_str = s.replace("-", "_").replace(":", "_")
-        if guess_str in cls._member_map_.keys():
+        if guess_str in cls._member_map_:
             return cls[guess_str]
         return None
 
@@ -520,7 +520,7 @@ class Opt_type(enum.Enum):
     @classmethod
     def from_str(cls, s: str) -> Self | None:
         guess_str = s.replace("-", "_").replace(":", "_")
-        if guess_str in cls._member_map_.keys():
+        if guess_str in cls._member_map_:
             return cls[guess_str]
         return None
 

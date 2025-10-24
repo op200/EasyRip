@@ -60,10 +60,10 @@ class zhconvert:
                         return text
 
                     raise Exception(f"HTTP error: {response.getcode()}")
-            except urllib.error.HTTPError as e:
+            except urllib.error.HTTPError:
                 sleep(0.5)
                 if retry_num == 4:
-                    raise e
+                    raise
                 log.debug("Attempt to reconnect")
                 continue
 

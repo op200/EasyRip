@@ -25,10 +25,9 @@ class AES:
     def decrypt(ciphertext: bytes, key: bytes) -> bytes:
         iv = ciphertext[:16]  # 提取 IV
         cipher = CryptoAES.new(key, CryptoAES.MODE_CBC, iv=iv)
-        plaintext = unpad(
+        return unpad(
             cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
         )  # 解密并去除填充
-        return plaintext
 
 
 class Event:
@@ -40,7 +39,7 @@ class Event:
     progress: deque[dict[str, int | float]] = deque([{}])
 
     @staticmethod
-    def post_run_event(cmd: str):
+    def post_run_event(cmd: str) -> None:
         pass
 
 
@@ -68,14 +67,14 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             .strip('"')
         )
 
-    def do_OPTIONS(self):
+    def do_OPTIONS(self) -> None:
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
         self.end_headers()
 
-    def do_POST(self):
+    def do_POST(self) -> None:
         from ..easyrip_log import log
 
         # 获取请求体的长度
@@ -111,7 +110,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # 设置标志请求关闭服务
             if data.get("shutdown") == "shutdown":
-                self.server.shutdown_requested = True  # type: ignore
+                self.server.shutdown_requested = True  # pyright: ignore[reportAttributeAccessIssue]
 
             # 通过 token 判断一致性
             if (
@@ -193,7 +192,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(response.encode(encoding="utf-8"))
 
-    def do_GET(self):
+    def do_GET(self) -> None:
         self.send_response(200)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Content-Type", "application/json")
@@ -217,7 +216,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         )
 
 
-def run_server(host: str = "", port: int = 0, password: str | None = None):
+def run_server(host: str = "", port: int = 0, password: str | None = None) -> None:
     from ..easyrip_log import log
 
     MainHTTPRequestHandler.token = secrets.token_urlsafe(16)

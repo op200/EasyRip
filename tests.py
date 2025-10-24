@@ -118,7 +118,7 @@ class TestRip(unittest.TestCase):
     test_audio_output_basename = "testAudioOutput"
 
     @staticmethod
-    def restore():
+    def restore() -> None:
         if os.path.exists(f"{TestRip.test_video_output_basename}.rip.mp4"):
             os.remove(f"{TestRip.test_video_output_basename}.rip.mp4")
 
@@ -180,7 +180,7 @@ class TestRip(unittest.TestCase):
         )
         _info_list: list = _info.get("streams", [])
 
-        _video_info_dict: dict = _info_list[0] if _info_list else dict()
+        _video_info_dict: dict = _info_list[0] if _info_list else {}
 
         _fps_str: str = _video_info_dict.get("r_frame_rate", "0") + "/1"
         _fps = [int(s) for s in _fps_str.split("/")]

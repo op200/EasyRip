@@ -27,7 +27,8 @@ def run() -> NoReturn:
             sys.stderr.flush()
         except KeyboardInterrupt:
             print(
-                f"\033[{91 if log.default_background_color == 41 else 31}m^C\033[{log.default_foreground_color}m"
+                f"\033[{91 if log.default_background_color == 41 else 31}m^C\033[{log.default_foreground_color}m\n",
+                end="",
             )
             continue
         except EOFError:

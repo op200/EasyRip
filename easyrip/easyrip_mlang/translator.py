@@ -1,7 +1,8 @@
+from collections.abc import Iterable
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Final, Iterable
+from typing import Final
 
 from ..easyrip_web.third_party_api import zhconvert
 from .global_lang_val import (
@@ -21,11 +22,12 @@ def translate_subtitles(
     enable_multithreading: bool = True,
 ) -> list[tuple[Path, str]]:
     """
-    #### 自动搜索符合中缀的字幕文件，翻译为目标语言
-    文件交集选择器: 不为 None 时，与选择器有交集的 Path 才会选择
-    Return: list[tuple[file, content]]
-    """
+    自动搜索符合中缀的字幕文件，翻译为目标语言
 
+    :param 文件交集选择器: 不为 None 时，与选择器有交集的 Path 才会选择
+
+    :return: list[tuple[file, content]]
+    """
     from ..easyrip_log import log
     from ..easyrip_mlang import gettext
     from ..utils import read_text
@@ -155,7 +157,7 @@ def translate_subtitles(
     res_file_list: Final = list[tuple[Path, str]]()
     res_file_dict: Final = dict[int, tuple[Path, str]]()
 
-    def _tr(index: int, path: Path, org_text: str):
+    def _tr(index: int, path: Path, org_text: str) -> None:
         log.info('Start translating file "{}"', path)
         res_file_dict[index] = (
             path,

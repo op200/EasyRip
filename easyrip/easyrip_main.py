@@ -44,26 +44,29 @@ PROJECT_TITLE = global_val.PROJECT_TITLE
 PROJECT_URL = global_val.PROJECT_URL
 
 
-def log_new_ver(new_ver: str | None, old_ver: str, program_name: str, dl_url: str):
+def log_new_ver(
+    new_ver: str | None, old_ver: str, program_name: str, dl_url: str
+) -> None:
     if new_ver is None:
         return
     try:
         if check_ver(new_ver, old_ver):
-            print()
             log.info(
-                "{} has new version {}. You can download it: {}",
-                program_name,
-                new_ver,
-                dl_url,
+                "\n"
+                + gettext(
+                    "{} has new version {}. You can download it: {}",
+                    program_name,
+                    new_ver,
+                    dl_url,
+                )
             )
             print(get_input_prompt(True), end="")
     except Exception as e:
-        print()
-        log.warning(e, deep=True)
+        log.warning(f"\n{e}", is_format=False, deep=True)
         print(get_input_prompt(True), end="")
 
 
-def check_env():
+def check_env() -> None:
     try:
         change_title(f"{gettext('Check env...')} {PROJECT_TITLE}")
 
@@ -71,11 +74,13 @@ def check_env():
             _url = "https://ffmpeg.org/download.html"
             for _name in ("FFmpeg", "FFprobe"):
                 if not shutil.which(_name):
-                    print()
                     log.error(
-                        "{} not found, download it: {}",
-                        _name,
-                        f"(full build ver) {_url}",
+                        "\n"
+                        + gettext(
+                            "{} not found, download it: {}",
+                            _name,
+                            f"(full build ver) {_url}",
+                        )
                     )
                     print(get_input_prompt(True), end="")
                 else:
@@ -96,9 +101,11 @@ def check_env():
 
             _name, _url = "flac", "https://github.com/xiph/flac/releases"
             if not shutil.which(_name):
-                print()
                 log.warning(
-                    "{} not found, download it: {}", _name, f"(ver >= 1.5.0) {_url}"
+                    "\n"
+                    + gettext(
+                        "{} not found, download it: {}", _name, f"(ver >= 1.5.0) {_url}"
+                    )
                 )
                 print(get_input_prompt(True), end="")
 
@@ -124,8 +131,9 @@ def check_env():
 
             _name, _url = "mp4fpsmod", "https://github.com/nu774/mp4fpsmod/releases"
             if not shutil.which(_name):
-                print()
-                log.warning("{} not found, download it: {}", _name, _url)
+                log.warning(
+                    "\n" + gettext("{} not found, download it: {}", _name, _url)
+                )
                 print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
@@ -141,8 +149,9 @@ def check_env():
 
             _name, _url = "MP4Box", "https://gpac.io/downloads/gpac-nightly-builds/"
             if not shutil.which(_name):
-                print()
-                log.warning("{} not found, download it: {}", _name, _url)
+                log.warning(
+                    "\n" + gettext("{} not found, download it: {}", _name, _url)
+                )
                 print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
@@ -158,8 +167,9 @@ def check_env():
             _url = "https://mkvtoolnix.download/downloads.html"
             for _name in ("mkvpropedit", "mkvmerge"):
                 if not shutil.which(_name):
-                    print()
-                    log.warning("{} not found, download it: {}", _name, _url)
+                    log.warning(
+                        "\n" + gettext("{} not found, download it: {}", _name, _url)
+                    )
                     print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
@@ -171,12 +181,18 @@ def check_env():
                         _url,
                     )
 
-            # _name, _url = 'MediaInfo', 'https://mediaarea.net/en/MediaInfo/Download'
+            # _name, _url = "MediaInfo", "https://mediaarea.net/en/MediaInfo/Download"
             # if not shutil.which(_name):
-            #     print()
-            #     log.warning('{} not found, download it: {}', _name, f'(CLI ver) {_url}')
-            #     print(get_input_prompt(), end='')
-            # elif not subprocess.run('mediainfo --version', capture_output=True, text=True).stdout:
+            #     log.warning(
+            #         "\n"
+            #         + gettext(
+            #             "{} not found, download it: {}", _name, f"(CLI ver) {_url}"
+            #         )
+            #     )
+            #     print(get_input_prompt(), end="")
+            # elif not subprocess.run(
+            #     "mediainfo --version", capture_output=True, text=True
+            # ).stdout:
             #     log.error("The MediaInfo must be CLI ver")
 
         if config.get_user_profile("check_update"):
@@ -211,7 +227,7 @@ if os.name == "nt":
         log.warning("Windows DPI Aware failed")
 
 
-def file_dialog(initialdir=None):
+def file_dialog(initialdir=None):  # noqa: ANN202
     tkRoot = tk.Tk()
     tkRoot.withdraw()
     file_paths = filedialog.askopenfilenames(initialdir=initialdir)
@@ -224,7 +240,7 @@ def run_ripper_list(
     is_exit_when_run_finished: bool = False,
     shutdow_sec_str: str | None = None,
     enable_multithreading: bool = False,
-):
+) -> None:
     shutdown_sec: int | None = None
     if shutdow_sec_str is not None:
         try:
@@ -244,7 +260,7 @@ def run_ripper_list(
     except FileExistsError:
         _shm = shared_memory.SharedMemory(name=_name)
         _res: dict = json.loads(
-            bytes(_shm.buf[: len(_shm.buf)]).decode("utf-8").rstrip("\0")
+            bytes(_shm.buf[: len(_shm.buf)]).decode("utf-8").rstrip("\0")  # pyright: ignore[reportOptionalSubscript,reportArgumentType] # pylance bug
         )
         _shm.unlink()
         log.error(
@@ -261,7 +277,7 @@ def run_ripper_list(
                 "start_time": datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4],
             }
         ).encode("utf-8")
-        path_lock_shm.buf[: len(_data)] = _data
+        path_lock_shm.buf[: len(_data)] = _data  # pyright: ignore[reportOptionalSubscript] # pylance bug
 
     total: Final[int] = len(Ripper.ripper_list)
     warning_num: Final[int] = log.warning_num
@@ -272,7 +288,7 @@ def run_ripper_list(
         threads_return = dict[int, bool]()
         progress_num: list[int] = [0]
 
-        def _run_ripper_thread_target(key: int, ripper: Ripper, /):
+        def _run_ripper_thread_target(key: int, ripper: Ripper, /) -> None:
             threads_return[key] = ripper.run()
             progress_num[0] += 1
 
@@ -287,7 +303,7 @@ def run_ripper_list(
             threads.append(thread)
 
         # 进度打印线程
-        def _run_ripper_thread_progress():
+        def _run_ripper_thread_progress() -> None:
             progress = f"{len(threads_return)} / {total} - {PROJECT_TITLE}"
             log.info(progress)
             change_title(progress)
@@ -359,7 +375,7 @@ def run_command(command: list[str] | str) -> bool:
     cmd_list.append("")
 
     cmd_type: Cmd_type | None = None
-    if cmd_list[0] in Cmd_type._member_map_.keys():
+    if cmd_list[0] in Cmd_type._member_map_:
         cmd_type = Cmd_type[cmd_list[0]]
     elif len(cmd_list[0]) > 0 and cmd_list[0].startswith("$"):
         cmd_type = Cmd_type._run_any
@@ -434,10 +450,7 @@ def run_command(command: list[str] | str) -> bool:
 
             if isinstance(command, str):
                 _path = command.split(" ", maxsplit=1)
-                if len(_path) <= 1:
-                    _path = None
-                else:
-                    _path = _path[1].strip('"').strip("'")
+                _path = None if len(_path) <= 1 else _path[1].strip('"').strip("'")
 
             if _path is None:
                 _path = cmd_list[1]
@@ -799,7 +812,9 @@ def run_command(command: list[str] | str) -> bool:
                 for i, input_pathname in enumerate(input_pathname_org_list):
                     new_option_map = option_map.copy()
 
-                    def _iterator_fmt_replace(match: re.Match[str]):
+                    _time = datetime.now()
+
+                    def _iterator_fmt_replace(match: re.Match[str]) -> str:
                         s = match.group(1)
                         match s:
                             case str() as s if s.startswith("time:"):
@@ -826,8 +841,6 @@ def run_command(command: list[str] | str) -> bool:
                     if output_basename is None:
                         new_output_basename = None
                     else:
-                        _time = datetime.now()
-
                         new_output_basename = re.sub(
                             r"\?\{([^}]*)\}",
                             _iterator_fmt_replace,
@@ -949,14 +962,15 @@ def run_command(command: list[str] | str) -> bool:
     return True
 
 
-def init(is_first_run: bool = False):
+def init(is_first_run: bool = False) -> None:
     if is_first_run:
         # 当前路径添加到环境变量
         new_path = os.path.realpath(os.getcwd())
-        if os.pathsep in (current_path := os.environ.get("PATH", "")):
-            if new_path not in current_path.split(os.pathsep):
-                updated_path = f"{new_path}{os.pathsep}{current_path}"
-                os.environ["PATH"] = updated_path
+        if os.pathsep in (
+            current_path := os.environ.get("PATH", "")
+        ) and new_path not in current_path.split(os.pathsep):
+            updated_path = f"{new_path}{os.pathsep}{current_path}"
+            os.environ["PATH"] = updated_path
 
     # 设置语言
     _sys_lang = get_system_language()
@@ -1008,9 +1022,7 @@ def init(is_first_run: bool = False):
         if (
             lang_tag := Lang_tag.from_str(file.stem[5:])
         ).language is not Lang_tag_language.Unknown:
-            easyrip_mlang.all_supported_lang_map[lang_tag] = {
-                k: v for k, v in lang_map.items()
-            }
+            easyrip_mlang.all_supported_lang_map[lang_tag] = lang_map
 
             log.debug("Loading \"{}\" as '{}' language successfully", file, lang_tag)
 
@@ -1022,7 +1034,7 @@ def init(is_first_run: bool = False):
             lambda message: easyrip_web.http_server.Event.log_queue.append(message)
         )
 
-        def _post_run_event(cmd: str):
+        def _post_run_event(cmd: str) -> None:
             run_command(cmd)
             easyrip_web.http_server.Event.is_run_command = False
 

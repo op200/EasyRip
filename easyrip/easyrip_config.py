@@ -17,7 +17,7 @@ class config:
     _config: dict | None = None
 
     @classmethod
-    def init(cls):
+    def init(cls) -> None:
         if sys.platform == "win32":
             # Windows: C:\Users\<用户名>\AppData\Roaming\<app_name>
             cls._config_dir = Path(os.getenv("APPDATA", ""))
@@ -67,13 +67,13 @@ class config:
         cls._read_config()
 
     @classmethod
-    def open_config_dir(cls):
+    def open_config_dir(cls) -> None:
         if not cls._config_dir.is_dir():
             cls.init()
         os.startfile(cls._config_dir)
 
     @classmethod
-    def regenerate_config(cls):
+    def regenerate_config(cls) -> None:
         cls._config_file.unlink(missing_ok=True)
 
         cls.init()
@@ -113,9 +113,8 @@ class config:
 
     @classmethod
     def set_user_profile(cls, key: str, val: str | int | float | bool) -> bool:
-        if cls._config is None:
-            if not cls._read_config():
-                return False
+        if cls._config is None and not cls._read_config():
+            return False
 
         if cls._config is None:
             log.error("Config is None")
@@ -147,7 +146,7 @@ class config:
         return cls._config["user_profile"][key]
 
     @classmethod
-    def show_config_list(cls):
+    def show_config_list(cls) -> None:
         if cls._config is None:
             cls.init()
         if cls._config is None:
@@ -155,7 +154,7 @@ class config:
             return
 
         user_profile: dict = cls._config["user_profile"]
-        length_key = max(len(k) for k in user_profile.keys())
+        length_key = max(len(k) for k in user_profile)
         length_val = max(len(str(v)) for v in user_profile.values())
         for k, v in user_profile.items():
             log.send(
@@ -168,9 +167,7 @@ class config:
             {
                 "language": gettext(
                     "Easy Rip's language, support incomplete matching. Support: {}",
-                    ", ".join(
-                        ("auto", *(str(tag) for tag in all_supported_lang_map.keys()))
-                    ),
+                    ", ".join(("auto", *(str(tag) for tag in all_supported_lang_map))),
                 ),
                 "check_update": gettext("Auto check the update of Easy Rip"),
                 "check_dependent": gettext(
@@ -194,5 +191,5 @@ class config:
                     ", ".join(log.LogLevel._member_names_),
                 ),
             }
-            | (cls._config or dict())
+            | (cls._config or {})
         ).get(key, "None about")

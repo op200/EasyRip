@@ -14,18 +14,19 @@ __all__ = ["Event", "log"]
 
 class Event:
     @staticmethod
-    def append_http_server_log_queue(message: tuple[str, str, str]):
+    def append_http_server_log_queue(message: tuple[str, str, str]) -> None:
         pass
 
 
 class log:
     @classmethod
-    def init(cls):
+    def init(cls) -> None:
         """
-        1. 获取终端颜色
-        2. 写入 \\</div>
-        """
+        初始化日志功能
 
+        1. 获取终端颜色
+        2. 写入 \\</div> 以闭合已有日志
+        """
         # 获取终端颜色
         if os.name == "nt":
 
@@ -135,7 +136,7 @@ class log:
         is_server: bool = False,
         http_send_header: str = "",
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         if log_level == cls.LogLevel.none:
             return
 
@@ -278,7 +279,7 @@ class log:
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.debug,
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         cls._do_log(
             level,
             mode,
@@ -302,7 +303,7 @@ class log:
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.info,
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         cls._do_log(
             level,
             mode,
@@ -326,7 +327,7 @@ class log:
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.warning,
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         cls._do_log(
             level,
             mode,
@@ -350,7 +351,7 @@ class log:
         mode: LogMode = LogMode.normal,
         level: LogLevel = LogLevel.error,
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         cls._do_log(
             level,
             mode,
@@ -375,7 +376,7 @@ class log:
         http_send_header: str = "",
         level: LogLevel = LogLevel.send,
         **fmt_kwargs: object,
-    ):
+    ) -> None:
         cls._do_log(
             level,
             mode,
@@ -392,7 +393,7 @@ class log:
     def write_html_log(
         cls,
         message: str,
-    ):
+    ) -> None:
         try:
             with open(cls.html_filename, "at", encoding="utf-8") as f:
                 f.write(message)

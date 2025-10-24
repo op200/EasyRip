@@ -11,7 +11,7 @@ def get_version():
     version_match = re.search(
         rf'{PROJECT_VERSION_VAR_NAME}\s*=\s*[\'"]([^\'"]*)[\'"]',
         Path(GLOBAL_VAL_PY_FILE_PATH_STR).read_text("utf-8"),
-        re.M,
+        re.MULTILINE,
     )
 
     assert version_match is not None, (

@@ -31,7 +31,7 @@ class Font:
     def __hash__(self) -> int:
         return hash(self.pathname)
 
-    def __del__(self):
+    def __del__(self) -> None:
         self.font.close()
 
 
@@ -50,14 +50,12 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
 
         try:
             if suffix == ".ttc":
-                fonts: list[TTFont] = [
-                    font for font in TTCollection(file=file, lazy=lazy)
-                ]
+                fonts: list[TTFont] = list(TTCollection(file=file, lazy=lazy))
             else:
                 fonts = [TTFont(file=file, lazy=lazy)]
 
             for font in fonts:
-                table_name: table__n_a_m_e | None = font.get("name")  # type: ignore
+                table_name: table__n_a_m_e | None = font.get("name")  # pyright: ignore[reportAssignmentType]
 
                 if table_name is None:
                     log.warning(f"No 'name' table found in font {file}")
@@ -75,13 +73,6 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                         continue
 
                     name_str: str = record.toUnicode()
-                    if not isinstance(name_str, str):
-                        log.warning(
-                            f"Unexpected type for name string in font {file}: {type(name_str)}"
-                        )
-                        continue
-                    else:
-                        name_str = str(name_str)
 
                     match name_id:
                         case 1:  # Font Family Name
@@ -138,6 +129,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
 def get_font_path_from_registry(font_name: str) -> list[str]:
     """
     通过Windows注册表获取字体文件路径
+
     :param font_name: 字体名称（如"Arial"）
     :return: 字体文件完整路径，如果找不到返回None
     """
@@ -158,7 +150,7 @@ def get_font_path_from_registry(font_name: str) -> list[str]:
                     # 检查字体名称是否匹配（去掉可能的"(TrueType)"等后缀）
                     if value_name.startswith(font_name):
                         # 获取字体文件路径
-                        fonts_dir = os.path.join(os.environ["SystemRoot"], "Fonts")
+                        fonts_dir = os.path.join(os.environ["SYSTEMROOT"], "Fonts")
                         font_path = os.path.join(fonts_dir, value_data)
 
                         # 检查文件是否存在
@@ -178,7 +170,7 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
 
     # 检查哪些字符不存在于字体中
     cmap = subset_font.getBestCmap()
-    available_chars = set(chr(key) for key in cmap.keys())
+    available_chars = {chr(key) for key in cmap.keys()}  # noqa: SIM118
     input_chars = set(subset_str)
     missing_chars = input_chars - available_chars
 
@@ -218,8 +210,8 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
     # 修改 Name Record
     affix_ascii = afffix.encode("ascii")
     affix_utf16be = afffix.encode("utf-16-be")
-    table_name: table__n_a_m_e = font.font.get("name")  # type: ignore
-    subset_table_name: table__n_a_m_e = subset_font.get("name")  # type: ignore
+    table_name: table__n_a_m_e = font.font.get("name")  # pyright: ignore[reportAssignmentType]
+    subset_table_name: table__n_a_m_e = subset_font.get("name")  # pyright: ignore[reportAssignmentType]
     subset_table_name.names = list[NameRecord]()  # 重写 name table
     for record in table_name.names:
         name_id = int(record.nameID)

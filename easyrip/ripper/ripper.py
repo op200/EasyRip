@@ -2,13 +2,14 @@ import enum
 import os
 import re
 import shutil
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import zip_longest
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Callable, Iterable, Self, final
+from typing import Self, final
 
 from .. import easyrip_web
 from ..easyrip_log import log
@@ -130,7 +131,7 @@ class Ripper:
         muxer: "Ripper.Muxer | None"
         muxer_format_str: str
 
-        def __str__(self):
+        def __str__(self) -> str:
             return f"  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str}"
 
     input_path_list: list[Path]
@@ -164,7 +165,7 @@ class Ripper:
         output_dir: str | None,
         option: Option | PresetName,
         option_map: dict[str, str],
-    ):
+    ) -> None:
         self.input_path_list = [Path(path) for path in input_path]
 
         self.media_info = Media_info.from_path(self.input_path_list[0])
@@ -196,7 +197,7 @@ class Ripper:
 
         self._progress = dict[str, int | float]()
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"-i {self.input_path_list[0]} -o {self.output_prefix_list[0]} -o:dir {self.output_dir} -preset {self.option.preset_name.value} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
             "  option:  {\n"
@@ -233,10 +234,7 @@ class Ripper:
         is_pipe_input = bool(self.input_path_list[0].suffix == ".vpy" or vpy_pathname)
 
         ff_input_option: list[str]
-        if is_pipe_input:
-            ff_input_option = ["-"]
-        else:
-            ff_input_option = ['"{input}"']
+        ff_input_option = ["-"] if is_pipe_input else ['"{input}"']
         ff_stream_option: list[str] = ["0:v"]
         ff_vf_option: list[str] = (
             s.split(",") if (s := self.option_map.get("vf")) else []
@@ -248,7 +246,7 @@ class Ripper:
 
         # Audio
         if audio_encoder_str := self.option_map.get("c:a"):
-            if audio_encoder_str not in Ripper.AudioCodec._member_map_.keys():
+            if audio_encoder_str not in Ripper.AudioCodec._member_map_:
                 raise ValueError(
                     gettext("Unsupported '{}' param: {}", "-c:a", audio_encoder_str)
                 )
@@ -454,8 +452,8 @@ class Ripper:
 
                 encoder_format_str = (
                     f"{FFMPEG_HEADER} {hwaccel} "
-                    + '-i "{input}" -c copy '
-                    + f"{' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    '-i "{input}" -c copy '
+                    f"{' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + ffparams_out
                     + '"{output}"'
@@ -539,7 +537,7 @@ class Ripper:
                     case _:
                         _mux_str = (
                             f"mp4box -add {' -add '.join(_mux_flac_input_list)}"
-                            + ' -new "{output}" '
+                            ' -new "{output}" '
                             if muxer == Ripper.Muxer.mp4
                             else 'mkvmerge -o "{output}" '
                             + " ".join(_mux_flac_input_list)
@@ -574,16 +572,15 @@ class Ripper:
                         "min-keyint": self.option_map.get("min-keyint"),
                         "trellis": self.option_map.get("trellis"),
                         "fast-pskip": self.option_map.get("fast-pskip"),
-                        **{
-                            k: v
-                            for k, v in [
+                        **dict(
+                            [
                                 s.split("=")
                                 for s in str(
                                     self.option_map.get("x264-params", "")
                                 ).split(":")
                                 if s
                             ]
-                        },
+                        ),
                     }.items()
                     if v is not None
                 }
@@ -659,16 +656,15 @@ class Ripper:
                         "max-tu-size": self.option_map.get("max-tu-size"),
                         "level-idc": self.option_map.get("level-idc"),
                         "sao": self.option_map.get("sao"),
-                        **{
-                            k: v
-                            for k, v in [
+                        **dict(
+                            [
                                 s.split("=")
                                 for s in str(
                                     self.option_map.get("x265-params", "")
                                 ).split(":")
                                 if s
                             ]
-                        },
+                        ),
                     }.items()
                     if v is not None
                 }
@@ -676,29 +672,30 @@ class Ripper:
                 _option_map = DEFAULT_PRESET_PARAMS[preset_name] | _custom_option_map
 
                 # HEVC 规范
-                if self.option_map.get("hevc-strict", "1") == "1":
-                    if self.media_info.width * self.media_info.height >= (
-                        _RESOLUTION := 1920 * 1080 * 4
-                    ):
-                        if _option_map.get("hme", "0") == "1":
-                            _option_map["hme"] = "0"
-                            log.warning(
-                                "The resolution {} * {} >= {}, auto close HME",
-                                self.media_info.width,
-                                self.media_info.height,
-                                _RESOLUTION,
-                            )
+                if self.option_map.get(
+                    "hevc-strict", "1"
+                ) != "0" and self.media_info.width * self.media_info.height >= (
+                    _RESOLUTION := 1920 * 1080 * 4
+                ):
+                    if _option_map.get("hme", "0") == "1":
+                        _option_map["hme"] = "0"
+                        log.warning(
+                            "The resolution {} * {} >= {}, auto close HME",
+                            self.media_info.width,
+                            self.media_info.height,
+                            _RESOLUTION,
+                        )
 
-                        if int(_option_map.get("ref") or "3") > (_NEW_REF := 6):
-                            _option_map["ref"] = str(_NEW_REF)
-                            log.warning(
-                                "The resolution {} * {} >= {}, auto reduce {} to {}",
-                                self.media_info.width,
-                                self.media_info.height,
-                                _RESOLUTION,
-                                _option_map.get("ref"),
-                                _NEW_REF,
-                            )
+                    if int(_option_map.get("ref") or "3") > (_NEW_REF := 6):
+                        _option_map["ref"] = str(_NEW_REF)
+                        log.warning(
+                            "The resolution {} * {} >= {}, auto reduce {} to {}",
+                            self.media_info.width,
+                            self.media_info.height,
+                            _RESOLUTION,
+                            _option_map.get("ref"),
+                            _NEW_REF,
+                        )
 
                 # 低版本 x265 不支持 -hme 0 主动关闭 HME
                 if _option_map.get("hme", "0") == "0":
@@ -1043,7 +1040,7 @@ class Ripper:
 
         self._progress["frame_count"] = 0
         self._progress["duration"] = 0
-        if not self.input_path_list[0].suffix == ".vpy":
+        if self.input_path_list[0].suffix != ".vpy":
             self._progress["frame_count"] = self.media_info.nb_frames
             self._progress["duration"] = self.media_info.duration
 
@@ -1192,7 +1189,7 @@ class Ripper:
                 add_tr_files = list[Path]()
                 if translate_sub := self.option_map.get("translate-sub"):
                     _tr = translate_sub.split(":")
-                    if not len(_tr) == 2:
+                    if len(_tr) != 2:
                         log.error("{} param illegal", "-translate-sub")
                     else:
                         try:
@@ -1259,9 +1256,8 @@ class Ripper:
                             ).items()
                             if v
                         },
-                    ).run():
-                        if os.path.exists(new_full_name):
-                            os.remove(new_full_name)
+                    ).run() and os.path.exists(new_full_name):
+                        os.remove(new_full_name)
                 else:
                     log.error("Subset faild, cancel mux")
 

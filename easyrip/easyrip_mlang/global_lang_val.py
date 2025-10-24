@@ -1,6 +1,7 @@
 import enum
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Iterable, Self, final
+from typing import Self, final
 
 
 @final
@@ -14,13 +15,13 @@ class Lang_tag_val:
         return self.en_name if self._local_name is None else self._local_name
 
     @local_name.setter
-    def local_name(self, val: str | None):
+    def local_name(self, val: str | None) -> None:
         if val is not None and len(val) == 0:
             raise ValueError("The length of the name cannot be 0")
 
         self._local_name = val
 
-    def __init__(self, *, en_name: str, local_name: str | None = None):
+    def __init__(self, *, en_name: str, local_name: str | None = None) -> None:
         if len(en_name) == 0:
             raise ValueError("The length of the name cannot be 0")
 
@@ -165,7 +166,6 @@ class Lang_tag:
         is_allow_mismatch_language: bool = False,
     ) -> Self | None:
         """启用不完整匹配时，找到最匹配的第一项"""
-
         target_tags_tuple = tuple(target_tags)
         del target_tags
 
@@ -180,7 +180,7 @@ class Lang_tag:
 
         if self in matching_tags_tuple:
             return self
-        elif not is_incomplete_match:
+        if not is_incomplete_match:
             return None
 
         same_region_tuple = tuple(
@@ -206,10 +206,10 @@ class Lang_tag:
         str_tag: str,
     ) -> Self:
         """
-        #### 输入语言标签字符串，输出标签对象
+        输入语言标签字符串，输出标签对象
+
         e.g. zh-Hans-CN -> Self(Language.zh, Script.Hans, Region.CN)
         """
-
         from ..easyrip_mlang import gettext
 
         str_tag_list = str_tag.split("-")
@@ -219,13 +219,13 @@ class Lang_tag:
         region: Lang_tag_region = Lang_tag_region.Unknown
 
         for i, s in enumerate(str_tag_list[1:]):
-            if s in Lang_tag_script._member_map_.keys():
+            if s in Lang_tag_script._member_map_:
                 if i != 0:
                     raise ValueError(
                         gettext("The input language tag string format is illegal")
                     )
                 script = Lang_tag_script[s]
-            elif s in Lang_tag_region._member_map_.keys():
+            elif s in Lang_tag_region._member_map_:
                 region = Lang_tag_region[s]
 
         return cls(
@@ -266,7 +266,7 @@ class Global_lang_val:
 
         res_str_list: list[str] = [
             _local_name
-            if (_org_name := tag_list[0]) in Lang_tag_language._member_map_.keys()
+            if (_org_name := tag_list[0]) in Lang_tag_language._member_map_
             and (_local_name := Lang_tag_language[_org_name].value.local_name)
             else _org_name
         ]
@@ -274,9 +274,9 @@ class Global_lang_val:
         if tag_list_len >= 2:
             _org_name = tag_list[1]
 
-            if _org_name in Lang_tag_script._member_map_.keys():
+            if _org_name in Lang_tag_script.__members__:
                 _local_name = Lang_tag_script[_org_name].value.local_name
-            elif _org_name in Lang_tag_region._member_map_.keys():
+            elif _org_name in Lang_tag_region._member_map_:
                 _local_name = Lang_tag_region[_org_name].value.local_name
             else:
                 _local_name = _org_name
@@ -286,7 +286,7 @@ class Global_lang_val:
         if tag_list_len >= 3:
             _org_name = tag_list[2]
 
-            if _org_name in Lang_tag_region._member_map_.keys():
+            if _org_name in Lang_tag_region._member_map_:
                 _local_name = Lang_tag_region[_org_name].value.local_name
             else:
                 _local_name = _org_name

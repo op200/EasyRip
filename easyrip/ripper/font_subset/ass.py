@@ -168,7 +168,7 @@ class Styles:
     )
     data: list[Style_data] = field(default_factory=list[Style_data])
 
-    def flush_fmt_order_index(self):
+    def flush_fmt_order_index(self) -> None:
         for it in self.fmt_order:
             if index := next(
                 (i for i, v in enumerate(DEFAULT_STYLE_FMT_ORDER) if v == it), None
@@ -236,7 +236,7 @@ class Styles:
                 Encoding=int(style_tuple[self.fmt_index[Style_fmt_it.Encoding]]),
             )
         except ValueError as e:
-            raise Ass_generate_error(e)
+            raise Ass_generate_error from e
 
         return res
 
@@ -248,16 +248,14 @@ class Styles:
                 *(
                     "Style: "
                     + ",".join(
-                        (
-                            str(
-                                v
-                                if type(v := getattr(style, k.value)) is not float
-                                else int(v)
-                                if v == int(v)
-                                else v
-                            )
-                            for k in self.fmt_order
+                        str(
+                            v
+                            if type(v := getattr(style, k.value)) is not float
+                            else int(v)
+                            if v == int(v)
+                            else v
                         )
+                        for k in self.fmt_order
                     )
                     for style in self.data
                 ),
@@ -348,34 +346,33 @@ class Event_data:
                 result.append((False, "".join(current)))
             return result
 
-        else:
-            # 模式1: 不处理转义字符
-            current = list[str]()  # 当前累积的字符
-            is_in_tag = False  # 是否在标签内
+        # 模式1: 不处理转义字符
+        current = list[str]()  # 当前累积的字符
+        is_in_tag = False  # 是否在标签内
 
-            for char in text:
-                if is_in_tag is False:
-                    if char == "{":
-                        # 开始新标签，先保存当前累积的普通文本
-                        if current:
-                            result.append((False, "".join(current)))
-                            current = []
-                        current.append(char)
-                        is_in_tag = True
-                    else:
-                        current.append(char)  # 普通文本
-                else:
-                    current.append(char)  # 标签内容
-                    if char == "}":
-                        # 标签结束
-                        result.append((True, "".join(current)))
+        for char in text:
+            if is_in_tag is False:
+                if char == "{":
+                    # 开始新标签，先保存当前累积的普通文本
+                    if current:
+                        result.append((False, "".join(current)))
                         current = []
-                        is_in_tag = False
+                    current.append(char)
+                    is_in_tag = True
+                else:
+                    current.append(char)  # 普通文本
+            else:
+                current.append(char)  # 标签内容
+                if char == "}":
+                    # 标签结束
+                    result.append((True, "".join(current)))
+                    current = []
+                    is_in_tag = False
 
-            # 处理剩余部分
-            if current:
-                result.append((False, "".join(current)))
-            return result
+        # 处理剩余部分
+        if current:
+            result.append((False, "".join(current)))
+        return result
 
 
 DEFAULT_EVENT_FMT_ORDER = (
@@ -422,7 +419,7 @@ class Events:
     )
     data: list[Event_data] = field(default_factory=list[Event_data])
 
-    def flush_fmt_order_index(self):
+    def flush_fmt_order_index(self) -> None:
         for it in self.fmt_order:
             if index := next(
                 (i for i, v in enumerate(DEFAULT_EVENT_FMT_ORDER) if v == it), None
@@ -464,7 +461,7 @@ class Events:
                 Text=event_tuple[self.fmt_index[Event_fmt_it.Text]],
             )
         except ValueError as e:
-            raise Ass_generate_error(e)
+            raise Ass_generate_error from e
 
         return res
 
@@ -590,19 +587,19 @@ class Unknown_data:
 class Ass_generate_error(Exception):
     def __init__(
         self,
-        msg: str | object,
         *args: object,
         **kwargs: object,
     ) -> None:
+        msg = args[0]
         if isinstance(msg, str):
-            new_msg: str = gettext(msg, *args, is_format=True, **kwargs)
+            new_msg: str = gettext(msg, *args[1:], is_format=True, **kwargs)
             super().__init__(new_msg)
         else:
-            super().__init__(msg, *args)
+            super().__init__(msg, *args[1:])
 
 
 class Ass:
-    def __init__(self, path: str | Path):
+    def __init__(self, path: str | Path) -> None:
         path = Path(path)
         if not path.is_file():
             raise Ass_generate_error("Not a file: {}", path)
@@ -662,7 +659,7 @@ class Ass:
                                 map(Event_fmt_it.__getitem__, formats_tuple)
                             )
                         except ValueError as e:
-                            raise Ass_generate_error(e)
+                            raise Ass_generate_error from e
 
                         if len(format_order) != 10:
                             raise Ass_generate_error("Event Format len != 10")

@@ -12,7 +12,7 @@ from .easyrip_log import log
 BASE62 = string.digits + string.ascii_letters
 
 
-def change_title(title: str):
+def change_title(title: str) -> None:
     if os.name == "nt":
         os.system(f"title {title}")
     elif os.name == "posix":
@@ -21,15 +21,15 @@ def change_title(title: str):
 
 
 def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
-    new_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split(".")]
-    new_ver_add_num = [v for v in str(new_ver[-1]).split("+")]
+    new_ver = list(re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split("."))
+    new_ver_add_num = list(str(new_ver[-1]).split("+"))
     new_ver = (
         [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
         [int(v) for v in new_ver_add_num[1:]],
     )
 
-    old_ver = [v for v in re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split(".")]
-    old_ver_add_num = [v for v in str(old_ver[-1]).split("+")]
+    old_ver = list(re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split("."))
+    old_ver_add_num = list(str(old_ver[-1]).split("+"))
     old_ver = (
         [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
         [int(v) for v in old_ver_add_num[1:]],
@@ -39,7 +39,7 @@ def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
         for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
             if new > old:
                 return True
-            elif new < old:
+            if new < old:
                 break
         else:
             continue
@@ -66,17 +66,16 @@ def read_text(path: Path) -> str:
 
     if data.startswith(codecs.BOM_UTF8):
         return data.decode("utf-8-sig")
-    elif data.startswith(codecs.BOM_UTF16_LE):
+    if data.startswith(codecs.BOM_UTF16_LE):
         return data.decode("utf-16-le")
-    elif data.startswith(codecs.BOM_UTF16_BE):
+    if data.startswith(codecs.BOM_UTF16_BE):
         return data.decode("utf-16-be")
-    elif data.startswith(codecs.BOM_UTF32_LE):
+    if data.startswith(codecs.BOM_UTF32_LE):
         return data.decode("utf-32-le")
-    elif data.startswith(codecs.BOM_UTF32_BE):
+    if data.startswith(codecs.BOM_UTF32_BE):
         return data.decode("utf-32-be")
-    else:
-        log.warning("Can not find the BOM from {}. Defaulting to UTF-8", path)
-        return data.decode("utf-8")
+    log.warning("Can not find the BOM from {}. Defaulting to UTF-8", path)
+    return data.decode("utf-8")
 
 
 def uuencode_ssa(data: bytes) -> str:
@@ -84,7 +83,7 @@ def uuencode_ssa(data: bytes) -> str:
     line = list[str]()
     line_count: int = 0
 
-    def append_chars(chars: list[str]):
+    def append_chars(chars: list[str]) -> None:
         nonlocal line, line_count
         for c in chars:
             line.append(c)

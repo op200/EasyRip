@@ -1,7 +1,7 @@
 import re
+from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
-from typing import Iterable
 
 from ... import global_val
 from ...easyrip_log import log
@@ -20,8 +20,7 @@ from .font import Font, Font_type, get_font_path_from_registry, load_fonts, subs
 def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type:
     if bold:
         return Font_type.Bold_Italic if italic else Font_type.Bold
-    else:
-        return Font_type.Italic if italic else Font_type.Regular
+    return Font_type.Italic if italic else Font_type.Regular
 
 
 def subset(
@@ -65,7 +64,7 @@ def subset(
 
     family__affix: dict[str, str] = {}
 
-    def get_font_new_name(org_name: str):
+    def get_font_new_name(org_name: str) -> str:
         if org_name not in family__affix:
             family__affix[org_name] = f"__subset_{get_base62_time()}__"
         return family__affix[org_name] + org_name
@@ -287,31 +286,31 @@ def subset(
             _font = None
             match key[1]:
                 case Font_type.Regular:
-                    if (_k := (key[0], Font_type.Bold)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Italic)) in font_sign__font:
+                    if (
+                        (_k := (key[0], Font_type.Bold)) in font_sign__font
+                        or (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
+                        or (_k := (key[0], Font_type.Italic)) in font_sign__font
+                    ):
                         _font = font_sign__font[_k]
 
                 case Font_type.Bold:
-                    if (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Regular)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Italic)) in font_sign__font:
+                    if (
+                        (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
+                        or (_k := (key[0], Font_type.Regular)) in font_sign__font
+                        or (_k := (key[0], Font_type.Italic)) in font_sign__font
+                    ):
                         _font = font_sign__font[_k]
 
                 case Font_type.Italic:
-                    if (_k := (key[0], Font_type.Regular)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Bold)) in font_sign__font:
+                    if (_k := (key[0], Font_type.Regular)) in font_sign__font or (
+                        _k := (key[0], Font_type.Bold)
+                    ) in font_sign__font:
                         _font = font_sign__font[_k]
 
                 case Font_type.Bold_Italic:
-                    if (_k := (key[0], Font_type.Bold)) in font_sign__font:
-                        _font = font_sign__font[_k]
-                    elif (_k := (key[0], Font_type.Regular)) in font_sign__font:
+                    if (_k := (key[0], Font_type.Bold)) in font_sign__font or (
+                        _k := (key[0], Font_type.Regular)
+                    ) in font_sign__font:
                         _font = font_sign__font[_k]
 
             # 模糊字重也找不到字体
