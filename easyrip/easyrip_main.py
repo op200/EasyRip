@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tkinter as tk
+from collections.abc import Callable
 from datetime import datetime
 from multiprocessing import shared_memory
 from pathlib import Path
@@ -257,10 +258,12 @@ def run_ripper_list(
             create=True,
             size=_size,
         )
+        assert path_lock_shm.buf is not None
     except FileExistsError:
         _shm = shared_memory.SharedMemory(name=_name)
+        assert _shm.buf is not None
         _res: dict = json.loads(
-            bytes(_shm.buf[: len(_shm.buf)]).decode("utf-8").rstrip("\0")  # pyright: ignore[reportOptionalSubscript,reportArgumentType] # pylance bug
+            bytes(_shm.buf[: len(_shm.buf)]).decode("utf-8").rstrip("\0")
         )
         _shm.unlink()
         log.error(
@@ -277,15 +280,15 @@ def run_ripper_list(
                 "start_time": datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4],
             }
         ).encode("utf-8")
-        path_lock_shm.buf[: len(_data)] = _data  # pyright: ignore[reportOptionalSubscript] # pylance bug
+        path_lock_shm.buf[: len(_data)] = _data
 
     total: Final[int] = len(Ripper.ripper_list)
     warning_num: Final[int] = log.warning_num
     error_num: Final[int] = log.error_num
 
     if enable_multithreading:
-        threads = list[Thread]()
-        threads_return = dict[int, bool]()
+        threads: list[Thread] = []
+        threads_return: dict[int, bool] = {}
         progress_num: list[int] = [0]
 
         def _run_ripper_thread_target(key: int, ripper: Ripper, /) -> None:
@@ -332,7 +335,7 @@ def run_ripper_list(
         )
     if log.error_num > error_num:
         log.error("There are {} {} during run", log.error_num - error_num, "error")
-    Ripper.ripper_list = []
+    Ripper.ripper_list.clear()
     path_lock_shm.close()
 
     if shutdown_sec:
@@ -483,7 +486,7 @@ def run_command(command: list[str] | str) -> bool:
         case Cmd_type.list:
             match cmd_list[1]:
                 case "clear" | "clean":
-                    Ripper.ripper_list = []
+                    Ripper.ripper_list.clear()
                 case "del" | "pop":
                     try:
                         del Ripper.ripper_list[int(cmd_list[2]) - 1]
@@ -509,15 +512,14 @@ def run_command(command: list[str] | str) -> bool:
                             reverse=reverse,
                         )
                 case "":
-                    msg = f"Ripper list ({len(Ripper.ripper_list)}):"
-                    if Ripper.ripper_list:
-                        msg += "\n" + f"\n  {log.hr}\n".join(
-                            [
-                                f"  {i}.\n  {ripper}"
-                                for i, ripper in enumerate(Ripper.ripper_list, 1)
-                            ]
-                        )
-                    log.send(msg, is_format=False)
+                    log.send(
+                        f"Ripper list ({len(Ripper.ripper_list)}):"
+                        + f"\n {'─' * (shutil.get_terminal_size().columns - 2)}".join(
+                            f"\n  {i}.\n  {ripper}"
+                            for i, ripper in enumerate(Ripper.ripper_list, 1)
+                        ),
+                        is_format=False,
+                    )
                 case _:
                     try:
                         i1, i2 = int(cmd_list[1]), int(cmd_list[2])
@@ -710,12 +712,12 @@ def run_command(command: list[str] | str) -> bool:
 
         case _:
             input_pathname_org_list: list[str] = []
-            output_basename = None
-            output_dir = None
-            preset_name = None
+            output_basename: str | None = None
+            output_dir: str | None = None
+            preset_name: str | None = None
             option_map: dict[str, str] = {}
-            is_run = False
-            is_exit_when_run_finished = False
+            is_run: bool = False
+            is_exit_when_run_finished: bool = False
             shutdown_sec_str: str | None = None
             enable_multithreading: bool = False
 
@@ -812,19 +814,21 @@ def run_command(command: list[str] | str) -> bool:
                 for i, input_pathname in enumerate(input_pathname_org_list):
                     new_option_map = option_map.copy()
 
-                    _time = datetime.now()
+                    fmt_time = datetime.now()
 
-                    def _iterator_fmt_replace(match: re.Match[str]) -> str:
-                        s = match.group(1)
-                        match s:
-                            case str() as s if s.startswith("time:"):
-                                try:
-                                    return _time.strftime(s[5:])
-                                except Exception as e:
-                                    log.error(f"{e!r} {e}", deep=True)
-                                    return ""
-                            case _:
-                                try:
+                    def _create_iterator_fmt_replace(
+                        time: datetime, num: int
+                    ) -> Callable[[re.Match[str]], str]:
+                        def _iterator_fmt_replace(match: re.Match[str]) -> str:
+                            s = match.group(1)
+                            match s:
+                                case str() as s if s.startswith("time:"):
+                                    try:
+                                        return time.strftime(s[5:])
+                                    except Exception as e:
+                                        log.error(f"{e!r} {e}", deep=True)
+                                        return ""
+                                case _:
                                     d = {
                                         k: v
                                         for s1 in s.split(",")
@@ -833,33 +837,38 @@ def run_command(command: list[str] | str) -> bool:
                                     start = int(d.get("start", 0))
                                     padding = int(d.get("padding", 0))
                                     increment = int(d.get("increment", 1))
-                                    return str(start + i * increment).zfill(padding)
-                                except Exception as e:
-                                    log.error(f"{e!r} {e}", deep=True)
-                                    return ""
+                                    return str(start + num * increment).zfill(padding)
 
-                    if output_basename is None:
-                        new_output_basename = None
-                    else:
-                        new_output_basename = re.sub(
-                            r"\?\{([^}]*)\}",
-                            _iterator_fmt_replace,
-                            output_basename,
+                        return _iterator_fmt_replace
+
+                    try:
+                        new_output_basename = (
+                            None
+                            if output_basename is None
+                            else re.sub(
+                                r"\?\{([^}]*)\}",
+                                _create_iterator_fmt_replace(fmt_time, i),
+                                output_basename,
+                            )
                         )
 
-                    if chapters := option_map.get("chapters"):
-                        chapters = re.sub(
-                            r"\?\{([^}]*)\}",
-                            _iterator_fmt_replace,
-                            chapters,
-                        )
-
-                        if not Path(chapters).is_file():
-                            log.warning(
-                                "The '-chapters' file {} does not exist", chapters
+                        if chapters := option_map.get("chapters"):
+                            chapters = re.sub(
+                                r"\?\{([^}]*)\}",
+                                _create_iterator_fmt_replace(fmt_time, i),
+                                chapters,
                             )
 
-                        new_option_map["chapters"] = chapters
+                            if not Path(chapters).is_file():
+                                log.warning(
+                                    "The '-chapters' file {} does not exist", chapters
+                                )
+
+                            new_option_map["chapters"] = chapters
+
+                    except ValueError as e:
+                        log.error("Unsupported param: {}", e)
+                        return False
 
                     input_pathname_list: list[str] = input_pathname.split("?")
                     for path in input_pathname_list:

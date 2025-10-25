@@ -40,7 +40,7 @@ def translate_subtitles(
     if file_intersection_selector is not None:
         file_intersection_selector = set(file_intersection_selector)
 
-    file_list: Final = list[tuple[Path, str]]()
+    file_list: Final[list[tuple[Path, str]]] = []
     for f in directory.iterdir():
         if f.suffix not in {".ass", ".ssa", ".srt"} or (
             file_intersection_selector is not None
@@ -154,8 +154,8 @@ def translate_subtitles(
         case _:
             raise Exception(gettext("Unsupported language tag: {}", infix))
 
-    res_file_list: Final = list[tuple[Path, str]]()
-    res_file_dict: Final = dict[int, tuple[Path, str]]()
+    res_file_list: Final[list[tuple[Path, str]]] = []
+    res_file_dict: Final[dict[int, tuple[Path, str]]] = {}
 
     def _tr(index: int, path: Path, org_text: str) -> None:
         log.info('Start translating file "{}"', path)
@@ -168,7 +168,7 @@ def translate_subtitles(
         )
         log.info("Successfully translated: {}", path)
 
-    threads = list[Thread]()
+    threads: Final[list[Thread]] = []
 
     for i, f in enumerate(file_list):
         t = Thread(target=_tr, args=(i, f[0], f[1]), daemon=False)

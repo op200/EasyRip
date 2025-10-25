@@ -122,8 +122,6 @@ class log:
     error_num: int = 0
     send_num: int = 0
 
-    hr = "———————————————————————————————————"
-
     @classmethod
     def _do_log(
         cls,

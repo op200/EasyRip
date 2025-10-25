@@ -302,11 +302,11 @@ class Event_data:
 
     @staticmethod
     def parse_text(text: str, use_libass_spec: bool) -> list[tuple[bool, str]]:
-        result = list[tuple[bool, str]]()
+        result: list[tuple[bool, str]] = []
 
         if use_libass_spec:
             # 模式2: 处理转义字符（libass规范）
-            current = list[str]()  # 当前累积的字符
+            current: list[str] = []  # 当前累积的字符
             is_in_tag = False  # 是否在标签内
             is_escape_next = False  # 下一个字符是否转义
 
@@ -347,7 +347,7 @@ class Event_data:
             return result
 
         # 模式1: 不处理转义字符
-        current = list[str]()  # 当前累积的字符
+        current: list[str] = []  # 当前累积的字符
         is_in_tag = False  # 是否在标签内
 
         for char in text:

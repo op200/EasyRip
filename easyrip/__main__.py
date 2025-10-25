@@ -13,7 +13,7 @@ def run() -> NoReturn:
     log.debug(f"pycryptodome: v{Crypto.__version__}")
     log.debug(f"fonttools: v{fontTools.__version__}")
 
-    Ripper.ripper_list = []
+    Ripper.ripper_list.clear()
 
     if len(sys.argv) > 1:
         run_command(sys.argv[1:])

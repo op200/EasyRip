@@ -31,15 +31,12 @@ class Font:
     def __hash__(self) -> int:
         return hash(self.pathname)
 
-    def __del__(self) -> None:
-        self.font.close()
-
 
 def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     if isinstance(path, str):
         path = Path(path)
 
-    res_font_list: Final = list[Font]()
+    res_font_list: Final[list[Font]] = []
 
     for file in path.iterdir() if path.is_dir() else (path,):
         if not (
@@ -49,12 +46,11 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
             continue
 
         try:
-            if suffix == ".ttc":
-                fonts: list[TTFont] = list(TTCollection(file=file, lazy=lazy))
-            else:
-                fonts = [TTFont(file=file, lazy=lazy)]
-
-            for font in fonts:
+            for font in (
+                list[TTFont](TTCollection(file=file, lazy=lazy))
+                if suffix == ".ttc"
+                else [TTFont(file=file, lazy=lazy)]
+            ):
                 table_name: table__n_a_m_e | None = font.get("name")  # pyright: ignore[reportAssignmentType]
 
                 if table_name is None:
@@ -133,7 +129,7 @@ def get_font_path_from_registry(font_name: str) -> list[str]:
     :param font_name: 字体名称（如"Arial"）
     :return: 字体文件完整路径，如果找不到返回None
     """
-    res: Final = list[str]()
+    res: Final[list[str]] = []
     try:
         # 打开字体注册表键
         with winreg.OpenKey(
@@ -165,8 +161,8 @@ def get_font_path_from_registry(font_name: str) -> list[str]:
     return res
 
 
-def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]:
-    subset_font = deepcopy(font.font)
+def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
+    subset_font = deepcopy(font.font)  # TODO: 解决 deepcopy 导致文件占用
 
     # 检查哪些字符不存在于字体中
     cmap = subset_font.getBestCmap()
@@ -208,8 +204,8 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
     subsetter.subset(subset_font)
 
     # 修改 Name Record
-    affix_ascii = afffix.encode("ascii")
-    affix_utf16be = afffix.encode("utf-16-be")
+    affix_ascii = affix.encode("ascii")
+    affix_utf16be = affix.encode("utf-16-be")
     table_name: table__n_a_m_e = font.font.get("name")  # pyright: ignore[reportAssignmentType]
     subset_table_name: table__n_a_m_e = subset_font.get("name")  # pyright: ignore[reportAssignmentType]
     subset_table_name.names = list[NameRecord]()  # 重写 name table
@@ -236,4 +232,5 @@ def subset_font(font: Font, subset_str: str, afffix: str) -> tuple[TTFont, bool]
             )
         )
 
+    subset_font.close()
     return subset_font, not missing_chars

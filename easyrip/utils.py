@@ -6,6 +6,7 @@ import sys
 import time
 from itertools import zip_longest
 from pathlib import Path
+from typing import Final
 
 from .easyrip_log import log
 
@@ -50,7 +51,7 @@ def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
 def int_to_base62(num: int) -> str:
     if num == 0:
         return "0"
-    s = list[str]()
+    s: list[str] = []
     while num > 0:
         num, rem = divmod(num, 62)
         s.append(BASE62[rem])
@@ -79,8 +80,8 @@ def read_text(path: Path) -> str:
 
 
 def uuencode_ssa(data: bytes) -> str:
-    encoded = list[str]()
-    line = list[str]()
+    encoded: list[str] = []
+    line: list[str] = []
     line_count: int = 0
 
     def append_chars(chars: list[str]) -> None:
@@ -140,14 +141,14 @@ def uuencode_ssa(data: bytes) -> str:
 
 def uudecode_ssa(s: str) -> bytes:
     # 合并所有行并移除可能的空行
-    chars = []
+    chars: list[str] = []
     for line in s.splitlines():
         if line:  # 跳过空行
             chars.extend(line)
 
-    decoded = bytearray()
-    i = 0
-    n = len(chars)
+    decoded: Final[bytearray] = bytearray()
+    i: int = 0
+    n: int = len(chars)
 
     # 处理完整4字符组
     while i + 3 < n:

@@ -2,6 +2,7 @@ import re
 from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
+from typing import Final
 
 from ... import global_val
 from ...easyrip_log import log
@@ -254,9 +255,9 @@ def subset(
         subset_sub_dict[_ass_path_abs] = (output_dir / _ass_path.name, path_and_sub)
 
     # 加载 Font
-    fonts: list[Font] = []
+    fonts: Final[list[Font]] = []
     for _path in font_path_list:
-        fonts += load_fonts(_path)
+        fonts.extend(load_fonts(_path))
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
     for _font in fonts:

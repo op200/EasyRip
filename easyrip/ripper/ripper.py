@@ -9,7 +9,7 @@ from itertools import zip_longest
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Self, final
+from typing import Final, Self, final
 
 from .. import easyrip_web
 from ..easyrip_log import log
@@ -24,7 +24,7 @@ FF_REPORT_LOG_FILE = Path("FFReport.log")
 
 @final
 class Ripper:
-    ripper_list: list["Ripper"] = []
+    ripper_list: Final[list["Ripper"]] = []
 
     @classmethod
     def add_ripper(
@@ -195,7 +195,7 @@ class Ripper:
             self.preset_name = Ripper.PresetName.custom
             self.option = option
 
-        self._progress = dict[str, int | float]()
+        self._progress: dict[str, int | float] = {}
 
     def __str__(self) -> str:
         return (
@@ -479,7 +479,7 @@ class Ripper:
             case Ripper.PresetName.flac:
                 _ff_encode_str: str = ""
                 _flac_encode_str: str = ""
-                _mux_flac_input_list = list[str]()
+                _mux_flac_input_list: list[str] = []
                 # _mux_flac_map_str: str = ""
                 _del_flac_str: str = ""
 
@@ -900,8 +900,8 @@ class Ripper:
                 _output_dir = Path(self.output_dir) / basename
                 _output_dir.mkdir(parents=True, exist_ok=True)
 
-                _ass_list = list[Path]()
-                _other_sub_list = list[Path]()
+                _ass_list: list[Path] = []
+                _other_sub_list: list[Path] = []
 
                 for path in self.input_path_list:
                     if path.suffix == ".ass":
@@ -1186,7 +1186,7 @@ class Ripper:
                 log.info("-soft-sub list = {}", soft_sub_list)
 
                 # 临时翻译
-                add_tr_files = list[Path]()
+                add_tr_files: Final[list[Path]] = []
                 if translate_sub := self.option_map.get("translate-sub"):
                     _tr = translate_sub.split(":")
                     if len(_tr) != 2:

@@ -215,7 +215,7 @@ class TestRip(unittest.TestCase):
         else:
             self.fail("x265 options not found")
 
-        x265_options_dict = dict[str, str | None]()
+        x265_options_dict: dict[str, str | None] = {}
 
         for s in x265_options_str.split(" "):
             option = s.split("=")

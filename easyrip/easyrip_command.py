@@ -48,7 +48,7 @@ class Cmd_type_val:
 
     def to_doc(self) -> str:
         return (
-            f"{self.opt_str}\n{textwrap.indent(self.description, ' │', lambda _: True)}"
+            f"{self.opt_str}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
         )
 
 
