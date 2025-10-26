@@ -36,6 +36,8 @@ def subset(
     drop_unkow_data: bool = True,
     strict: bool = False,
 ) -> bool:
+    DEFAULT_STYLE_NAME = "Default"
+
     return_res: bool = True
 
     subset_sub_dict: dict[str, tuple[Path, Ass]] = {}
@@ -66,6 +68,11 @@ def subset(
     family__affix: dict[str, str] = {}
 
     def get_font_new_name(org_name: str) -> str:
+        """
+        输入字体名，返回子集化后的字体名
+
+        注意: 用这个函数生成子集化字体名，任何需要子集化的字体名都需要经过这个函数
+        """
         if org_name not in family__affix:
             family__affix[org_name] = f"__subset_{get_base62_time()}__"
         return family__affix[org_name] + org_name
@@ -97,19 +104,21 @@ def subset(
 
             # 获取每行的默认字体
             if event.Style not in style__font_sign:
-                if "Default" in style__font_sign:
+                if DEFAULT_STYLE_NAME in style__font_sign:
                     log.warning(
-                        "The style {} not in Styles. Defaulting to the style 'Default'",
+                        "The style '{}' not in Styles. Defaulting to the style '{}'",
                         event.Style,
+                        DEFAULT_STYLE_NAME,
                     )
-                    default_font_sign = style__font_sign["Default"]
+                    default_font_sign = style__font_sign[DEFAULT_STYLE_NAME]
                     return_res = not strict
                 else:
                     log.error(
-                        "The style {} and the style 'Default' not in Styles. Defaulting to the font 'Arial'",
+                        "The style '{}' and the style 'Default' not in Styles. Defaulting to the font 'Arial'",
                         event.Style,
                     )
                     default_font_sign = ("Arial", Font_type.Regular)
+                    get_font_new_name("Arial")
                     return_res = not strict
             else:
                 default_font_sign = style__font_sign[event.Style]
@@ -124,10 +133,10 @@ def subset(
                     tag_italic: str | None = None
 
                     for tag, value in re.findall(
-                        r"\\\s*(fn@|fn|b(?![a-zA-Z])|i(?![a-zA-Z])|r)([^\\}]*)", text
+                        r"\\\s*(fn|b(?![a-zA-Z])|i(?![a-zA-Z])|r)([^\\}]*)", text
                     ):
                         match tag:
-                            case "fn@" | "fn":
+                            case "fn":
                                 tag_fn = value
                             case "b":
                                 tag_bold = value
@@ -153,15 +162,13 @@ def subset(
                             case "":
                                 new_fontname = default_font_sign[0]
                             case _:
-                                new_fontname = _tag_fn
+                                _is_vertical: bool = _tag_fn[0] == "@"
+                                new_fontname = _tag_fn[1:] if _is_vertical else _tag_fn
 
                                 # 修改
                                 text = text.replace(
                                     f"\\fn{tag_fn}",
-                                    f"\\fn{get_font_new_name(new_fontname)}",
-                                ).replace(
-                                    f"\\fn@{tag_fn}",
-                                    f"\\fn@{get_font_new_name(new_fontname)}",
+                                    f"\\fn{'@' if _is_vertical else ''}{get_font_new_name(new_fontname)}",
                                 )
 
                     if tag_bold is not None:
@@ -174,7 +181,7 @@ def subset(
                                 new_bold = True
                             case _:
                                 log.error(
-                                    "Undefined behavior: {} in line {} in file {}",
+                                    "Illegal format: '{}' in file \"{}\" in line: {}",
                                     "\\b",
                                     event.Text,
                                     _ass_path,
@@ -191,7 +198,7 @@ def subset(
                                 new_italic = True
                             case _:
                                 log.error(
-                                    "Undefined behavior: {} in line {} in file {}",
+                                    "Illegal format: '{}' in line '{}' in file {}",
                                     "\\i",
                                     event.Text,
                                     _ass_path,

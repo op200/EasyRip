@@ -47,9 +47,7 @@ class Cmd_type_val:
         return hash(self.name)
 
     def to_doc(self) -> str:
-        return (
-            f"{self.opt_str}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
-        )
+        return f"{self.opt_str}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
 
 
 class Cmd_type(enum.Enum):
@@ -512,7 +510,7 @@ class Opt_type(enum.Enum):
         "-hevc-strict",
         opt_str="-hevc-strict <0 | 1>",
         description=(
-            "When the resolution >= 4k, close HME, and auto reduce the --ref\n"  # .
+            "When the resolution >= 4K, close HME, and auto reduce the -ref\n"  # .
             "Default: 1"
         ),
     )
