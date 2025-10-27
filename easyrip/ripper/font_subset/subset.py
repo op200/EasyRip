@@ -88,14 +88,18 @@ def subset(
         # Styles
         style__font_sign: dict[str, tuple[str, Font_type]] = {}
         for style in path_and_sub.styles.data:
+            _is_vertical: bool = style.Fontname[0] == "@"
+            _font_name: str = style.Fontname[1:] if _is_vertical else style.Fontname
             # 获取
             style__font_sign[style.Name] = (
-                style.Fontname,
+                _font_name,
                 _bold_italic_to_font_type(style.Bold, style.Italic),
             )
 
             # 修改
-            style.Fontname = get_font_new_name(style.Fontname)
+            style.Fontname = (
+                f"{'@' if _is_vertical else ''}{get_font_new_name(_font_name)}"
+            )
 
         # Events
         for event in path_and_sub.events.data:
