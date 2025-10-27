@@ -269,6 +269,10 @@ LANG_MAP: dict[str, str] = {
         "当分辨率 >= 4K 时, 关闭 HME, 并自动降低 -ref\n"  # .
         "默认: 1"
     ),
+    Opt_type._multithreading.value.description: (
+        "使用多线程执行 Ripper list, 适合性能占用低的情况\n"  # .
+        "例如 -p subset 或 -p copy"
+    ),
     # utils
     "{} has new version {}. You can download it: {}": "检测到 {} 有新版本 {}。可在此下载: {}",
     "{} not found, download it: {}": "没找到 {}, 在此下载: {}",
@@ -323,9 +327,8 @@ LANG_MAP: dict[str, str] = {
     "FFmpeg report: {}": "FFmpeg 报告: {}",
     "{} not found. Skip it": "没找到 {}。默认跳过",
     'The font "{}" does not contain these characters: {}': '字体 "{}" 不包含字符: {}',
-    # ripper.subset
     "The style '{}' not in Styles. Defaulting to the style '{}'": "样式 '{}' 不在 Styles 中。默认使用样式 '{}'",
-    "The style '{}' and the style 'Default' not in Styles. Defaulting to the font 'Arial'": "样式 '{}' 和样式 'Default' 都不在 Styles 中。默认使用字体 'Arial'",
+    "The style '{}' and the style 'Default' not in Styles. Defaulting to no font": "样式 '{}' 和样式 'Default' 都不在 Styles 中。默认不使用字体",
     "The \\r style '{}' not in Styles": "\\r 样式 '{}' 不在 Styles 中",
     "Illegal format: '{}' in file \"{}\" in line: {}": "非法格式: '{}' 在文件 \"{}\" 的此行: {}",
     # web
@@ -361,4 +364,5 @@ LANG_MAP: dict[str, str] = {
     # 通用
     "Run {} failed": "执行 {} 失败",
     "Unknown error": "未知错误",
+    "'{}' execution failed: {}": "'{}' 执行失败: {}",
 }

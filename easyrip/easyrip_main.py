@@ -228,12 +228,21 @@ if os.name == "nt":
         log.warning("Windows DPI Aware failed")
 
 
-def file_dialog(initialdir=None):  # noqa: ANN202
+def file_dialog(
+    *,
+    is_askdir: bool = False,
+    initialdir=None,
+) -> tuple[str, ...]:
     tkRoot = tk.Tk()
+
     tkRoot.withdraw()
-    file_paths = filedialog.askopenfilenames(initialdir=initialdir)
+    if is_askdir:
+        file_paths = (filedialog.askdirectory(initialdir=initialdir),)
+    else:
+        file_paths = filedialog.askopenfilenames(initialdir=initialdir)
+
     tkRoot.destroy()
-    return file_paths
+    return file_paths if file_paths else ()
 
 
 def run_ripper_list(
@@ -449,24 +458,38 @@ def run_command(command: list[str] | str) -> bool:
             sys.exit()
 
         case Cmd_type.cd | Cmd_type.mediainfo:
-            _path = None
+            _path_tuple: tuple[str, ...] | None = None
 
-            if isinstance(command, str):
-                _path = command.split(" ", maxsplit=1)
-                _path = None if len(_path) <= 1 else _path[1].strip('"').strip("'")
+            match cmd_list[1]:
+                case "fd" | "cfd" as fd_param:
+                    if easyrip_web.http_server.Event.is_run_command:
+                        log.error("Disable the use of '{}' on the web", fd_param)
+                        return False
+                    _path_tuple = file_dialog(
+                        is_askdir=cmd_type is Cmd_type.cd,
+                        initialdir=os.getcwd() if fd_param == "cfd" else None,
+                    )
+                case _:
+                    if isinstance(command, str):
+                        _path = command.split(" ", maxsplit=1)
+                        _path_tuple = (
+                            None
+                            if len(_path) <= 1
+                            else tuple(_path[1].strip('"').strip("'").split("?"))
+                        )
 
-            if _path is None:
-                _path = cmd_list[1]
+                    if _path_tuple is None:
+                        _path_tuple = tuple(cmd_list[1].split("?"))
 
             match cmd_type:
                 case Cmd_type.cd:
                     try:
-                        os.chdir(_path)
+                        os.chdir(_path_tuple[0])
                     except OSError as e:
                         log.error(e)
                 case Cmd_type.mediainfo:
-                    mediainfo = Media_info.from_path(_path)
-                    log.send(mediainfo)
+                    for _path in _path_tuple:
+                        log.send(f"{_path}: {Media_info.from_path(_path)}")
 
         case Cmd_type.dir:
             files = os.listdir(os.getcwd())
@@ -739,7 +762,9 @@ def run_command(command: list[str] | str) -> bool:
                                     )
                                     return False
                                 input_pathname_org_list += file_dialog(
-                                    os.getcwd() if fd_param == "cfd" else None
+                                    initialdir=(
+                                        os.getcwd() if fd_param == "cfd" else None
+                                    )
                                 )
                             case _:
                                 input_pathname_org_list += [

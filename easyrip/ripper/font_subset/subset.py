@@ -4,9 +4,11 @@ from io import BytesIO
 from pathlib import Path
 from typing import Final
 
+import fontTools
+
 from ... import global_val
 from ...easyrip_log import log
-from ...utils import get_base62_time
+from ...utils import get_base62_time, non_ascii_str_len
 from .ass import (
     Ass,
     Attach_type,
@@ -113,12 +115,11 @@ def subset(
                     default_font_sign = style__font_sign[DEFAULT_STYLE_NAME]
                     return_res = not strict
                 else:
-                    log.error(
-                        "The style '{}' and the style 'Default' not in Styles. Defaulting to the font 'Arial'",
+                    log.warning(
+                        "The style '{}' and the style 'Default' not in Styles. Defaulting to no font",
                         event.Style,
                     )
-                    default_font_sign = ("Arial", Font_type.Regular)
-                    get_font_new_name("Arial")
+                    default_font_sign = ("", Font_type.Regular)
                     return_res = not strict
             else:
                 default_font_sign = style__font_sign[event.Style]
@@ -210,7 +211,7 @@ def subset(
                         Font_type((new_bold, new_italic)),
                     )
 
-                else:
+                elif current_font_sign[0]:  # 空字符串为不使用字体
                     add_text = re.sub(r"\\[nN]", "", text).replace("\\h", "\u00a0")
 
                     if current_font_sign not in font_sign__subset_str:
@@ -232,31 +233,33 @@ def subset(
             event.Text = new_text
 
         # 修改子集化后的字幕
+        family__affix_k_max_na_len: int = max(
+            map(non_ascii_str_len, family__affix.keys())
+        )
         path_and_sub.script_info.data = [
             Script_info_data(
-                raw_str=f"; ---------- Font Subset by {global_val.PROJECT_TITLE} ----------"
-            ),
-            *(
-                Script_info_data(raw_str=f'Font Subset Mapping: "{v}{k}"   ->   "{k}"')
-                for k, v in family__affix.items()
+                raw_str=f"Font Subset Info: {global_val.PROJECT_TITLE} & {fontTools.__name__} v{fontTools.__version__}"
             ),
             Script_info_data(
                 raw_str=f"Font Subset Setting: {
                     '  '.join(
                         f'{k} {v}'
                         for k, v in {
-                            '-subset-font-in-sub': '1' if font_in_sub else '0',
-                            '-subset-use-win-font': '1' if use_win_font else '0',
-                            '-subset-use-libass-spec': '1' if use_libass_spec else '0',
-                            '-subset-drop-non-render': '1' if drop_non_render else '0',
-                            '-subset-drop-unkow-data': '1' if drop_unkow_data else '0',
-                            '-subset-strict': '1' if strict else '0',
+                            '-subset-font-in-sub': str(int(font_in_sub)),
+                            '-subset-use-win-font': str(int(use_win_font)),
+                            '-subset-use-libass-spec': str(int(use_libass_spec)),
+                            '-subset-drop-non-render': str(int(drop_non_render)),
+                            '-subset-drop-unkow-data': str(int(drop_unkow_data)),
+                            '-subset-strict': str(int(strict)),
                         }.items()
                     )
                 }"
             ),
-            Script_info_data(
-                raw_str=f"; ---------- {'Font Subset End':^{len(global_val.PROJECT_TITLE) + 20}} ----------"
+            *(
+                Script_info_data(
+                    raw_str=f'Font Subset Mapping: {f'"{k}"':<{2 + family__affix_k_max_na_len - (non_ascii_str_len(k) - len(k))}}   -->   "{v}{k}"'
+                )
+                for k, v in family__affix.items()
             ),
         ] + path_and_sub.script_info.data
         subset_sub_dict[_ass_path_abs] = (output_dir / _ass_path.name, path_and_sub)
@@ -375,8 +378,7 @@ def subset(
                 _suffix = "otf" if key.font.sfntVersion == "OTTO" else "ttf"
                 break
         else:
-            # return_res = False
-            raise RuntimeError("No font name")
+            raise AssertionError("No font name")
 
         if font_in_sub:
             for org_path_abs, s in val.items():

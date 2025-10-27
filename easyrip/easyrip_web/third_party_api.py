@@ -73,13 +73,19 @@ class zhconvert:
 class github:
     @staticmethod
     def get_release_ver(release_api_url: str) -> str | None:
+        from ..easyrip_log import log
+
         req = urllib.request.Request(release_api_url)
 
         try:
             with urllib.request.urlopen(req) as response:
                 data = json.loads(response.read().decode("utf-8"))
                 return data.get("tag_name")
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(
+                "'{}' execution failed: {}",
+                f"{github.__name__}.{github.get_release_ver.__name__}",
+                e,
+            )
 
         return None

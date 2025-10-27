@@ -103,7 +103,7 @@ class Cmd_type(enum.Enum):
     )
     cd = Cmd_type_val(
         "cd",
-        opt_str="cd <string>",
+        opt_str="cd <<path> | 'fd' | 'cfd'>",
         description="Change current working directory",
     )
     dir = Cmd_type_val(
@@ -196,7 +196,7 @@ class Cmd_type(enum.Enum):
     )
     mediainfo = Cmd_type_val(
         "mediainfo",
-        opt_str="mediainfo <path>",
+        opt_str="mediainfo <<path> | 'fd' | 'cfd'>",
         description="Get the media info by the Media_info class",
     )
     Option = Cmd_type_val(
@@ -224,7 +224,7 @@ class Cmd_type(enum.Enum):
 class Opt_type(enum.Enum):
     _i = Cmd_type_val(
         "-i",
-        opt_str="-i <string[::string[?string...]...] | 'fd' | 'cfd'>",
+        opt_str="-i <<path>[::<path>[?<path>...]...] | 'fd' | 'cfd'>",
         description=(
             "Input files' pathname or enter 'fd' to use file dialog, 'cfd' to open from the current directory\n"
             "In some cases, it is allowed to use '?' as a delimiter to input multiple into a Ripper, for example, 'preset subset' allows multiple ASS inputs"
@@ -232,12 +232,12 @@ class Opt_type(enum.Enum):
     )
     _o_dir = Cmd_type_val(
         "-o:dir",
-        opt_str="-o:dir <string>",
+        opt_str="-o:dir <path>",
         description="Destination directory of the output file",
     )
     _o = Cmd_type_val(
         "-o",
-        opt_str="-o <string>",
+        opt_str="-o <path>",
         description=(
             "Output file basename's prefix\n"
             "Allow iterators and time formatting for multiple inputs\n"
@@ -296,7 +296,7 @@ class Opt_type(enum.Enum):
     )
     _sub = Cmd_type_val(
         "-sub",
-        opt_str="-sub <string | 'auto' | 'auto:...'>",
+        opt_str="-sub <<path> | 'auto' | 'auto:...'>",
         description=(
             "It use libass to make hard subtitle, input a subtitle pathname when you need hard subtitle\n"
             'It can add multiple subtitles by "::"\n'
@@ -308,17 +308,17 @@ class Opt_type(enum.Enum):
     )
     _only_mux_sub_path = Cmd_type_val(
         "-only-mux-sub-path",
-        opt_str="-only-mux-sub-path <string>",
+        opt_str="-only-mux-sub-path <path>",
         description="All subtitles and fonts in this path will be muxed",
     )
     _soft_sub = Cmd_type_val(
         "-soft-sub",
-        opt_str="-soft-sub <string[?string...] | 'auto' | 'auto:...'>",
+        opt_str="-soft-sub <<path>[?<path>...] | 'auto' | 'auto:...'>",
         description="Mux ASS subtitles in MKV with subset",
     )
     _subset_font_dir = Cmd_type_val(
         "-subset-font-dir",
-        opt_str="-subset-font-dir <string[?string...]>",
+        opt_str="-subset-font-dir <<path>[?<path>...]>",
         description=(
             "The fonts directory when subset\n"
             'Default: Prioritize the current directory, followed by folders containing "font" (case-insensitive) within the current directory'
@@ -421,7 +421,7 @@ class Opt_type(enum.Enum):
     )
     _chapters = Cmd_type_val(
         "-chapters",
-        opt_str="-chapters <string>",
+        opt_str="-chapters <path>",
         description=(
             "Specify the chapters file to add\n"
             "Supports the same iteration syntax as '-o'"
@@ -512,6 +512,14 @@ class Opt_type(enum.Enum):
         description=(
             "When the resolution >= 4K, close HME, and auto reduce the -ref\n"  # .
             "Default: 1"
+        ),
+    )
+    _multithreading = Cmd_type_val(
+        "-multithreading",
+        opt_str="-multithreading <0 | 1>",
+        description=(
+            "Use multi-threading to run Ripper list, suitable for situations with low performance occupancy\n"
+            "e.g. -p subset or -p copy"
         ),
     )
 

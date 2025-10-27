@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 from ctypes import wintypes
+from typing import TextIO
 
 from . import easyrip_web
 from .easyrip_mlang import gettext
@@ -14,8 +15,7 @@ __all__ = ["Event", "log"]
 
 class Event:
     @staticmethod
-    def append_http_server_log_queue(message: tuple[str, str, str]) -> None:
-        pass
+    def append_http_server_log_queue(message: tuple[str, str, str]) -> None: ...
 
 
 class log:
@@ -129,6 +129,9 @@ class log:
         mode: LogMode,
         message: object,
         *fmt_args: object,
+        stream: TextIO,
+        print_level: LogLevel,
+        write_level: LogLevel,
         is_format: bool = True,
         is_deep: bool = False,
         is_server: bool = False,
@@ -162,6 +165,7 @@ class log:
                     print(
                         f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
+                        file=stream,
                     )
 
                 if (
@@ -184,6 +188,7 @@ class log:
                     print(
                         f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
+                        file=stream,
                     )
 
                 if (
@@ -206,7 +211,7 @@ class log:
                     print(
                         f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
-                        file=sys.stderr,
+                        file=stream,
                     )
 
                 if (
@@ -229,7 +234,7 @@ class log:
                     print(
                         f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
-                        file=sys.stderr,
+                        file=stream,
                     )
 
                 if (
@@ -250,6 +255,7 @@ class log:
                         print(
                             f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m\n",
                             end="",
+                            file=stream,
                         )
 
                     if cls.write_level.value <= cls.LogLevel.send.value:
@@ -272,17 +278,22 @@ class log:
         message: object,
         /,
         *fmt_args: object,
+        stream: None | TextIO = None,
+        print_level: LogLevel = LogLevel.debug,
+        write_level: LogLevel = LogLevel.debug,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
-        level: LogLevel = LogLevel.debug,
         **fmt_kwargs: object,
     ) -> None:
         cls._do_log(
-            level,
+            log.LogLevel.debug,
             mode,
             message,
             *fmt_args,
+            stream=sys.stderr if stream is None else stream,
+            print_level=print_level,
+            write_level=write_level,
             is_format=is_format,
             is_deep=deep,
             is_server=False,
@@ -296,17 +307,22 @@ class log:
         message: object,
         /,
         *fmt_args: object,
+        stream: None | TextIO = None,
+        print_level: LogLevel = LogLevel.info,
+        write_level: LogLevel = LogLevel.info,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
-        level: LogLevel = LogLevel.info,
         **fmt_kwargs: object,
     ) -> None:
         cls._do_log(
-            level,
+            log.LogLevel.info,
             mode,
             message,
             *fmt_args,
+            stream=sys.stderr if stream is None else stream,
+            print_level=print_level,
+            write_level=write_level,
             is_format=is_format,
             is_deep=deep,
             is_server=False,
@@ -320,17 +336,22 @@ class log:
         message: object,
         /,
         *fmt_args: object,
+        stream: None | TextIO = None,
+        print_level: LogLevel = LogLevel.warning,
+        write_level: LogLevel = LogLevel.warning,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
-        level: LogLevel = LogLevel.warning,
         **fmt_kwargs: object,
     ) -> None:
         cls._do_log(
-            level,
+            log.LogLevel.warning,
             mode,
             message,
             *fmt_args,
+            stream=sys.stderr if stream is None else stream,
+            print_level=print_level,
+            write_level=write_level,
             is_format=is_format,
             is_deep=deep,
             is_server=False,
@@ -344,17 +365,22 @@ class log:
         message: object,
         /,
         *fmt_args: object,
+        stream: None | TextIO = None,
+        print_level: LogLevel = LogLevel.error,
+        write_level: LogLevel = LogLevel.error,
         is_format: bool = True,
         deep: bool = False,
         mode: LogMode = LogMode.normal,
-        level: LogLevel = LogLevel.error,
         **fmt_kwargs: object,
     ) -> None:
         cls._do_log(
-            level,
+            log.LogLevel.error,
             mode,
             message,
             *fmt_args,
+            stream=sys.stderr if stream is None else stream,
+            print_level=print_level,
+            write_level=write_level,
             is_format=is_format,
             is_deep=deep,
             is_server=False,
@@ -368,18 +394,23 @@ class log:
         message: object,
         /,
         *fmt_args: object,
+        stream: None | TextIO = None,
+        print_level: LogLevel = LogLevel.send,
+        write_level: LogLevel = LogLevel.send,
         is_format: bool = True,
         mode: LogMode = LogMode.normal,
         is_server: bool = False,
         http_send_header: str = "",
-        level: LogLevel = LogLevel.send,
         **fmt_kwargs: object,
     ) -> None:
         cls._do_log(
-            level,
+            log.LogLevel.send,
             mode,
             message,
             *fmt_args,
+            stream=sys.stderr if stream is None else stream,
+            print_level=print_level,
+            write_level=write_level,
             is_format=is_format,
             is_deep=False,
             is_server=is_server,

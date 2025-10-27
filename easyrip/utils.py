@@ -184,3 +184,8 @@ def uudecode_ssa(s: str) -> bytes:
 
 def time_str_to_sec(s: str) -> float:
     return sum(float(t) * 60**i for i, t in enumerate(s.split(":")[::-1]))
+
+
+def non_ascii_str_len(s: str) -> int:
+    """非 ASCII 字符算作 2 宽度"""
+    return sum(2 - int(ord(c) < 256) for c in s)
