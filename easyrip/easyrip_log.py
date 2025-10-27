@@ -91,6 +91,7 @@ class log:
             cls.write_html_log("</div></div></div>")
 
     class LogLevel(enum.Enum):
+        _detail = enum.auto()
         debug = enum.auto()
         send = enum.auto()
         info = enum.auto()
@@ -161,6 +162,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_write
                     and cls.print_level.value <= cls.LogLevel.debug.value
+                    and cls.print_level.value <= print_level.value
                 ):
                     print(
                         f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m\n",
@@ -171,6 +173,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_print
                     and cls.write_level.value <= cls.LogLevel.debug.value
+                    and cls.write_level.value <= write_level.value
                 ):
                     cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:green;">[DEBUG] {message}</span></div>'
@@ -184,6 +187,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_write
                     and cls.print_level.value <= cls.LogLevel.info.value
+                    and cls.print_level.value <= print_level.value
                 ):
                     print(
                         f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m\n",
@@ -194,6 +198,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_print
                     and cls.write_level.value <= cls.LogLevel.info.value
+                    and cls.write_level.value <= write_level.value
                 ):
                     cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
@@ -207,6 +212,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_write
                     and cls.print_level.value <= cls.LogLevel.warning.value
+                    and cls.print_level.value <= print_level.value
                 ):
                     print(
                         f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m\n",
@@ -217,6 +223,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_print
                     and cls.write_level.value <= cls.LogLevel.warning.value
+                    and cls.write_level.value <= write_level.value
                 ):
                     cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
@@ -230,6 +237,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_write
                     and cls.print_level.value <= cls.LogLevel.error.value
+                    and cls.print_level.value <= print_level.value
                 ):
                     print(
                         f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m\n",
@@ -240,6 +248,7 @@ class log:
                 if (
                     mode != cls.LogMode.only_print
                     and cls.write_level.value <= cls.LogLevel.error.value
+                    and cls.write_level.value <= write_level.value
                 ):
                     cls.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
@@ -251,14 +260,22 @@ class log:
                 cls.send_num += 1
 
                 if is_server or easyrip_web.http_server.Event.is_run_command:
-                    if cls.print_level.value <= cls.LogLevel.send.value:
+                    if (
+                        mode != cls.LogMode.only_write
+                        and cls.print_level.value <= cls.LogLevel.send.value
+                        and cls.print_level.value <= print_level.value
+                    ):
                         print(
                             f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m\n",
                             end="",
                             file=stream,
                         )
 
-                    if cls.write_level.value <= cls.LogLevel.send.value:
+                    if (
+                        mode != cls.LogMode.only_print
+                        and cls.write_level.value <= cls.LogLevel.send.value
+                        and cls.write_level.value <= write_level.value
+                    ):
                         cls.write_html_log(
                             f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
@@ -278,7 +295,7 @@ class log:
         message: object,
         /,
         *fmt_args: object,
-        stream: None | TextIO = None,
+        stream: TextIO = sys.stderr,
         print_level: LogLevel = LogLevel.debug,
         write_level: LogLevel = LogLevel.debug,
         is_format: bool = True,
@@ -291,7 +308,7 @@ class log:
             mode,
             message,
             *fmt_args,
-            stream=sys.stderr if stream is None else stream,
+            stream=stream,
             print_level=print_level,
             write_level=write_level,
             is_format=is_format,
@@ -307,7 +324,7 @@ class log:
         message: object,
         /,
         *fmt_args: object,
-        stream: None | TextIO = None,
+        stream: TextIO = sys.stderr,
         print_level: LogLevel = LogLevel.info,
         write_level: LogLevel = LogLevel.info,
         is_format: bool = True,
@@ -320,7 +337,7 @@ class log:
             mode,
             message,
             *fmt_args,
-            stream=sys.stderr if stream is None else stream,
+            stream=stream,
             print_level=print_level,
             write_level=write_level,
             is_format=is_format,
@@ -336,7 +353,7 @@ class log:
         message: object,
         /,
         *fmt_args: object,
-        stream: None | TextIO = None,
+        stream: TextIO = sys.stderr,
         print_level: LogLevel = LogLevel.warning,
         write_level: LogLevel = LogLevel.warning,
         is_format: bool = True,
@@ -349,7 +366,7 @@ class log:
             mode,
             message,
             *fmt_args,
-            stream=sys.stderr if stream is None else stream,
+            stream=stream,
             print_level=print_level,
             write_level=write_level,
             is_format=is_format,
@@ -365,7 +382,7 @@ class log:
         message: object,
         /,
         *fmt_args: object,
-        stream: None | TextIO = None,
+        stream: TextIO = sys.stderr,
         print_level: LogLevel = LogLevel.error,
         write_level: LogLevel = LogLevel.error,
         is_format: bool = True,
@@ -378,7 +395,7 @@ class log:
             mode,
             message,
             *fmt_args,
-            stream=sys.stderr if stream is None else stream,
+            stream=stream,
             print_level=print_level,
             write_level=write_level,
             is_format=is_format,
@@ -394,7 +411,7 @@ class log:
         message: object,
         /,
         *fmt_args: object,
-        stream: None | TextIO = None,
+        stream: TextIO = sys.stdout,
         print_level: LogLevel = LogLevel.send,
         write_level: LogLevel = LogLevel.send,
         is_format: bool = True,
@@ -408,7 +425,7 @@ class log:
             mode,
             message,
             *fmt_args,
-            stream=sys.stderr if stream is None else stream,
+            stream=stream,
             print_level=print_level,
             write_level=write_level,
             is_format=is_format,

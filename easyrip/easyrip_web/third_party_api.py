@@ -86,6 +86,7 @@ class github:
                 "'{}' execution failed: {}",
                 f"{github.__name__}.{github.get_release_ver.__name__}",
                 e,
+                print_level=log.LogLevel._detail,
             )
 
         return None
