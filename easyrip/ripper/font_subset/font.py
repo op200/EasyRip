@@ -31,6 +31,9 @@ class Font:
     def __hash__(self) -> int:
         return hash(self.pathname)
 
+    def __del__(self) -> None:
+        self.font.close()
+
 
 def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     if isinstance(path, str):
@@ -162,7 +165,7 @@ def get_font_path_from_registry(font_name: str) -> list[str]:
 
 
 def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
-    subset_font = deepcopy(font.font)  # TODO: 解决 deepcopy 导致文件占用
+    subset_font = deepcopy(font.font)
 
     # 检查哪些字符不存在于字体中
     cmap = subset_font.getBestCmap()

@@ -151,6 +151,7 @@ def subset(
                                 if value in style__font_sign:
                                     current_font_sign = style__font_sign[value]
                                 else:
+                                    # 空为还原样式, 非样式表内样式名效果同空, 但发出不规范警告
                                     current_font_sign = default_font_sign
                                     if value != "":
                                         log.warning(
@@ -187,9 +188,9 @@ def subset(
                             case _:
                                 log.error(
                                     "Illegal format: '{}' in file \"{}\" in line: {}",
-                                    "\\b",
-                                    event.Text,
+                                    f"\\b{tag_bold}",
                                     _ass_path,
+                                    event.Text,
                                 )
                                 return_res = not strict
 
@@ -203,10 +204,10 @@ def subset(
                                 new_italic = True
                             case _:
                                 log.error(
-                                    "Illegal format: '{}' in line '{}' in file {}",
-                                    "\\i",
-                                    event.Text,
+                                    "Illegal format: '{}' in file \"{}\" in line: {}",
+                                    f"\\i{tag_italic}",
                                     _ass_path,
+                                    event.Text,
                                 )
                                 return_res = not strict
 
@@ -249,12 +250,12 @@ def subset(
                     '  '.join(
                         f'{k} {v}'
                         for k, v in {
-                            '-subset-font-in-sub': str(int(font_in_sub)),
-                            '-subset-use-win-font': str(int(use_win_font)),
-                            '-subset-use-libass-spec': str(int(use_libass_spec)),
-                            '-subset-drop-non-render': str(int(drop_non_render)),
-                            '-subset-drop-unkow-data': str(int(drop_unkow_data)),
-                            '-subset-strict': str(int(strict)),
+                            '-subset-font-in-sub': '1' if font_in_sub else '0',
+                            '-subset-use-win-font': '1' if use_win_font else '0',
+                            '-subset-use-libass-spec': '1' if use_libass_spec else '0',
+                            '-subset-drop-non-render': '1' if drop_non_render else '0',
+                            '-subset-drop-unkow-data': '1' if drop_unkow_data else '0',
+                            '-subset-strict': '1' if strict else '0',
                         }.items()
                     )
                 }"
@@ -435,5 +436,9 @@ def subset(
                     drop_non_render=drop_non_render, drop_unkow_data=drop_unkow_data
                 )
             )
+
+    # 释放文件占用
+    for font in font_sign__font.values():
+        font.__del__()
 
     return return_res

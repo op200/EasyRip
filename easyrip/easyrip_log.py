@@ -10,7 +10,7 @@ from typing import TextIO
 from . import easyrip_web
 from .easyrip_mlang import gettext
 
-__all__ = ["Event", "log"]
+__all__ = ["log"]
 
 
 class Event:
