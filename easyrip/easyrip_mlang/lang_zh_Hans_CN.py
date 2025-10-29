@@ -16,8 +16,8 @@ LANG_MAP: dict[str, str] = {
     # doc
     "Version": "版本",
     "Help": "帮助",
-    "You can input command or use command-line arguments to run.": "输入命令或使用命令行传参以运行。",
-    "Commands": "命令",
+    "Enter '<cmd> [<param> ...]' to execute Easy Rip commands or any commands that exist in environment.\nOr enter '<option> <param> [<option> <param> ...]' to add Ripper.": "键入 '<命令> [<参数> ...]' 以执行 Easy Rip 命令或任何环境中存在的命令。\n或者键入 '<选项> <参数> [<选项> <参数> ...]' 以添加 Ripper。",
+    "Easy Rip Commands": "Easy Rip 命令",
     "Ripper options": "Ripper 选项",
     Cmd_type.help.value.description: (
         "展示全部帮助文档或展示 <cmd> 的帮助文档\n"
@@ -297,11 +297,13 @@ LANG_MAP: dict[str, str] = {
     "Input file number == 0": "输入的文件数量为 0",
     'The file "{}" does not exist': '文件 "{}" 不存在',
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",
+    "The new value is the same as the old value, cancel the modification": "新值与旧值相同, 取消修改",
+    "'{}' successfully: {}": "'{}' 成功: {}",
     "Unsupported option: {}": "不支持的选项: {}",
     "Unsupported param: {}": "不支持的参数: {}",
     "Unsupported '{}' param: {}": "'{}' 不支持此参数: {}",
     "Manually force exit": "手动强制退出",
-    "or run '{}' when you use pip": "或运行 '{}' 以使用 pip 更新",
+    "or run this command to update using pip: {}": "或运行以下命令以使用 pip 更新: {}",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误, 改为默认值 60s",
     "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
     "Stop run command": "命令执行终止",

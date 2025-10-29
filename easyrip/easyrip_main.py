@@ -7,8 +7,10 @@ import shlex
 import shutil
 import subprocess
 import sys
+import threading
 import tkinter as tk
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from multiprocessing import shared_memory
 from pathlib import Path
@@ -201,7 +203,7 @@ def check_env() -> None:
                 easyrip_web.github.get_release_ver(global_val.PROJECT_RELEASE_API),
                 PROJECT_VERSION,
                 PROJECT_NAME,
-                f"{global_val.PROJECT_URL} {gettext("or run '{}' when you use pip", 'pip install -U easyrip')}",
+                f"{global_val.PROJECT_URL}\n{gettext('or run this command to update using pip: {}', f'{sys.executable + " -m " if sys.executable[-10:].lower() == "python.exe" else ""}pip install -U easyrip')}",
             )
 
         sys.stdout.flush()
@@ -296,34 +298,29 @@ def run_ripper_list(
     error_num: Final[int] = log.error_num
 
     if enable_multithreading:
-        threads: list[Thread] = []
-        threads_return: dict[int, bool] = {}
-        progress_num: list[int] = [0]
+        threading_lock = threading.Lock()
+        progress_num: int = 0
 
-        def _run_ripper_thread_target(key: int, ripper: Ripper, /) -> None:
-            threads_return[key] = ripper.run()
-            progress_num[0] += 1
+        def _executor_submit_ripper_run(ripper: Ripper) -> None:
+            nonlocal progress_num
+            with threading_lock:
+                progress_num += 1
 
-        for i, ripper in enumerate(Ripper.ripper_list, 1):
-            thread = Thread(
-                target=_run_ripper_thread_target,
-                args=(i, ripper),
-                daemon=True,
-            )
-            log.info("Start Ripper thread {} / {}", i, total)
-            thread.start()
-            threads.append(thread)
-
-        # 进度打印线程
-        def _run_ripper_thread_progress() -> None:
-            progress = f"{len(threads_return)} / {total} - {PROJECT_TITLE}"
+            progress = f"{progress_num} / {total} - {PROJECT_TITLE}"
             log.info(progress)
             change_title(progress)
 
-        Thread(target=_run_ripper_thread_progress, daemon=True)
+            try:
+                if ripper.run() is False:
+                    log.error("Run {} failed", "Ripper")
+            except Exception as e:
+                log.error(e, deep=True)
+                log.warning("Stop run Ripper")
 
-        for thread in threads:
-            thread.join()
+        with ThreadPoolExecutor() as executor:
+            for ripper in Ripper.ripper_list:
+                executor.submit(_executor_submit_ripper_run, ripper)
+                sleep(0.1)
 
     else:
         for i, ripper in enumerate(Ripper.ripper_list, 1):
@@ -493,8 +490,7 @@ def run_command(command: list[str] | str) -> bool:
 
         case Cmd_type.dir:
             files = os.listdir(os.getcwd())
-            for f_and_s in files:
-                print(f_and_s)
+            print("\n".join(files))
             log.send(" | ".join(files))
 
         case Cmd_type.mkdir:
@@ -651,41 +647,50 @@ def run_command(command: list[str] | str) -> bool:
 
         case Cmd_type.config:
             match cmd_list[1]:
+                case "list" | "":
+                    config.show_config_list()
                 case "clear" | "clean" | "reset" | "regenerate":
                     config.regenerate_config()
                     init()
                 case "open":
                     config.open_config_dir()
                 case "set":
+                    _key = cmd_list[2]
                     _val = cmd_list[3]
-                    try:
-                        _val = int(_val)
-                    except ValueError:
-                        pass
+                    _old_val = config.get_user_profile(_key)
+
                     try:
                         _val = float(_val)
                     except ValueError:
-                        pass
-                    match _val:
-                        case "true" | "True":
-                            _val = True
-                        case "false" | "False":
-                            _val = False
+                        match _val:
+                            case "true" | "True":
+                                _val = True
+                            case "false" | "False":
+                                _val = False
+                    else:
+                        if (_val_int := int(_val)) == _val:
+                            _val = _val_int
 
-                    if (_old_val := config.get_user_profile(cmd_list[2])) == _val:
+                    if (
+                        (_old_val is _val)
+                        if isinstance(_val, bool) or isinstance(_old_val, bool)
+                        else (_old_val == _val)
+                    ):
                         log.info(
                             "The new value is the same as the old value, cancel the modification",
                         )
-                    elif config.set_user_profile(cmd_list[2], _val):
+                    elif config.set_user_profile(_key, _val):
                         init()
                         log.info(
-                            "'config set {}' successful: {} -> {}",
-                            cmd_list[2],
-                            _old_val,
-                            _val,
+                            "'{}' successfully: {}",
+                            f"config set {_key}",
+                            f"{f'"{_old_val}"' if isinstance(_old_val, str) else _old_val} -> {f'"{_val}"' if isinstance(_val, str) else _val}"
+                            + (
+                                ""
+                                if type(_old_val) is type(_val)
+                                else f" ({type(_old_val).__name__} -> {type(_val).__name__})"
+                            ),
                         )
-                case "list":
-                    config.show_config_list()
                 case _ as param:
                     log.error("Unsupported param: {}", param)
                     return False
@@ -734,6 +739,14 @@ def run_command(command: list[str] | str) -> bool:
             return True
 
         case _:
+            if shutil.which(cmd_list[0]):
+                if easyrip_web.http_server.Event.is_run_command:
+                    log.error("Disable the use of '{}' on the web", cmd_list[0])
+                    return False
+
+                os.system(command if isinstance(command, str) else " ".join(command))
+                return True
+
             input_pathname_org_list: list[str] = []
             output_basename: str | None = None
             output_dir: str | None = None

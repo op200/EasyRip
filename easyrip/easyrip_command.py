@@ -106,9 +106,9 @@ class Cmd_type(enum.Enum):
         opt_str="cd <<path> | 'fd' | 'cfd'>",
         description="Change current working directory",
     )
-    dir = Cmd_type_val(
+    dir = ls = Cmd_type_val(
         "dir",
-        opt_str="dir",
+        opt_str="dir / ls",
         description="Print files and folders' name in the current working directory",
     )
     mkdir = makedir = Cmd_type_val(
@@ -544,12 +544,12 @@ def get_help_doc() -> str:
         "\n"
         f"{gettext('Help')}:\n"
         "\n"
-        f"  {gettext('You can input command or use command-line arguments to run.')}\n"
+        f"{textwrap.indent(gettext("Enter '<cmd> [<param> ...]' to execute Easy Rip commands or any commands that exist in environment.\nOr enter '<option> <param> [<option> <param> ...]' to add Ripper."), '  ')}\n"
         "\n"
         "\n"
-        f"{gettext('Commands')}:\n"
+        f"{gettext('Easy Rip Commands')}:\n"
         "\n"
-        f"{textwrap.indent(Cmd_type.to_doc(), '  ')}"
+        f"{textwrap.indent(Cmd_type.to_doc(), '  ')}\n"
         "\n"
         "\n"
         f"{gettext('Ripper options')}:\n"

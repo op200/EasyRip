@@ -857,7 +857,9 @@ class Ripper:
 
         # 生成临时名
         basename = self.output_prefix_list[0]
-        temp_name = f"{basename}-{datetime.now().strftime('%Y-%m-%d_%H：%M：%S')}"
+        temp_name = (
+            f"{basename}-{datetime.now().strftime('%Y-%m-%d_%H：%M：%S.%f')[:-4]}"
+        )
         suffix: str
 
         # 根据格式判断

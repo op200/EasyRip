@@ -10,6 +10,7 @@ from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
 def run() -> NoReturn:
     init(True)
 
+    log.debug(f"Python: v{sys.version}")
     log.debug(f"pycryptodome: v{Crypto.__version__}")
     log.debug(f"fonttools: v{fontTools.__version__}")
 
