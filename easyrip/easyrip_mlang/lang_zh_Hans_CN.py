@@ -348,14 +348,13 @@ LANG_MAP: dict[str, str] = {
     "User profile is not found": "用户配置文件不存在",
     "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
     # config about
-    "Easy Rip's language, support incomplete matching. Support: {}": "Easy Rip 的语言, 支持不完整匹配。支持: {}",
-    "Auto check the update of Easy Rip": "自动检测 Easy Rip 更新",
-    "Auto check the versions of all dependent programs": "自动检测所有依赖的程序的版本",
-    "Program startup directory, when the value is empty, starts in the working directory": "程序启动目录, 值为空时在工作目录启动",
-    "Force change of log file path, when the value is empty, it is the working directory": "强制更改日志文件所在路径, 值为空时为工作目录",
-    "Do not write to log file": "不写入日志文件",
-    "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Support: {}": "此等级及以上的日志会打印到控制台, 若值为 '{}' 则不打印。支持: {}",
-    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Support: {}": "此等级及以上的日志会写入日志文件, 若值为 '{}' 则不写入, '{}' 仅在 'server' 时写入。支持: {}",
+    "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}": "Easy Rip 的语言, 支持不完整匹配。默认: {}。支持: {}",
+    "Auto check the update of Easy Rip. Default: {}": "自动检测 Easy Rip 更新。默认: {}",
+    "Auto check the versions of all dependent programs. Default: {}": "自动检测所有依赖的程序的版本。默认: {}",
+    "Program startup directory, when the value is empty, starts in the working directory. Default: {}": "程序启动目录, 值为空时在工作目录启动。默认: {}",
+    "Force change of log file path, when the value is empty, it is the working directory. Default: {}": "强制更改日志文件所在路径, 值为空时为工作目录。默认: {}",
+    "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Default: {}. Supported: {}": "此等级及以上的日志会打印到控制台, 若值为 '{}' 则不打印。默认: {}。支持: {}",
+    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Default: {}. Supported: {}": "此等级及以上的日志会写入日志文件, 若值为 '{}' 则不写入, '{}' 仅在 'server' 时写入。默认: {}。支持: {}",
     # 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
     # mlang

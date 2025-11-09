@@ -844,6 +844,16 @@ def run_command(command: list[str] | str) -> bool:
                 log.warning("Missing '-preset' option, set to default value 'custom'")
                 preset_name = "custom"
 
+            if (
+                Ripper.PresetName(preset_name) is Ripper.PresetName.custom
+                and easyrip_web.http_server.Event.is_run_command
+            ):
+                log.error(
+                    "Disable the use of '{}' on the web",
+                    f"-preset {Ripper.PresetName.custom.name}",
+                )
+                return False
+
             try:
                 if len(input_pathname_org_list) == 0:
                     log.warning("Input file number == 0")

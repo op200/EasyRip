@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 import sys
@@ -9,6 +10,27 @@ from .easyrip_mlang import all_supported_lang_map, gettext
 
 PROJECT_NAME = global_val.PROJECT_NAME
 CONFIG_VERSION = "2.9.4"
+
+
+class Config_key(enum.Enum):
+    language = "language"
+    check_update = "check_update"
+    check_dependent = "check_dependent"
+    startup_directory = "startup_directory"
+    force_log_file_path = "force_log_file_path"
+    log_print_level = "log_print_level"
+    log_write_level = "log_write_level"
+
+
+CONFIG_DEFAULT_DICT: dict[Config_key, str | bool] = {
+    Config_key.language: "auto",
+    Config_key.check_update: True,
+    Config_key.check_dependent: True,
+    Config_key.startup_directory: "",
+    Config_key.force_log_file_path: "",
+    Config_key.log_print_level: log.LogLevel.send.name,
+    Config_key.log_write_level: log.LogLevel.send.name,
+}
 
 
 class config:
@@ -35,18 +57,13 @@ class config:
         if not cls._config_file.is_file():
             cls._config_dir.mkdir(exist_ok=True)
             with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
+                config_default_dict: dict[str, str | bool] = {
+                    k.value: v for k, v in CONFIG_DEFAULT_DICT.items()
+                }
                 json.dump(
                     {
                         "version": CONFIG_VERSION,
-                        "user_profile": {
-                            "language": "auto",
-                            "check_update": True,
-                            "check_dependent": True,
-                            "startup_directory": "",
-                            "force_log_file_path": "",
-                            "log_print_level": log.LogLevel.send.name,
-                            "log_write_level": log.LogLevel.send.name,
-                        },
+                        "user_profile": config_default_dict,
                     },
                     f,
                     ensure_ascii=False,
@@ -124,7 +141,7 @@ class config:
             log.error("User profile is not found in config")
             return False
 
-        if key in cls._config["user_profile"]:
+        if key in Config_key:
             cls._config["user_profile"][key] = val
         else:
             log.error("Key '{}' is not found in user profile", key)
@@ -165,29 +182,38 @@ class config:
     def _get_config_about(cls, key: str) -> str:
         return (
             {
-                "language": gettext(
-                    "Easy Rip's language, support incomplete matching. Support: {}",
+                Config_key.language.value: gettext(
+                    "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.language],
                     ", ".join(("auto", *(str(tag) for tag in all_supported_lang_map))),
                 ),
-                "check_update": gettext("Auto check the update of Easy Rip"),
-                "check_dependent": gettext(
-                    "Auto check the versions of all dependent programs"
+                Config_key.check_update.value: gettext(
+                    "Auto check the update of Easy Rip. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.check_update],
                 ),
-                "startup_directory": gettext(
-                    "Program startup directory, when the value is empty, starts in the working directory"
+                Config_key.check_dependent.value: gettext(
+                    "Auto check the versions of all dependent programs. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.check_dependent],
                 ),
-                "force_log_file_path": gettext(
-                    "Force change of log file path, when the value is empty, it is the working directory"
+                Config_key.startup_directory.value: gettext(
+                    "Program startup directory, when the value is empty, starts in the working directory. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.startup_directory] or '""',
                 ),
-                "log_print_level": gettext(
-                    "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Support: {}",
+                Config_key.force_log_file_path.value: gettext(
+                    "Force change of log file path, when the value is empty, it is the working directory. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.force_log_file_path] or '""',
+                ),
+                Config_key.log_print_level.value: gettext(
+                    "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Default: {}. Supported: {}",
                     log.LogLevel.none.name,
+                    CONFIG_DEFAULT_DICT[Config_key.log_print_level],
                     ", ".join(log.LogLevel._member_names_),
                 ),
-                "log_write_level": gettext(
-                    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Support: {}",
+                Config_key.log_write_level.value: gettext(
+                    "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Default: {}. Supported: {}",
                     log.LogLevel.none.name,
                     log.LogLevel.send.name,
+                    CONFIG_DEFAULT_DICT[Config_key.log_write_level],
                     ", ".join(log.LogLevel._member_names_),
                 ),
             }
