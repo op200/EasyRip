@@ -24,7 +24,9 @@ def get_version():
 setup(
     name="easyrip",
     version=get_version(),
-    repository="https://github.com/op200/EasyRip",
+    project_urls={
+        "Repository": "https://github.com/op200/EasyRip",
+    },
     classifiers=[
         "Topic :: Multimedia",
         "Development Status :: 5 - Production/Stable",
