@@ -591,11 +591,11 @@ class Ripper:
                     (_crf := _option_map.get("crf"))
                     and (_qpmin := _option_map.get("qpmin"))
                     and (_qpmax := _option_map.get("qpmax"))
-                    and not (_qpmin <= _crf <= _qpmax)
+                    and not (float(_qpmin) <= float(_crf) <= float(_qpmax))
                 ):
                     log.warning("The CRF is not between QPmin and QPmax")
 
-                _param = ":".join((f"{key}={val}" for key, val in _option_map.items()))
+                _param = ":".join(f"{key}={val}" for key, val in _option_map.items())
 
                 encoder_format_str = (
                     f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
@@ -706,7 +706,7 @@ class Ripper:
                     (_crf := _option_map.get("crf"))
                     and (_qpmin := _option_map.get("qpmin"))
                     and (_qpmax := _option_map.get("qpmax"))
-                    and not (_qpmin <= _crf <= _qpmax)
+                    and not (float(_qpmin) <= float(_crf) <= float(_qpmax))
                 ):
                     log.warning("The CRF is not between QPmin and QPmax")
 

@@ -15,7 +15,7 @@ __all__ = ["log"]
 
 class Event:
     @staticmethod
-    def append_http_server_log_queue(message: tuple[str, str, str]) -> None: ...
+    def append_http_server_log_queue(message: tuple[str, str, str], /) -> None: ...
 
 
 class log:
@@ -179,7 +179,7 @@ class log:
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:green;">[DEBUG] {message}</span></div>'
                     )
 
-                Event.append_http_server_log_queue((time_now, "INFO", message))
+                Event.append_http_server_log_queue((time_now, "DEBUG", message))
 
             case cls.LogLevel.info:
                 cls.info_num += 1

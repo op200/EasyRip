@@ -8,9 +8,26 @@ from itertools import zip_longest
 from pathlib import Path
 from typing import Final
 
-from .easyrip_log import log
+from Crypto.Cipher import AES as CryptoAES
+from Crypto.Util.Padding import pad, unpad
 
 BASE62 = string.digits + string.ascii_letters
+
+
+class AES:
+    @staticmethod
+    def encrypt(plaintext: bytes, key: bytes) -> bytes:
+        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC)  # 使用 CBC 模式
+        ciphertext = cipher.encrypt(pad(plaintext, CryptoAES.block_size))  # 加密并填充
+        return bytes(cipher.iv) + ciphertext  # 返回 IV 和密文
+
+    @staticmethod
+    def decrypt(ciphertext: bytes, key: bytes) -> bytes:
+        iv = ciphertext[:16]  # 提取 IV
+        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC, iv=iv)
+        return unpad(
+            cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
+        )  # 解密并去除填充
 
 
 def change_title(title: str) -> None:
@@ -63,6 +80,8 @@ def get_base62_time() -> str:
 
 
 def read_text(path: Path) -> str:
+    from .easyrip_log import log
+
     data = path.read_bytes()
 
     if data.startswith(codecs.BOM_UTF8):
@@ -75,6 +94,7 @@ def read_text(path: Path) -> str:
         return data.decode("utf-32-le")
     if data.startswith(codecs.BOM_UTF32_BE):
         return data.decode("utf-32-be")
+
     log.warning("Can not find the BOM from {}. Defaulting to UTF-8", path)
     return data.decode("utf-8")
 

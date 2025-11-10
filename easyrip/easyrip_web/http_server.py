@@ -8,39 +8,27 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 from time import sleep
 
-from Crypto.Cipher import AES as CryptoAES
-from Crypto.Util.Padding import pad, unpad
+from ..utils import AES
 
-__all__ = ["Event", "run_server"]
-
-
-class AES:
-    @staticmethod
-    def encrypt(plaintext: bytes, key: bytes) -> bytes:
-        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC)  # 使用 CBC 模式
-        ciphertext = cipher.encrypt(pad(plaintext, CryptoAES.block_size))  # 加密并填充
-        return bytes(cipher.iv) + ciphertext  # 返回 IV 和密文
-
-    @staticmethod
-    def decrypt(ciphertext: bytes, key: bytes) -> bytes:
-        iv = ciphertext[:16]  # 提取 IV
-        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC, iv=iv)
-        return unpad(
-            cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
-        )  # 解密并去除填充
+__all__ = ["run_server"]
 
 
 class Event:
     log_queue: deque[tuple[str, str, str]] = deque()
+
     is_run_command: bool = False
-    """
-    用于防止 server 二次运行，以及告知客户端运行状态
-    """
+    """用于防止 server 二次运行，以及告知客户端运行状态"""
+
     progress: deque[dict[str, int | float]] = deque([{}])
 
-    @staticmethod
-    def post_run_event(cmd: str) -> None:
-        pass
+    @classmethod
+    def post_run_event(cls, cmd: str) -> None:
+        from ..easyrip_main import run_command
+
+        try:
+            run_command(cmd)
+        finally:
+            cls.is_run_command = False
 
 
 class MainHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -67,11 +55,16 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             .strip('"')
         )
 
+    def _send_cors_headers(self) -> None:
+        """统一设置 CORS 头"""
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        # self.send_header("Access-Control-Allow-Credentials", "true")
+
     def do_OPTIONS(self) -> None:
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
-        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        self._send_cors_headers()
         self.end_headers()
 
     def do_POST(self) -> None:
@@ -186,7 +179,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
             header = ("Content-type", "text/html")
 
         self.send_response(status_code)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._send_cors_headers()
         self.send_header(*header)
         self.send_header("Content-Length", str(len(response)))
         self.end_headers()
@@ -194,7 +187,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def do_GET(self) -> None:
         self.send_response(200)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        self._send_cors_headers()
         self.send_header("Content-Type", "application/json")
         self.end_headers()
         self.wfile.write(
@@ -228,8 +221,15 @@ def run_server(host: str = "", port: int = 0, password: str | None = None) -> No
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
-    log.info("Starting HTTP service on port {}...", httpd.server_port)
+
+    protocol = "HTTP"
+
+    log.info(
+        "Starting {protocol} service on port {port}...",
+        protocol=protocol,
+        port=httpd.server_port,
+    )
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
-        log.info("HTTP service stopped by ^C")
+        log.info("{} service stopped by ^C", protocol)

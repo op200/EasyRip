@@ -334,8 +334,8 @@ LANG_MAP: dict[str, str] = {
     "The \\r style '{}' not in Styles": "\\r 样式 '{}' 不在 Styles 中",
     "Illegal format: '{}' in file \"{}\" in line: {}": "非法格式: '{}' 在文件 \"{}\" 的此行: {}",
     # web
-    "Starting HTTP service on port {}...": "在端口 {} 启动 HTTP 服务...",
-    "HTTP service stopped by ^C": "HTTP 服务被 ^C 停止",
+    "Starting {protocol} service on port {port}...": "在端口 {port} 启动 {protocol} 服务...",
+    "{} service stopped by ^C": "{} 服务被 ^C 停止",
     "There is a running command, terminate this request": "存在正在运行的命令, 终止此次请求",
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
     # config

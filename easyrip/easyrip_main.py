@@ -1088,11 +1088,5 @@ def init(is_first_run: bool = False) -> None:
         Thread(target=check_env, daemon=True).start()
 
         LogEvent.append_http_server_log_queue = (
-            lambda message: easyrip_web.http_server.Event.log_queue.append(message)
+            easyrip_web.http_server.Event.log_queue.append
         )
-
-        def _post_run_event(cmd: str) -> None:
-            run_command(cmd)
-            easyrip_web.http_server.Event.is_run_command = False
-
-        easyrip_web.http_server.Event.post_run_event = _post_run_event
