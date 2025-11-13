@@ -386,9 +386,9 @@ class Ripper:
         pipe_gvar_list = [
             s for s in self.option_map.get("pipe:gvar", "").split(":") if s
         ]
-        pipe_gvar_dict = {
-            s.split("=")[0]: s.split("=")[1] for s in pipe_gvar_list if "=" in s
-        }
+        pipe_gvar_dict = dict(
+            s.split("=", maxsplit=1) for s in pipe_gvar_list if "=" in s
+        )
         if sub_pathname:
             pipe_gvar_dict["subtitle"] = sub_pathname
 
@@ -573,13 +573,11 @@ class Ripper:
                         "trellis": self.option_map.get("trellis"),
                         "fast-pskip": self.option_map.get("fast-pskip"),
                         **dict(
-                            [
-                                s.split("=")
-                                for s in str(
-                                    self.option_map.get("x264-params", "")
-                                ).split(":")
-                                if s
-                            ]
+                            s.split("=", maxsplit=1)
+                            for s in str(self.option_map.get("x264-params", "")).split(
+                                ":"
+                            )
+                            if s
                         ),
                     }.items()
                     if v is not None
@@ -657,13 +655,11 @@ class Ripper:
                         "level-idc": self.option_map.get("level-idc"),
                         "sao": self.option_map.get("sao"),
                         **dict(
-                            [
-                                s.split("=")
-                                for s in str(
-                                    self.option_map.get("x265-params", "")
-                                ).split(":")
-                                if s
-                            ]
+                            s.split("=", maxsplit=1)
+                            for s in str(self.option_map.get("x265-params", "")).split(
+                                ":"
+                            )
+                            if s
                         ),
                     }.items()
                     if v is not None
@@ -817,17 +813,14 @@ class Ripper:
                 log.error(e)
                 continue
 
-            res = {
-                line[0]: line[1]
-                for line in (line.strip().split("=") for line in buffer[-12:])
-            }
+            res = dict(line.strip().split("=", maxsplit=1) for line in buffer[-12:])
 
             if p := res.get("progress"):
-                out_time_us = res.get("out_time_us", "")
-                speed = res.get("speed", "").rstrip("x")
+                out_time_us = res.get("out_time_us", -1)
+                speed = res.get("speed", "-1").rstrip("x")
 
-                self._progress["frame"] = int(res.get("frame", ""))
-                self._progress["fps"] = float(res.get("fps", ""))
+                self._progress["frame"] = int(res.get("frame", -1))
+                self._progress["fps"] = float(res.get("fps", -1))
                 self._progress["out_time_us"] = (
                     int(out_time_us) if out_time_us != "N/A" else 0
                 )

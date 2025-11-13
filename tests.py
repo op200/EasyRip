@@ -8,6 +8,8 @@ import subprocess
 import sys
 import timeit
 import unittest
+from pathlib import Path
+from typing import Final
 
 import easyrip
 from easyrip import (
@@ -112,18 +114,21 @@ class TestBasic(unittest.TestCase):
 
 
 class TestRip(unittest.TestCase):
-    test_va_basename = "testVideo1080p23.98"
-    test_va_suffix = "mkv"
-    test_video_output_basename = "testVideoOutput"
-    test_audio_output_basename = "testAudioOutput"
+    TEST_VA_BASENAME: Final = "testVideo1080p23.98"
+    TEST_VA_SUFFIX: Final = "mkv"
+    TEST_VIDEO_OUTPUT_BASENAME: Final = "testVideoOutput"
+    TEST_AUDIO_OUTPUT_BASENAME: Final = "testAudioOutput"
 
     @staticmethod
     def restore() -> None:
-        if os.path.exists(f"{TestRip.test_video_output_basename}.rip.mp4"):
-            os.remove(f"{TestRip.test_video_output_basename}.rip.mp4")
-
-        if os.path.exists(f"{TestRip.test_audio_output_basename}.flac"):
-            os.remove(f"{TestRip.test_audio_output_basename}.flac")
+        for path_str in (
+            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mp4",
+            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.va.mp4",
+            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mkv",
+            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.va.mkv",
+            f"{TestRip.TEST_AUDIO_OUTPUT_BASENAME}.flac",
+        ):
+            Path(path_str).unlink(True)
 
         run_command("list clear")
 
@@ -131,7 +136,7 @@ class TestRip(unittest.TestCase):
         TestRip.restore()
 
         self.assertTrue(
-            os.path.exists(f"{TestRip.test_va_basename}.{TestRip.test_va_suffix}")
+            os.path.exists(f"{TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX}")
         )
 
         for tool in (
@@ -151,11 +156,14 @@ class TestRip(unittest.TestCase):
         TestRip.restore()
 
     def test_x265(self):
-        run = run_command
-
+        """测试 hme 关闭，以及其他标准传参"""
+        crf = "33.3"
+        qpmin = "2"
+        qpmax = "44"
+        params: str = f"-hme 0 -crf {crf} -x265-params qpmin={qpmin}:qpmax={qpmax}::"
         self.assertTrue(
-            run(
-                f"-i {TestRip.test_va_basename}.{TestRip.test_va_suffix} -t 0.1 -preset x265slow -hme 0 -r auto -o {TestRip.test_video_output_basename} -muxer mp4 -run"
+            run_command(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {TestRip.TEST_VIDEO_OUTPUT_BASENAME} -muxer mp4 -run"
             )
         )
 
@@ -171,7 +179,7 @@ class TestRip(unittest.TestCase):
                     "-show_data",
                     "-print_format",
                     "json",
-                    f"{TestRip.test_video_output_basename}.v.mp4",
+                    f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mp4",
                 ],
                 stdout=subprocess.PIPE,
                 text=True,
@@ -227,11 +235,14 @@ class TestRip(unittest.TestCase):
         )
 
         self.assertTrue("no-hme" in x265_options_dict)
+        self.assertEqual(crf, x265_options_dict["crf"])
+        self.assertEqual(qpmin, x265_options_dict["qpmin"])
+        self.assertEqual(qpmax, x265_options_dict["qpmax"])
 
     def test_flac(self):
         self.assertTrue(
             run_command(
-                f"-i {TestRip.test_va_basename}.{TestRip.test_va_suffix} -preset flac -o {TestRip.test_audio_output_basename} -run"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -preset flac -o {TestRip.TEST_AUDIO_OUTPUT_BASENAME} -run"
             )
         )
 
@@ -299,5 +310,6 @@ class TestLanguage(unittest.TestCase):
 
     def test_lang_val_to_lang_tag(self):
         self.assertIs(
-            Lang_tag_language.zh, Lang_tag_language(Lang_tag_val(en_name="Chinese"))
+            Lang_tag_language.zh,
+            Lang_tag_language(Lang_tag_val(en_name="Chinese")),
         )
