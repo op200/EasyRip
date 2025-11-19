@@ -266,9 +266,9 @@ class Opt_type(enum.Enum):
             "  flac\n"
             "  x264fast x264slow\n"
             "  x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
-            "  h264_amf h264_nvenc h264_qsv\n"
-            "  hevc_amf hevc_nvenc hevc_qsv\n"
-            "  av1_amf av1_nvenc av1_qsv"
+            "  h264_qsv h264_nvenc h264_amf\n"
+            "  hevc_qsv hevc_nvenc hevc_amf\n"
+            "  av1_qsv av1_nvenc av1_amf"
         ),
     )
     _pipe = Cmd_type_val(

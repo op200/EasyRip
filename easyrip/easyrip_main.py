@@ -356,7 +356,7 @@ def run_ripper_list(
         os.system(_cmd[0])
 
     if is_exit_when_run_finished:
-        sys.exit()
+        sys.exit(0)
 
     change_title(f"End - {PROJECT_TITLE}")
     log.info("Run completed")
@@ -452,7 +452,7 @@ def run_command(command: list[str] | str) -> bool:
                 log.error("Your input command has error:\n{}", e)
 
         case Cmd_type.exit:
-            sys.exit()
+            sys.exit(0)
 
         case Cmd_type.cd | Cmd_type.mediainfo:
             _path_tuple: tuple[str, ...] | None = None
@@ -501,6 +501,7 @@ def run_command(command: list[str] | str) -> bool:
 
         case Cmd_type.cls:
             os.system("cls") if os.name == "nt" else os.system("clear")
+            easyrip_web.http_server.Event.log_queue.clear()
 
         case Cmd_type.list:
             match cmd_list[1]:

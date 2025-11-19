@@ -143,11 +143,6 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                             sleep(1)
                     except KeyboardInterrupt:
                         log.error("Manually force exit")
-                        # Event.is_run_command.append(False)
-                        # Event.is_run_command.popleft()
-                        # sleep(1)
-                        # Event.progress.append({})
-                        # Event.progress.popleft()
 
                 elif Event.is_run_command is True:
                     log.warning("There is a running command, terminate this request")
@@ -218,6 +213,10 @@ def run_server(host: str = "", port: int = 0, password: str | None = None) -> No
         _pw_sha3_512 = hashlib.sha3_512(MainHTTPRequestHandler.password.encode())
         MainHTTPRequestHandler.password_sha3_512_last8 = _pw_sha3_512.hexdigest()[-8:]
         MainHTTPRequestHandler.aes_key = _pw_sha3_512.digest()[:16]
+    else:
+        MainHTTPRequestHandler.password = None
+        MainHTTPRequestHandler.password_sha3_512_last8 = None
+        MainHTTPRequestHandler.aes_key = None
 
     server_address = (host, port)
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)

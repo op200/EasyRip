@@ -19,7 +19,7 @@ def run() -> NoReturn:
     if len(sys.argv) > 1:
         run_command(sys.argv[1:])
         if len(Ripper.ripper_list) == 0:
-            sys.exit()
+            sys.exit(0)
 
     while True:
         try:
@@ -34,7 +34,7 @@ def run() -> NoReturn:
             continue
         except EOFError:
             log.debug("Manually force exit")
-            sys.exit()
+            sys.exit(0)
 
         if not run_command(command):
             log.warning("Stop run command")
