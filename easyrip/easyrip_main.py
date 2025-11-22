@@ -96,10 +96,10 @@ def check_env() -> None:
                     )
 
                     if "." in _new_ver:
-                        log_new_ver("8.0", _new_ver.split("-")[0], _name, _url)
+                        log_new_ver("8.0.1", _new_ver.split("-")[0], _name, _url)
                     else:
                         log_new_ver(
-                            "2025.08.22", ".".join(_new_ver.split("-")[:3]), _name, _url
+                            "2025.11.20", ".".join(_new_ver.split("-")[:3]), _name, _url
                         )
 
             _name, _url = "flac", "https://github.com/xiph/flac/releases"
@@ -176,7 +176,7 @@ def check_env() -> None:
                     print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        "95",
+                        "96",
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
