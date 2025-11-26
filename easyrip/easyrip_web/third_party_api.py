@@ -3,6 +3,7 @@ import json
 import urllib.error
 import urllib.parse
 import urllib.request
+import xml.etree.ElementTree
 from time import sleep
 
 
@@ -27,6 +28,7 @@ class zhconvert:
         org_text: str,
         target_lang: Target_lang,
     ) -> str:
+        """失败抛出异常"""
         from ..easyrip_log import log
 
         log.info(
@@ -71,8 +73,9 @@ class zhconvert:
 
 
 class github:
-    @staticmethod
-    def get_release_ver(release_api_url: str) -> str | None:
+    @classmethod
+    def get_latest_release_ver(cls, release_api_url: str) -> str | None:
+        """失败返回 None"""
         from ..easyrip_log import log
 
         req = urllib.request.Request(release_api_url)
@@ -84,7 +87,44 @@ class github:
         except Exception as e:
             log.debug(
                 "'{}' execution failed: {}",
-                f"{github.__name__}.{github.get_release_ver.__name__}",
+                f"{cls.__name__}.{cls.get_latest_release_ver.__name__}",
+                e,
+                print_level=log.LogLevel._detail,
+            )
+
+        return None
+
+
+class mkvtoolnix:
+    __latest_release_ver_cache: str | None = None
+
+    @classmethod
+    def get_latest_release_ver(cls, *, flush_cache: bool = False) -> str | None:
+        """失败返回 None"""
+        if flush_cache is False and cls.__latest_release_ver_cache is not None:
+            return cls.__latest_release_ver_cache
+
+        from ..easyrip_log import log
+
+        req = urllib.request.Request("https://mkvtoolnix.download/latest-release.xml")
+
+        try:
+            with urllib.request.urlopen(req) as response:
+                xml_tree = xml.etree.ElementTree.XML(response.read().decode("utf-8"))
+                if (ver := xml_tree.find("latest-source/version")) is None:
+                    log.debug(
+                        "'{}' execution failed: {}",
+                        f"{cls.__name__}.{cls.get_latest_release_ver.__name__}",
+                        f"XML parse faild: {xml.etree.ElementTree.tostring(xml_tree)}",
+                        print_level=log.LogLevel._detail,
+                    )
+                    return None
+                cls.__latest_release_ver_cache = ver.text
+                return ver.text
+        except Exception as e:
+            log.debug(
+                "'{}' execution failed: {}",
+                f"{cls.__name__}.{cls.get_latest_release_ver.__name__}",
                 e,
                 print_level=log.LogLevel._detail,
             )

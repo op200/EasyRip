@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Final
 
 import easyrip
+import easyrip.easyrip_web
 from easyrip import (
     Ass,
     Lang_tag,
@@ -29,6 +30,9 @@ from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
 if sys.stdout.encoding != "UTF-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
     sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
+log.print_level = log.LogLevel._detail
+log.write_level = log.LogLevel.none
 
 
 class TestBasic(unittest.TestCase):
@@ -253,6 +257,12 @@ class TestSubtitle(unittest.TestCase):
         log.info(
             f"Test ASS class {TEST_ASS_NUMBER} times: {timeit.timeit(lambda: Ass('test.zh-Hans.ass'), number=TEST_ASS_NUMBER):.4f}sec"
         )
+
+
+class TestThirdPartyApi(unittest.TestCase):
+    def test_mkvtoolnix_api(self):
+        ver = easyrip.easyrip_web.mkvtoolnix.get_latest_release_ver()
+        self.assertIsNotNone(ver)
 
 
 class TestLanguage(unittest.TestCase):

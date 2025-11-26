@@ -124,7 +124,7 @@ def check_env() -> None:
 
             else:
                 log_new_ver(
-                    easyrip_web.github.get_release_ver(
+                    easyrip_web.github.get_latest_release_ver(
                         "https://api.github.com/repos/xiph/flac/releases/latest"
                     ),
                     old_ver_str,
@@ -140,7 +140,7 @@ def check_env() -> None:
                 print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
-                    easyrip_web.github.get_release_ver(
+                    easyrip_web.github.get_latest_release_ver(
                         "https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"
                     ),
                     subprocess.run(_name, capture_output=True, text=True).stderr.split(
@@ -176,7 +176,7 @@ def check_env() -> None:
                     print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        "96",
+                        easyrip_web.mkvtoolnix.get_latest_release_ver(),
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
@@ -200,7 +200,7 @@ def check_env() -> None:
 
         if config.get_user_profile("check_update"):
             log_new_ver(
-                easyrip_web.github.get_release_ver(global_val.PROJECT_RELEASE_API),
+                easyrip_web.github.get_latest_release_ver(global_val.PROJECT_RELEASE_API),
                 PROJECT_VERSION,
                 PROJECT_NAME,
                 f"{global_val.PROJECT_URL}\n{gettext('or run this command to update using pip: {}', f'{sys.executable + " -m " if sys.executable[-10:].lower() == "python.exe" else ""}pip install -U easyrip')}",
@@ -413,7 +413,7 @@ def run_command(command: list[str] | str) -> bool:
                                     "The preset '{}' has no default val", cmd_list[2]
                                 )
                         else:
-                            log.error("'{}' is not a preset", cmd_list[2])
+                            log.error("'{}' is not a member of preset", cmd_list[2])
 
                     case None:
                         log.error("'{}' does not exist", cmd_list[1])
@@ -751,7 +751,7 @@ def run_command(command: list[str] | str) -> bool:
             input_pathname_org_list: list[str] = []
             output_basename: str | None = None
             output_dir: str | None = None
-            preset_name: str | None = None
+            preset_name: str | Ripper.PresetName | None = None
             option_map: dict[str, str] = {}
             is_run: bool = False
             is_exit_when_run_finished: bool = False
@@ -844,14 +844,19 @@ def run_command(command: list[str] | str) -> bool:
             if not preset_name:
                 log.warning("Missing '-preset' option, set to default value 'custom'")
                 preset_name = "custom"
+            if preset_name not in Ripper.PresetName._value2member_map_:
+                log.error("'{}' is not a member of preset", preset_name)
+                return False
+
+            preset_name = Ripper.PresetName(preset_name)
 
             if (
-                Ripper.PresetName(preset_name) is Ripper.PresetName.custom
+                preset_name is Ripper.PresetName.custom
                 and easyrip_web.http_server.Event.is_run_command
             ):
                 log.error(
                     "Disable the use of '{}' on the web",
-                    f"-preset {Ripper.PresetName.custom.name}",
+                    f"-preset {Ripper.PresetName.custom}",
                 )
                 return False
 
@@ -976,7 +981,7 @@ def run_command(command: list[str] | str) -> bool:
                                         f"{new_output_basename or _input_basename[0]}{_output_base_suffix_name}"
                                     ],
                                     output_dir,
-                                    Ripper.PresetName(preset_name),
+                                    preset_name,
                                     new_option_map,
                                 )
 
@@ -993,7 +998,7 @@ def run_command(command: list[str] | str) -> bool:
                                 input_pathname_list,
                                 [new_output_basename],
                                 output_dir,
-                                Ripper.PresetName(preset_name),
+                                preset_name,
                                 new_option_map,
                             )
 
@@ -1002,7 +1007,7 @@ def run_command(command: list[str] | str) -> bool:
                             input_pathname_list,
                             [new_output_basename],
                             output_dir,
-                            Ripper.PresetName(preset_name),
+                            preset_name,
                             new_option_map,
                         )
 

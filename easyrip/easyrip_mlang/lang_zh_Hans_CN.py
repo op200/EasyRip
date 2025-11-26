@@ -319,6 +319,7 @@ LANG_MAP: dict[str, str] = {
     "Time consuming": "耗时",
     "End": "结束",
     # ripper
+    "'{}' is not a member of preset": "'{}' 不存在于 preset",
     "Failed to add Ripper: {}": "添加 Ripper 失败: {}",
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}', 已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
