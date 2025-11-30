@@ -138,6 +138,8 @@ LANG_MAP: dict[str, str] = {
         "  flac\n"
         "  x264fast x264slow\n"
         "  x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
+        "  svtav1\n"
+        "  vvenc\n"
         "  h264_amf h264_nvenc h264_qsv\n"
         "  hevc_amf hevc_nvenc hevc_qsv\n"
         "  av1_amf av1_nvenc av1_qsv"
@@ -161,7 +163,10 @@ LANG_MAP: dict[str, str] = {
         "'auto:...'可以只选择指定中缀, 例如'auto:zh-Hans:zh-Hant'"
     ),
     Opt_type._only_mux_sub_path.value.description: "该目录下所有的字幕和字体文件将加入混流",
-    Opt_type._soft_sub.value.description: "往 MKV 中封装子集化字幕",
+    Opt_type._soft_sub.value.description: (
+        "往 MKV 中封装子集化字幕\n"  # .
+        "'auto' 的用法详见 '-sub'"
+    ),
     Opt_type._subset_font_dir.value.description: (
         "子集化时使用的字体的目录\n"
         '默认: 优先当前目录, 其次当前目录下含有 "font" 的文件夹 (不分大小写)'

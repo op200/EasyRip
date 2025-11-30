@@ -266,6 +266,8 @@ class Opt_type(enum.Enum):
             "  flac\n"
             "  x264fast x264slow\n"
             "  x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
+            "  svtav1\n"
+            "  vvenc\n"
             "  h264_qsv h264_nvenc h264_amf\n"
             "  hevc_qsv hevc_nvenc hevc_amf\n"
             "  av1_qsv av1_nvenc av1_amf"
@@ -314,7 +316,10 @@ class Opt_type(enum.Enum):
     _soft_sub = Cmd_type_val(
         "-soft-sub",
         opt_str="-soft-sub <<path>[?<path>...] | 'auto' | 'auto:...'>",
-        description="Mux ASS subtitles in MKV with subset",
+        description=(
+            "Mux ASS subtitles in MKV with subset\n"  # .
+            "The usage of 'auto' is detailed in '-sub'"
+        ),
     )
     _subset_font_dir = Cmd_type_val(
         "-subset-font-dir",

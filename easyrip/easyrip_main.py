@@ -200,10 +200,17 @@ def check_env() -> None:
 
         if config.get_user_profile("check_update"):
             log_new_ver(
-                easyrip_web.github.get_latest_release_ver(global_val.PROJECT_RELEASE_API),
+                easyrip_web.github.get_latest_release_ver(
+                    global_val.PROJECT_RELEASE_API
+                ),
                 PROJECT_VERSION,
                 PROJECT_NAME,
-                f"{global_val.PROJECT_URL}\n{gettext('or run this command to update using pip: {}', f'{sys.executable + " -m " if sys.executable[-10:].lower() == "python.exe" else ""}pip install -U easyrip')}",
+                f"{global_val.PROJECT_URL}\n{
+                    gettext(
+                        'or run this command to update using pip: {}',
+                        f'{sys.executable + " -m " if sys.executable[-10:].lower() == "python.exe" else ""}pip install -U easyrip',
+                    )
+                }",
             )
 
         sys.stdout.flush()

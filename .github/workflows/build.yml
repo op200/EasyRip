@@ -52,7 +52,7 @@ jobs:
           7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z ./easyrip_nuitka_output/*.exe
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: easyrip_x64
           path: ./easyrip.7z

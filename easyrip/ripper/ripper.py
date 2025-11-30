@@ -63,6 +63,8 @@ class Ripper:
 
         svtav1 = "svtav1"
 
+        vvenc = "vvenc"
+
         h264_amf = "h264_amf"
         h264_nvenc = "h264_nvenc"
         h264_qsv = "h264_qsv"
@@ -771,6 +773,27 @@ class Ripper:
                     f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + "-c:v libsvtav1 "
+                    + f"{_param} {ffparams_out} "
+                    + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
+                    + ' "{output}"'
+                )
+
+            case Ripper.PresetName.vvenc:
+                _option_map = {
+                    "qp": self.option_map.get("qp"),
+                    "pix_fmt": self.option_map.get("pix_fmt"),
+                    "preset:v": self.option_map.get("preset:v"),
+                    "vvenc-params": self.option_map.get("vvenc-params"),
+                }
+
+                _param = " ".join(
+                    (f"-{key} {val}" for key, val in _option_map.items() if val)
+                )
+
+                encoder_format_str = (
+                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
+                    + audio_option
+                    + "-c:v libvvenc "
                     + f"{_param} {ffparams_out} "
                     + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
                     + ' "{output}"'
