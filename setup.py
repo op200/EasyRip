@@ -47,8 +47,9 @@ setup(
     packages=find_packages(),
     python_requires=">=3.12",
     install_requires=[
+        "prompt-toolkit>=3.0.52",
+        "fonttools>=4.61.0",
         "pycryptodome>=3.21.0",
-        "fonttools>=4.60.1",
     ],
     entry_points={
         "console_scripts": [

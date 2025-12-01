@@ -1,4 +1,5 @@
 import enum
+import itertools
 import textwrap
 from dataclasses import dataclass
 from typing import Self, final
@@ -9,9 +10,10 @@ from . import global_val
 @final
 @dataclass(slots=True, init=False, eq=False)
 class Cmd_type_val:
-    name: str
+    names: tuple[str, ...]
     opt_str: str
     _description: str
+    childs: tuple["Cmd_type_val", ...]
 
     @property
     def description(self) -> str:
@@ -29,30 +31,32 @@ class Cmd_type_val:
 
     def __init__(
         self,
-        name: str,
+        names: tuple[str, ...],
         *,
-        opt_str: str,
+        opt_str: str = "",
         description: str = "",
+        childs: tuple["Cmd_type_val", ...] = (),
     ) -> None:
-        self.name = name
+        self.names = names
         self.opt_str = opt_str
         self.description = description
+        self.childs = childs
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Cmd_type_val):
-            return self.name == other.name
+            return self.names == other.names
         return False
 
     def __hash__(self) -> int:
-        return hash(self.name)
+        return hash(self.names)
 
     def to_doc(self) -> str:
-        return f"{self.opt_str}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
+        return f"{self.opt_str or ' / '.join(self.names)}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
 
 
 class Cmd_type(enum.Enum):
     help = h = Cmd_type_val(
-        "help",
+        ("help", "h"),
         opt_str="h / help [<cmd> [<cmd param>]]",
         description=(
             "Show full help or show the <cmd> help.\n"
@@ -61,12 +65,12 @@ class Cmd_type(enum.Enum):
         ),
     )
     version = v = ver = Cmd_type_val(
-        "version",
+        ("version", "v", "ver"),
         opt_str="v / ver / version",
         description="Show version info",
     )
     init = Cmd_type_val(
-        "init",
+        ("init",),
         opt_str="init",
         description=(
             "Execute initialization function\n"
@@ -74,7 +78,7 @@ class Cmd_type(enum.Enum):
         ),
     )
     log = Cmd_type_val(
-        "log",
+        ("log",),
         opt_str="log [<LogLevel>] <string>",
         description=(
             "Output custom log\n"
@@ -86,9 +90,16 @@ class Cmd_type(enum.Enum):
             "  debug\n"
             "  Default: info"
         ),
+        childs=(
+            Cmd_type_val(("info",)),
+            Cmd_type_val(("warning", "warn")),
+            Cmd_type_val(("error", "err")),
+            Cmd_type_val(("send",)),
+            Cmd_type_val(("debug",)),
+        ),
     )
     _run_any = Cmd_type_val(
-        "$",
+        ("$",),
         opt_str="$ <code>",
         description=(
             "Run code directly from the internal environment.\n"
@@ -97,32 +108,36 @@ class Cmd_type(enum.Enum):
         ),
     )
     exit = Cmd_type_val(
-        "exit",
+        ("exit",),
         opt_str="exit",
         description="Exit this program",
     )
     cd = Cmd_type_val(
-        "cd",
+        ("cd",),
         opt_str="cd <<path> | 'fd' | 'cfd'>",
         description="Change current working directory",
+        childs=(
+            Cmd_type_val(("fd",)),
+            Cmd_type_val(("cfd",)),
+        ),
     )
     dir = ls = Cmd_type_val(
-        "dir",
+        ("dir", "ls"),
         opt_str="dir / ls",
         description="Print files and folders' name in the current working directory",
     )
     mkdir = makedir = Cmd_type_val(
-        "mkdir",
+        ("mkdir", "makedir"),
         opt_str="mkdir / makedir <string>",
         description="Create a new path",
     )
     cls = clear = Cmd_type_val(
-        "cls",
+        ("cls", "clear"),
         opt_str="cls / clear",
         description="Clear screen",
     )
     list = Cmd_type_val(
-        "list",
+        ("list",),
         opt_str="list <list option>",
         description=(
             "Operate Ripper list\n"
@@ -144,9 +159,14 @@ class Cmd_type(enum.Enum):
             "<int> <int>:\n"
             "  Exchange specified index"
         ),
+        childs=(
+            Cmd_type_val(("clear", "clean")),
+            Cmd_type_val(("del", "pop")),
+            Cmd_type_val(("sort",), childs=(Cmd_type_val(("n", "r", "nr")),)),
+        ),
     )
     run = Cmd_type_val(
-        "run",
+        ("run",),
         opt_str="run [<run option>]",
         description=(
             "Run the Ripper in the Ripper list\n"
@@ -161,18 +181,26 @@ class Cmd_type(enum.Enum):
             "  Shutdown when run finished\n"
             "  Default: 60"
         ),
+        childs=(
+            Cmd_type_val(("exit",)),
+            Cmd_type_val(("shutdown",)),
+        ),
     )
     server = Cmd_type_val(
-        "server",
+        ("server",),
         opt_str="server [[-a | -address] <address>[:<port>] [[-p | -password] <password>]]",
         description=(
             "Boot web service\n"
             "Default: server localhost:0\n"
             "Client send command 'kill' can exit Ripper's run, note that FFmpeg needs to accept multiple ^C signals to forcibly terminate, and a single ^C signal will wait for the file output to be complete before terminating"
         ),
+        childs=(
+            Cmd_type_val(("-a", "-address")),
+            Cmd_type_val(("-p", "-password")),
+        ),
     )
     config = Cmd_type_val(
-        "config",
+        ("config",),
         opt_str="config <config option>",
         description=(
             "regenerate | clear | clean | reset\n"
@@ -185,22 +213,33 @@ class Cmd_type(enum.Enum):
             "  Set config\n"
             "  e.g. config set language zh"
         ),
+        childs=(
+            Cmd_type_val(("regenerate", "clear", "clean", "reset")),
+            Cmd_type_val(("open",)),
+            Cmd_type_val(("list",)),
+            Cmd_type_val(("set",)),
+        ),
     )
     translate = Cmd_type_val(
-        "translate",
+        ("translate",),
         opt_str="translate <files' infix> <target lang tag> [-overwrite]",
         description=(
             "Translate subtitle files\n"
             "e.g. 'translate zh-Hans zh-Hant' will translate all '*.zh-Hans.ass' files into zh-Hant"
         ),
+        childs=(Cmd_type_val(("-overwrite",)),),
     )
     mediainfo = Cmd_type_val(
-        "mediainfo",
+        ("mediainfo",),
         opt_str="mediainfo <<path> | 'fd' | 'cfd'>",
         description="Get the media info by the Media_info class",
+        childs=(
+            Cmd_type_val(("fd",)),
+            Cmd_type_val(("cfd",)),
+        ),
     )
     Option = Cmd_type_val(
-        "Option",
+        ("Option",),
         opt_str="<Option> ...",
         description=(
             "-i <input> -p <preset name> [-o <output>] [-o:dir <dir>] [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio encoder> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]] [...]\n"
@@ -223,20 +262,24 @@ class Cmd_type(enum.Enum):
 
 class Opt_type(enum.Enum):
     _i = Cmd_type_val(
-        "-i",
+        ("-i",),
         opt_str="-i <<path>[::<path>[?<path>...]...] | 'fd' | 'cfd'>",
         description=(
             "Input files' pathname or enter 'fd' to use file dialog, 'cfd' to open from the current directory\n"
             "In some cases, it is allowed to use '?' as a delimiter to input multiple into a Ripper, for example, 'preset subset' allows multiple ASS inputs"
         ),
+        childs=(
+            Cmd_type_val(("fd",)),
+            Cmd_type_val(("cfd",)),
+        ),
     )
     _o_dir = Cmd_type_val(
-        "-o:dir",
+        ("-o:dir",),
         opt_str="-o:dir <path>",
         description="Destination directory of the output file",
     )
     _o = Cmd_type_val(
-        "-o",
+        ("-o",),
         opt_str="-o <path>",
         description=(
             "Output file basename's prefix\n"
@@ -245,7 +288,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _auto_infix = Cmd_type_val(
-        "-auto-infix",
+        ("-auto-infix",),
         opt_str="-auto-infix <0 | 1>",
         description=(
             "If enable, output file name will add auto infix:\n"
@@ -253,9 +296,10 @@ class Opt_type(enum.Enum):
             "  with audio: '.va'\n"
             "Default: 1"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _preset = _p = Cmd_type_val(
-        "-preset",
+        ("-preset", "-p"),
         opt_str="-p / -preset <string>",
         description=(
             "Setting preset\n"
@@ -272,9 +316,38 @@ class Opt_type(enum.Enum):
             "  hevc_qsv hevc_nvenc hevc_amf\n"
             "  av1_qsv av1_nvenc av1_amf"
         ),
+        childs=(
+            Cmd_type_val(
+                (
+                    "custom",
+                    "subset",
+                    "copy",
+                    "flac",
+                    "x264fast",
+                    "x264slow",
+                    "x265fast4",
+                    "x265fast3",
+                    "x265fast2",
+                    "x265fast",
+                    "x265slow",
+                    "x265full",
+                    "svtav1",
+                    "vvenc",
+                    "h264_qsv",
+                    "h264_nvenc",
+                    "h264_amf",
+                    "hevc_qsv",
+                    "hevc_nvenc",
+                    "hevc_amf",
+                    "av1_qsv",
+                    "av1_nvenc",
+                    "av1_amf",
+                )
+            ),
+        ),
     )
     _pipe = Cmd_type_val(
-        "-pipe",
+        ("-pipe",),
         opt_str="-pipe <string>",
         description=(
             "Select a vpy file as pipe to input, this vpy must have input global val\n"
@@ -282,7 +355,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _pipe_gvar = Cmd_type_val(
-        "-pipe",
+        ("-pipe:gvar",),
         opt_str="-pipe:gvar <key>=<val>[:...]",
         description=(
             "Customize the global variables passed to vspipe, and use ':' intervals for multiple variables\n"
@@ -290,14 +363,14 @@ class Opt_type(enum.Enum):
         ),
     )
     _vf = Cmd_type_val(
-        "-vf",
+        ("-vf",),
         opt_str="-vf <string>",
         description=(
             "Customize FFmpeg's -vf\nUsing it together with -sub is undefined behavior"
         ),
     )
     _sub = Cmd_type_val(
-        "-sub",
+        ("-sub",),
         opt_str="-sub <<path> | 'auto' | 'auto:...'>",
         description=(
             "It use libass to make hard subtitle, input a subtitle pathname when you need hard subtitle\n"
@@ -307,22 +380,24 @@ class Opt_type(enum.Enum):
             "'auto:...' can only select which match infix.\n"
             "  e.g. 'auto:zh-Hans:zh-Hant'"
         ),
+        childs=(Cmd_type_val(("atuo",)),),
     )
     _only_mux_sub_path = Cmd_type_val(
-        "-only-mux-sub-path",
+        ("-only-mux-sub-path",),
         opt_str="-only-mux-sub-path <path>",
         description="All subtitles and fonts in this path will be muxed",
     )
     _soft_sub = Cmd_type_val(
-        "-soft-sub",
+        ("-soft-sub",),
         opt_str="-soft-sub <<path>[?<path>...] | 'auto' | 'auto:...'>",
         description=(
             "Mux ASS subtitles in MKV with subset\n"  # .
             "The usage of 'auto' is detailed in '-sub'"
         ),
+        childs=(Cmd_type_val(("atuo",)),),
     )
     _subset_font_dir = Cmd_type_val(
-        "-subset-font-dir",
+        ("-subset-font-dir",),
         opt_str="-subset-font-dir <<path>[?<path>...]>",
         description=(
             "The fonts directory when subset\n"
@@ -330,23 +405,25 @@ class Opt_type(enum.Enum):
         ),
     )
     _subset_font_in_sub = Cmd_type_val(
-        "-subset-font-in-sub",
+        ("-subset-font-in-sub",),
         opt_str="-subset-font-in-sub <0 | 1>",
         description=(
             "Encode fonts into ASS file instead of standalone files\n"  # .
             "Default: 0"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_use_win_font = Cmd_type_val(
-        "-subset-use-win-font",
+        ("-subset-use-win-font",),
         opt_str="-subset-use-win-font <0 | 1>",
         description=(
             "Use Windows fonts when can not find font in subset-font-dir\n"  # .
             "Default: 0"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_use_libass_spec = Cmd_type_val(
-        "-subset-use-libass-spec",
+        ("-subset-use-libass-spec",),
         opt_str="-subset-use-libass-spec <0 | 1>",
         description=(
             "Use libass specification when subset\n"
@@ -355,33 +432,37 @@ class Opt_type(enum.Enum):
             '  "11{22}33" (libass)\n'
             "Default: 0"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_drop_non_render = Cmd_type_val(
-        "-subset-drop-non-render",
+        ("-subset-drop-non-render",),
         opt_str="-subset-use-libass-spec <0 | 1>",
         description=(
             "Drop non rendered content such as Comment lines, Name, Effect, etc. in ASS\n"
             "Default: 1"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_drop_unkow_data = Cmd_type_val(
-        "-subset-drop-unkow-data",
+        ("-subset-drop-unkow-data",),
         opt_str="-subset-drop-unkow-data <0 | 1>",
         description=(
             "Drop lines that are not in {[Script Info], [V4+ Styles], [Events]} in ASS\n"
             "Default: 1"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_strict = Cmd_type_val(
-        "-subset-strict",
+        ("-subset-strict",),
         opt_str="-subset-strict <0 | 1>",
         description=(
             "Some error will interrupt subset\n"  # .
             "Default: 0"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _translate_sub = Cmd_type_val(
-        "-translate-sub",
+        ("-translate-sub",),
         opt_str="-translate-sub <infix>:<language-tag>",
         description=(
             "Temporary generation of subtitle translation files\n"
@@ -389,7 +470,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _c_a = Cmd_type_val(
-        "-c:a",
+        ("-c:a",),
         opt_str="-c:a <string>",
         description=(
             "Setting audio encoder\n"
@@ -399,14 +480,15 @@ class Opt_type(enum.Enum):
             "  libopus\n"
             "  flac"
         ),
+        childs=(Cmd_type_val(("copy", "libopus", "flac")),),
     )
     _b_a = Cmd_type_val(
-        "-b:a",
+        ("-b:a",),
         opt_str="-b:a <string>",
         description="Setting audio bitrate. Default '160k'",
     )
     _muxer = Cmd_type_val(
-        "-muxer",
+        ("-muxer",),
         opt_str="-muxer <string>",
         description=(
             "Setting muxer\n"
@@ -417,15 +499,16 @@ class Opt_type(enum.Enum):
         ),
     )
     _r = _fps = Cmd_type_val(
-        "-r",
+        ("-r", "-fps"),
         opt_str="-r / -fps <string | 'auto'>",
         description=(
             "Setting FPS when muxing\n"
             "When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point"
         ),
+        childs=(Cmd_type_val(("atuo",)),),
     )
     _chapters = Cmd_type_val(
-        "-chapters",
+        ("-chapters",),
         opt_str="-chapters <path>",
         description=(
             "Specify the chapters file to add\n"
@@ -433,7 +516,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _custom_template = _custom = _custom_format = Cmd_type_val(
-        "-custom:format",
+        ("-custom:format", "-custom", "-custom:tempate"),
         opt_str="-custom / -custom:format / -custom:template <string>",
         description=(
             "When -preset custom, this option will run\n"
@@ -442,7 +525,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _custom_suffix = Cmd_type_val(
-        "-custom:suffix",
+        ("-custom:suffix",),
         opt_str="-custom:suffix <string>",
         description=(
             "When -preset custom, this option will be used as a suffix for the output file\n"
@@ -450,7 +533,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _run = Cmd_type_val(
-        "-run",
+        ("-run",),
         opt_str="-run [<string>]",
         description=(
             "Run the Ripper from the Ripper list\n"
@@ -465,9 +548,13 @@ class Opt_type(enum.Enum):
             "  Shutdown when run finished\n"
             "  Default: 60\n"
         ),
+        childs=(
+            Cmd_type_val(("exit",)),
+            Cmd_type_val(("shutdown",)),
+        ),
     )
     _ff_params_ff = _ff_params = Cmd_type_val(
-        "-ff-params:ff",
+        ("-ff-params:ff", "-ff-params"),
         opt_str="-ff-params / -ff-params:ff <string>",
         description=(
             "Set FFmpeg global options\n"  # .
@@ -475,7 +562,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _ff_params_in = Cmd_type_val(
-        "-ff-params:in",
+        ("-ff-params:in",),
         opt_str="-ff-params:in <string>",
         description=(
             "Set FFmpeg input options\n"  # .
@@ -483,7 +570,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _ff_params_out = Cmd_type_val(
-        "-ff-params:out",
+        ("-ff-params:out",),
         opt_str="-ff-params:out <string>",
         description=(
             "Set FFmpeg output options\n"  # .
@@ -491,12 +578,12 @@ class Opt_type(enum.Enum):
         ),
     )
     _hwaccel = Cmd_type_val(
-        "-hwaccel",
+        ("-hwaccel",),
         opt_str="-hwaccel <string>",
         description="Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)",
     )
     _ss = Cmd_type_val(
-        "-ss",
+        ("-ss",),
         opt_str="-ss <time>",
         description=(
             "Set FFmpeg input file start time\n"  # .
@@ -504,7 +591,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _t = Cmd_type_val(
-        "-t",
+        ("-t",),
         opt_str="-t <time>",
         description=(
             "Set FFmpeg output file duration\n"  # .
@@ -512,20 +599,22 @@ class Opt_type(enum.Enum):
         ),
     )
     _hevc_strict = Cmd_type_val(
-        "-hevc-strict",
+        ("-hevc-strict",),
         opt_str="-hevc-strict <0 | 1>",
         description=(
             "When the resolution >= 4K, close HME, and auto reduce the -ref\n"  # .
             "Default: 1"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
     _multithreading = Cmd_type_val(
-        "-multithreading",
+        ("-multithreading",),
         opt_str="-multithreading <0 | 1>",
         description=(
             "Use multi-threading to run Ripper list, suitable for situations with low performance occupancy\n"
             "e.g. -p subset or -p copy"
         ),
+        childs=(Cmd_type_val(("0", "1")),),
     )
 
     @classmethod
@@ -538,6 +627,11 @@ class Opt_type(enum.Enum):
     @classmethod
     def to_doc(cls) -> str:
         return "\n\n".join(ct.value.to_doc() for ct in cls)
+
+
+Cmd_type.help.value.childs = tuple(
+    ct.value for ct in itertools.chain(Cmd_type, Opt_type) if ct is not Cmd_type.help
+)
 
 
 def get_help_doc() -> str:

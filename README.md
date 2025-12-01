@@ -46,12 +46,16 @@ Run `easyrip`, input `help` to get help doc
 
 * ### Python 3.13 (must >=3.12)
 
-  If you want to develop, you need to install dependencies. If you just want to use them, you don't need to install additional dependencies.  
-  如果你想开发，需要安装依赖，如果你只是想使用，不需要额外安装依赖。
+  If you want to develop, you need to install dependencies. If you just want to use them, you don't need to manually install dependencies.  
+  如果你想开发，需要安装依赖，如果你只是想使用，不需要手动安装依赖。
 
   ```pwsh
-  pip install -U pycryptodome fonttools
+  pip install -U prompt-toolkit fonttools pycryptodome
   ```
+
+  * [prompt-toolkit](https://pypi.org/project/prompt-toolkit/)
+  * [fonttools](https://pypi.org/project/fonttools/)
+  * [pycryptodome](https://pypi.org/project/pycryptodome/)
 
 * ### CLI
 

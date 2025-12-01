@@ -63,10 +63,10 @@ def log_new_ver(
                     dl_url,
                 )
             )
-            print(get_input_prompt(True), end="")
+            # print(get_input_prompt(True), end="")
     except Exception as e:
         log.warning(f"\n{e}", is_format=False, deep=True)
-        print(get_input_prompt(True), end="")
+        # print(get_input_prompt(True), end="")
 
 
 def check_env() -> None:
@@ -85,7 +85,7 @@ def check_env() -> None:
                             f"(full build ver) {_url}",
                         )
                     )
-                    print(get_input_prompt(True), end="")
+                    log.print(get_input_prompt(True), end="")
                 else:
                     _new_ver = (
                         subprocess.run(
@@ -110,7 +110,7 @@ def check_env() -> None:
                         "{} not found, download it: {}", _name, f"(ver >= 1.5.0) {_url}"
                     )
                 )
-                print(get_input_prompt(True), end="")
+                log.print(get_input_prompt(True), end="")
 
             elif check_ver(
                 "1.5.0",
@@ -137,7 +137,7 @@ def check_env() -> None:
                 log.warning(
                     "\n" + gettext("{} not found, download it: {}", _name, _url)
                 )
-                print(get_input_prompt(True), end="")
+                log.print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
                     easyrip_web.github.get_latest_release_ver(
@@ -155,7 +155,7 @@ def check_env() -> None:
                 log.warning(
                     "\n" + gettext("{} not found, download it: {}", _name, _url)
                 )
-                print(get_input_prompt(True), end="")
+                log.print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
                     "2.5",
@@ -173,7 +173,7 @@ def check_env() -> None:
                     log.warning(
                         "\n" + gettext("{} not found, download it: {}", _name, _url)
                     )
-                    print(get_input_prompt(True), end="")
+                    log.print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
                         easyrip_web.mkvtoolnix.get_latest_release_ver(),
@@ -192,7 +192,7 @@ def check_env() -> None:
             #             "{} not found, download it: {}", _name, f"(CLI ver) {_url}"
             #         )
             #     )
-            #     print(get_input_prompt(), end="")
+            #     log.print(get_input_prompt(), end="")
             # elif not subprocess.run(
             #     "mediainfo --version", capture_output=True, text=True
             # ).stdout:
@@ -213,8 +213,8 @@ def check_env() -> None:
                 }",
             )
 
-        sys.stdout.flush()
-        sys.stderr.flush()
+        # sys.stdout.flush()
+        # sys.stderr.flush()
         change_title(PROJECT_TITLE)
 
     except Exception as e:
@@ -497,7 +497,7 @@ def run_command(command: list[str] | str) -> bool:
 
         case Cmd_type.dir:
             files = os.listdir(os.getcwd())
-            print("\n".join(files))
+            log.print("\n".join(files))
             log.send(" | ".join(files))
 
         case Cmd_type.mkdir:

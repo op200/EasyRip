@@ -1,4 +1,5 @@
 import codecs
+import ctypes
 import os
 import re
 import string
@@ -32,7 +33,8 @@ class AES:
 
 def change_title(title: str) -> None:
     if os.name == "nt":
-        os.system(f"title {title}")
+        # os.system(f"title {title}")
+        ctypes.windll.kernel32.SetConsoleTitleW(title)
     elif os.name == "posix":
         sys.stdout.write(f"\x1b]2;{title}\x07")
         sys.stdout.flush()

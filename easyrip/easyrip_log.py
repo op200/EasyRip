@@ -7,6 +7,8 @@ import traceback
 from ctypes import wintypes
 from typing import TextIO
 
+from prompt_toolkit import ANSI, print_formatted_text
+
 from . import easyrip_web
 from .easyrip_mlang import gettext
 
@@ -123,6 +125,25 @@ class log:
     error_num: int = 0
     send_num: int = 0
 
+    @staticmethod
+    def print(
+        value: str,
+        end: str = "",
+        file: TextIO = sys.stdout,
+    ) -> None:
+        try:
+            print_formatted_text(
+                ANSI(value),
+                end=end,
+                file=file,
+            )
+        except Exception:
+            print(
+                value,
+                end=end,
+                file=file,
+            )
+
     @classmethod
     def _do_log(
         cls,
@@ -164,7 +185,7 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.debug.value
                     and cls.print_level.value <= print_level.value
                 ):
-                    print(
+                    cls.print(
                         f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
                         file=stream,
@@ -189,7 +210,7 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.info.value
                     and cls.print_level.value <= print_level.value
                 ):
-                    print(
+                    cls.print(
                         f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
                         file=stream,
@@ -214,7 +235,7 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.warning.value
                     and cls.print_level.value <= print_level.value
                 ):
-                    print(
+                    cls.print(
                         f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
                         file=stream,
@@ -239,7 +260,7 @@ class log:
                     and cls.print_level.value <= cls.LogLevel.error.value
                     and cls.print_level.value <= print_level.value
                 ):
-                    print(
+                    cls.print(
                         f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m\n",
                         end="",
                         file=stream,
@@ -265,7 +286,7 @@ class log:
                         and cls.print_level.value <= cls.LogLevel.send.value
                         and cls.print_level.value <= print_level.value
                     ):
-                        print(
+                        cls.print(
                             f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m\n",
                             end="",
                             file=stream,
@@ -284,7 +305,7 @@ class log:
                         (http_send_header, "Send", message)
                     )
                 elif cls.print_level.value <= cls.LogLevel.send.value:
-                    print(
+                    cls.print(
                         f"\033[{cls.send_color}m{message}\033[{cls.default_foreground_color}m\n",
                         end="",
                     )
