@@ -17,7 +17,7 @@ from .ass import (
     Event_type,
     Script_info_data,
 )
-from .font import Font, Font_type, get_font_path_from_registry, load_fonts, subset_font
+from .font import Font, Font_type, load_fonts, load_windows_fonts, subset_font
 
 
 def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type:
@@ -273,6 +273,8 @@ def subset(
     fonts: Final[list[Font]] = []
     for _path in font_path_list:
         fonts.extend(load_fonts(_path))
+    if use_win_font:
+        fonts.extend(load_windows_fonts())
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
     for _font in fonts:
@@ -283,14 +285,6 @@ def subset(
     # 子集化映射
     font__subset_str: dict[Font, dict[str, str]] = {}
     for key, val in font_sign__subset_str.items():
-        if key not in font_sign__font and use_win_font:
-            # 从系统获取
-            for _path in get_font_path_from_registry(key[0]):
-                for _font in load_fonts(_path):
-                    for _family in _font.familys:
-                        if _family not in font_sign__font:
-                            font_sign__font[(_family, _font.font_type)] = _font
-
         _k: tuple[str, Font_type] = key
         if key not in font_sign__font:
             if strict:

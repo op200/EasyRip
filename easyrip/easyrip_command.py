@@ -1,8 +1,20 @@
 import enum
 import itertools
 import textwrap
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Self, final
+from typing import Final, Self, TypeAlias, final
+
+from prompt_toolkit.completion import (
+    Completer,
+    FuzzyCompleter,
+    FuzzyWordCompleter,
+    NestedCompleter,
+    WordCompleter,
+    merge_completers,
+)
+from prompt_toolkit.completion.base import CompleteEvent, Completion
+from prompt_toolkit.document import Document
 
 from . import global_val
 
@@ -11,7 +23,7 @@ from . import global_val
 @dataclass(slots=True, init=False, eq=False)
 class Cmd_type_val:
     names: tuple[str, ...]
-    opt_str: str
+    param: str
     _description: str
     childs: tuple["Cmd_type_val", ...]
 
@@ -33,12 +45,12 @@ class Cmd_type_val:
         self,
         names: tuple[str, ...],
         *,
-        opt_str: str = "",
+        param: str = "",
         description: str = "",
         childs: tuple["Cmd_type_val", ...] = (),
     ) -> None:
         self.names = names
-        self.opt_str = opt_str
+        self.param = param
         self.description = description
         self.childs = childs
 
@@ -51,13 +63,13 @@ class Cmd_type_val:
         return hash(self.names)
 
     def to_doc(self) -> str:
-        return f"{self.opt_str or ' / '.join(self.names)}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
+        return f"{' / '.join(self.names)} {self.param}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
 
 
 class Cmd_type(enum.Enum):
     help = h = Cmd_type_val(
-        ("help", "h"),
-        opt_str="h / help [<cmd> [<cmd param>]]",
+        ("h", "help"),
+        param="[<cmd> [<cmd param>]]",
         description=(
             "Show full help or show the <cmd> help.\n"
             "e.g. help list\n"  # .
@@ -65,13 +77,11 @@ class Cmd_type(enum.Enum):
         ),
     )
     version = v = ver = Cmd_type_val(
-        ("version", "v", "ver"),
-        opt_str="v / ver / version",
+        ("v", "ver", "version"),
         description="Show version info",
     )
     init = Cmd_type_val(
         ("init",),
-        opt_str="init",
         description=(
             "Execute initialization function\n"
             "e.g. you can execute it after modifying the dynamic translation file"
@@ -79,7 +89,7 @@ class Cmd_type(enum.Enum):
     )
     log = Cmd_type_val(
         ("log",),
-        opt_str="log [<LogLevel>] <string>",
+        param="[<LogLevel>] <string>",
         description=(
             "Output custom log\n"
             "log level:\n"
@@ -100,7 +110,7 @@ class Cmd_type(enum.Enum):
     )
     _run_any = Cmd_type_val(
         ("$",),
-        opt_str="$ <code>",
+        param="<code>",
         description=(
             "Run code directly from the internal environment.\n"
             "Execute the code string directly after the '$'.\n"
@@ -109,12 +119,12 @@ class Cmd_type(enum.Enum):
     )
     exit = Cmd_type_val(
         ("exit",),
-        opt_str="exit",
+        param="exit",
         description="Exit this program",
     )
     cd = Cmd_type_val(
         ("cd",),
-        opt_str="cd <<path> | 'fd' | 'cfd'>",
+        param="<<path> | 'fd' | 'cfd'>",
         description="Change current working directory",
         childs=(
             Cmd_type_val(("fd",)),
@@ -123,22 +133,20 @@ class Cmd_type(enum.Enum):
     )
     dir = ls = Cmd_type_val(
         ("dir", "ls"),
-        opt_str="dir / ls",
         description="Print files and folders' name in the current working directory",
     )
     mkdir = makedir = Cmd_type_val(
         ("mkdir", "makedir"),
-        opt_str="mkdir / makedir <string>",
+        param="<string>",
         description="Create a new path",
     )
     cls = clear = Cmd_type_val(
         ("cls", "clear"),
-        opt_str="cls / clear",
         description="Clear screen",
     )
     list = Cmd_type_val(
         ("list",),
-        opt_str="list <list option>",
+        param="<list option>",
         description=(
             "Operate Ripper list\n"
             " \n"
@@ -167,7 +175,7 @@ class Cmd_type(enum.Enum):
     )
     run = Cmd_type_val(
         ("run",),
-        opt_str="run [<run option>]",
+        param="[<run option>]",
         description=(
             "Run the Ripper in the Ripper list\n"
             " \n"
@@ -188,7 +196,7 @@ class Cmd_type(enum.Enum):
     )
     server = Cmd_type_val(
         ("server",),
-        opt_str="server [[-a | -address] <address>[:<port>] [[-p | -password] <password>]]",
+        param="[[-a | -address] <address>[:<port>] [[-p | -password] <password>]]",
         description=(
             "Boot web service\n"
             "Default: server localhost:0\n"
@@ -201,7 +209,7 @@ class Cmd_type(enum.Enum):
     )
     config = Cmd_type_val(
         ("config",),
-        opt_str="config <config option>",
+        param="<config option>",
         description=(
             "regenerate | clear | clean | reset\n"
             "  Regenerate config file\n"
@@ -222,7 +230,7 @@ class Cmd_type(enum.Enum):
     )
     translate = Cmd_type_val(
         ("translate",),
-        opt_str="translate <files' infix> <target lang tag> [-overwrite]",
+        param="<files' infix> <target lang tag> [-overwrite]",
         description=(
             "Translate subtitle files\n"
             "e.g. 'translate zh-Hans zh-Hant' will translate all '*.zh-Hans.ass' files into zh-Hant"
@@ -231,7 +239,7 @@ class Cmd_type(enum.Enum):
     )
     mediainfo = Cmd_type_val(
         ("mediainfo",),
-        opt_str="mediainfo <<path> | 'fd' | 'cfd'>",
+        param="<<path> | 'fd' | 'cfd'>",
         description="Get the media info by the Media_info class",
         childs=(
             Cmd_type_val(("fd",)),
@@ -240,7 +248,7 @@ class Cmd_type(enum.Enum):
     )
     Option = Cmd_type_val(
         ("Option",),
-        opt_str="<Option> ...",
+        param="...",
         description=(
             "-i <input> -p <preset name> [-o <output>] [-o:dir <dir>] [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio encoder> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]] [...]\n"
             " \n"
@@ -263,7 +271,7 @@ class Cmd_type(enum.Enum):
 class Opt_type(enum.Enum):
     _i = Cmd_type_val(
         ("-i",),
-        opt_str="-i <<path>[::<path>[?<path>...]...] | 'fd' | 'cfd'>",
+        param="<<path>[::<path>[?<path>...]...] | 'fd' | 'cfd'>",
         description=(
             "Input files' pathname or enter 'fd' to use file dialog, 'cfd' to open from the current directory\n"
             "In some cases, it is allowed to use '?' as a delimiter to input multiple into a Ripper, for example, 'preset subset' allows multiple ASS inputs"
@@ -275,12 +283,12 @@ class Opt_type(enum.Enum):
     )
     _o_dir = Cmd_type_val(
         ("-o:dir",),
-        opt_str="-o:dir <path>",
+        param="<path>",
         description="Destination directory of the output file",
     )
     _o = Cmd_type_val(
         ("-o",),
-        opt_str="-o <path>",
+        param="<path>",
         description=(
             "Output file basename's prefix\n"
             "Allow iterators and time formatting for multiple inputs\n"
@@ -289,7 +297,7 @@ class Opt_type(enum.Enum):
     )
     _auto_infix = Cmd_type_val(
         ("-auto-infix",),
-        opt_str="-auto-infix <0 | 1>",
+        param="<0 | 1>",
         description=(
             "If enable, output file name will add auto infix:\n"
             "  no audio: '.v'\n"
@@ -299,8 +307,8 @@ class Opt_type(enum.Enum):
         childs=(Cmd_type_val(("0", "1")),),
     )
     _preset = _p = Cmd_type_val(
-        ("-preset", "-p"),
-        opt_str="-p / -preset <string>",
+        ("-p", "-preset"),
+        param="<string>",
         description=(
             "Setting preset\n"
             "Preset name:\n"
@@ -348,7 +356,7 @@ class Opt_type(enum.Enum):
     )
     _pipe = Cmd_type_val(
         ("-pipe",),
-        opt_str="-pipe <string>",
+        param="<string>",
         description=(
             "Select a vpy file as pipe to input, this vpy must have input global val\n"
             "The input in vspipe: vspipe -a input=<input> filter.vpy"
@@ -356,7 +364,7 @@ class Opt_type(enum.Enum):
     )
     _pipe_gvar = Cmd_type_val(
         ("-pipe:gvar",),
-        opt_str="-pipe:gvar <key>=<val>[:...]",
+        param="<key>=<val>[:...]",
         description=(
             "Customize the global variables passed to vspipe, and use ':' intervals for multiple variables\n"
             '  e.g. -pipe:gvar "a=1 2 3:b=abc" -> vspipe -a "a=1 2 3" -a "b=abc"'
@@ -364,14 +372,14 @@ class Opt_type(enum.Enum):
     )
     _vf = Cmd_type_val(
         ("-vf",),
-        opt_str="-vf <string>",
+        param="<string>",
         description=(
             "Customize FFmpeg's -vf\nUsing it together with -sub is undefined behavior"
         ),
     )
     _sub = Cmd_type_val(
         ("-sub",),
-        opt_str="-sub <<path> | 'auto' | 'auto:...'>",
+        param="<<path> | 'auto' | 'auto:...'>",
         description=(
             "It use libass to make hard subtitle, input a subtitle pathname when you need hard subtitle\n"
             'It can add multiple subtitles by "::"\n'
@@ -384,12 +392,12 @@ class Opt_type(enum.Enum):
     )
     _only_mux_sub_path = Cmd_type_val(
         ("-only-mux-sub-path",),
-        opt_str="-only-mux-sub-path <path>",
+        param="<path>",
         description="All subtitles and fonts in this path will be muxed",
     )
     _soft_sub = Cmd_type_val(
         ("-soft-sub",),
-        opt_str="-soft-sub <<path>[?<path>...] | 'auto' | 'auto:...'>",
+        param="<<path>[?<path>...] | 'auto' | 'auto:...'>",
         description=(
             "Mux ASS subtitles in MKV with subset\n"  # .
             "The usage of 'auto' is detailed in '-sub'"
@@ -398,7 +406,7 @@ class Opt_type(enum.Enum):
     )
     _subset_font_dir = Cmd_type_val(
         ("-subset-font-dir",),
-        opt_str="-subset-font-dir <<path>[?<path>...]>",
+        param="<<path>[?<path>...]>",
         description=(
             "The fonts directory when subset\n"
             'Default: Prioritize the current directory, followed by folders containing "font" (case-insensitive) within the current directory'
@@ -406,7 +414,7 @@ class Opt_type(enum.Enum):
     )
     _subset_font_in_sub = Cmd_type_val(
         ("-subset-font-in-sub",),
-        opt_str="-subset-font-in-sub <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Encode fonts into ASS file instead of standalone files\n"  # .
             "Default: 0"
@@ -415,7 +423,7 @@ class Opt_type(enum.Enum):
     )
     _subset_use_win_font = Cmd_type_val(
         ("-subset-use-win-font",),
-        opt_str="-subset-use-win-font <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Use Windows fonts when can not find font in subset-font-dir\n"  # .
             "Default: 0"
@@ -424,7 +432,7 @@ class Opt_type(enum.Enum):
     )
     _subset_use_libass_spec = Cmd_type_val(
         ("-subset-use-libass-spec",),
-        opt_str="-subset-use-libass-spec <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Use libass specification when subset\n"
             'e.g. "11\\{22}33" ->\n'
@@ -436,7 +444,7 @@ class Opt_type(enum.Enum):
     )
     _subset_drop_non_render = Cmd_type_val(
         ("-subset-drop-non-render",),
-        opt_str="-subset-use-libass-spec <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Drop non rendered content such as Comment lines, Name, Effect, etc. in ASS\n"
             "Default: 1"
@@ -445,7 +453,7 @@ class Opt_type(enum.Enum):
     )
     _subset_drop_unkow_data = Cmd_type_val(
         ("-subset-drop-unkow-data",),
-        opt_str="-subset-drop-unkow-data <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Drop lines that are not in {[Script Info], [V4+ Styles], [Events]} in ASS\n"
             "Default: 1"
@@ -454,7 +462,7 @@ class Opt_type(enum.Enum):
     )
     _subset_strict = Cmd_type_val(
         ("-subset-strict",),
-        opt_str="-subset-strict <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Some error will interrupt subset\n"  # .
             "Default: 0"
@@ -463,7 +471,7 @@ class Opt_type(enum.Enum):
     )
     _translate_sub = Cmd_type_val(
         ("-translate-sub",),
-        opt_str="-translate-sub <infix>:<language-tag>",
+        param="<infix>:<language-tag>",
         description=(
             "Temporary generation of subtitle translation files\n"
             "e.g. 'zh-Hans:zh-Hant' will temporary generation of Traditional Chinese subtitles"
@@ -471,7 +479,7 @@ class Opt_type(enum.Enum):
     )
     _c_a = Cmd_type_val(
         ("-c:a",),
-        opt_str="-c:a <string>",
+        param="<string>",
         description=(
             "Setting audio encoder\n"
             " \n"  # .
@@ -484,12 +492,12 @@ class Opt_type(enum.Enum):
     )
     _b_a = Cmd_type_val(
         ("-b:a",),
-        opt_str="-b:a <string>",
+        param="<string>",
         description="Setting audio bitrate. Default '160k'",
     )
     _muxer = Cmd_type_val(
         ("-muxer",),
-        opt_str="-muxer <string>",
+        param="<string>",
         description=(
             "Setting muxer\n"
             " \n"  # .
@@ -500,7 +508,7 @@ class Opt_type(enum.Enum):
     )
     _r = _fps = Cmd_type_val(
         ("-r", "-fps"),
-        opt_str="-r / -fps <string | 'auto'>",
+        param="<string | 'auto'>",
         description=(
             "Setting FPS when muxing\n"
             "When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point"
@@ -509,15 +517,15 @@ class Opt_type(enum.Enum):
     )
     _chapters = Cmd_type_val(
         ("-chapters",),
-        opt_str="-chapters <path>",
+        param="<path>",
         description=(
             "Specify the chapters file to add\n"
             "Supports the same iteration syntax as '-o'"
         ),
     )
     _custom_template = _custom = _custom_format = Cmd_type_val(
-        ("-custom:format", "-custom", "-custom:tempate"),
-        opt_str="-custom / -custom:format / -custom:template <string>",
+        ("-custom", "-custom:format", "-custom:tempate"),
+        param="<string>",
         description=(
             "When -preset custom, this option will run\n"
             "String escape: \\34/ -> \", \\39/ -> ', '' -> \"\n"
@@ -526,7 +534,7 @@ class Opt_type(enum.Enum):
     )
     _custom_suffix = Cmd_type_val(
         ("-custom:suffix",),
-        opt_str="-custom:suffix <string>",
+        param="<string>",
         description=(
             "When -preset custom, this option will be used as a suffix for the output file\n"
             'Default: ""'
@@ -534,7 +542,7 @@ class Opt_type(enum.Enum):
     )
     _run = Cmd_type_val(
         ("-run",),
-        opt_str="-run [<string>]",
+        param="[<string>]",
         description=(
             "Run the Ripper from the Ripper list\n"
             " \n"
@@ -554,8 +562,8 @@ class Opt_type(enum.Enum):
         ),
     )
     _ff_params_ff = _ff_params = Cmd_type_val(
-        ("-ff-params:ff", "-ff-params"),
-        opt_str="-ff-params / -ff-params:ff <string>",
+        ("-ff-params", "-ff-params:ff"),
+        param="<string>",
         description=(
             "Set FFmpeg global options\n"  # .
             "Same as ffmpeg <option> ... -i ..."
@@ -563,7 +571,7 @@ class Opt_type(enum.Enum):
     )
     _ff_params_in = Cmd_type_val(
         ("-ff-params:in",),
-        opt_str="-ff-params:in <string>",
+        param="<string>",
         description=(
             "Set FFmpeg input options\n"  # .
             "Same as ffmpeg ... <option> -i ..."
@@ -571,7 +579,7 @@ class Opt_type(enum.Enum):
     )
     _ff_params_out = Cmd_type_val(
         ("-ff-params:out",),
-        opt_str="-ff-params:out <string>",
+        param="<string>",
         description=(
             "Set FFmpeg output options\n"  # .
             "Same as ffmpeg -i ... <option> ..."
@@ -579,12 +587,12 @@ class Opt_type(enum.Enum):
     )
     _hwaccel = Cmd_type_val(
         ("-hwaccel",),
-        opt_str="-hwaccel <string>",
+        param="<string>",
         description="Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)",
     )
     _ss = Cmd_type_val(
         ("-ss",),
-        opt_str="-ss <time>",
+        param="<time>",
         description=(
             "Set FFmpeg input file start time\n"  # .
             "Same as ffmpeg -ss <time> -i ..."
@@ -592,7 +600,7 @@ class Opt_type(enum.Enum):
     )
     _t = Cmd_type_val(
         ("-t",),
-        opt_str="-t <time>",
+        param="<time>",
         description=(
             "Set FFmpeg output file duration\n"  # .
             "Same as ffmpeg -i ... -t <time> ..."
@@ -600,7 +608,7 @@ class Opt_type(enum.Enum):
     )
     _hevc_strict = Cmd_type_val(
         ("-hevc-strict",),
-        opt_str="-hevc-strict <0 | 1>",
+        param="<0 | 1>",
         description=(
             "When the resolution >= 4K, close HME, and auto reduce the -ref\n"  # .
             "Default: 1"
@@ -609,7 +617,7 @@ class Opt_type(enum.Enum):
     )
     _multithreading = Cmd_type_val(
         ("-multithreading",),
-        opt_str="-multithreading <0 | 1>",
+        param="<0 | 1>",
         description=(
             "Use multi-threading to run Ripper list, suitable for situations with low performance occupancy\n"
             "e.g. -p subset or -p copy"
@@ -655,3 +663,126 @@ def get_help_doc() -> str:
         "\n"
         f"{textwrap.indent(Opt_type.to_doc(), '  ')}"
     )
+
+
+nested_dict: TypeAlias = dict[str, "nested_dict | Completer"]
+META_DICT_OPT_TYPE = {
+    name: opt.value.param for opt in Opt_type for name in opt.value.names
+}
+META_DICT_CMD_TYPE = {
+    name: opt.value.param for opt in Cmd_type for name in opt.value.names
+}
+
+
+def _nested_dict_to_nc(n_dict: nested_dict) -> NestedCompleter:
+    return NestedCompleter(
+        {
+            k: (v if isinstance(v, Completer) else _nested_dict_to_nc(v) if v else None)
+            for k, v in n_dict.items()
+        }
+    )
+
+
+class CmdCompleter(NestedCompleter):
+    def get_completions(
+        self, document: Document, complete_event: CompleteEvent
+    ) -> Iterable[Completion]:
+        # Split document.
+        text = document.text_before_cursor.lstrip()
+        stripped_len = len(document.text_before_cursor) - len(text)
+
+        # If there is a space, check for the first term, and use a
+        # subcompleter.
+        if " " in text:
+            first_term = text.split()[0]
+            completer = self.options.get(first_term)
+
+            # If we have a sub completer, use this for the completions.
+            if completer is not None:
+                remaining_text = text[len(first_term) :].lstrip()
+                move_cursor = len(text) - len(remaining_text) + stripped_len
+
+                new_document = Document(
+                    remaining_text,
+                    cursor_position=document.cursor_position - move_cursor,
+                )
+
+                yield from completer.get_completions(new_document, complete_event)
+
+        # No space in the input: behave exactly like `WordCompleter`.
+        else:
+            # custom
+            completer = FuzzyWordCompleter(
+                tuple(self.options),
+                meta_dict=META_DICT_CMD_TYPE,
+                WORD=True,
+            )
+            yield from completer.get_completions(document, complete_event)
+
+
+class OptCompleter(Completer):
+    def __init__(self, *, opt_tree: nested_dict) -> None:
+        self.opt_tree: Final[nested_dict] = opt_tree
+
+    def get_completions(
+        self, document: Document, complete_event: CompleteEvent
+    ) -> Iterable[Completion]:
+        text = document.text_before_cursor.lstrip()
+
+        words = text.split()
+
+        if len(words) >= 1 and not text.startswith("-"):
+            return
+
+        opt_tree_pos_list: list[nested_dict | Completer] = [self.opt_tree]
+
+        for word in words:
+            if isinstance(opt_tree_pos_list[-1], Completer):
+                opt_tree_pos_list.append(self.opt_tree.get(word, self.opt_tree))
+            else:
+                opt_tree_pos_list.append(
+                    opt_tree_pos_list[-1].get(
+                        word, self.opt_tree.get(word, self.opt_tree)
+                    )
+                )
+
+        if isinstance(opt_tree_pos_list[-1], Completer):
+            # 直接使用 PathCompleter 会因为上下文问题失效，所以将上文套进 NestedCompleter
+            new_nd: nested_dict = {}
+            new_nd_pos: nested_dict = new_nd
+            for word in words[:-1]:
+                new_nd_pos[word] = new_nd_pos = {}
+            new_nd_pos[words[-1]] = opt_tree_pos_list[-1]
+
+            yield from _nested_dict_to_nc(new_nd).get_completions(
+                document=document, complete_event=complete_event
+            )
+
+        elif len(words) >= 2 and isinstance(opt_tree_pos_list[-2], Completer):
+            new_nd: nested_dict = {}
+            new_nd_pos: nested_dict = new_nd
+            for word in words[:-2]:
+                new_nd_pos[word] = new_nd_pos = {}
+            new_nd_pos[words[-2]] = opt_tree_pos_list[-2]
+
+            yield from merge_completers(
+                (
+                    _nested_dict_to_nc(new_nd),
+                    FuzzyWordCompleter(
+                        words=tuple(opt_tree_pos_list[-1]),
+                        meta_dict=META_DICT_OPT_TYPE,
+                        WORD=True,
+                    ),
+                )
+            ).get_completions(document=document, complete_event=complete_event)
+
+        else:
+            yield from FuzzyCompleter(
+                WordCompleter(
+                    words=tuple(opt_tree_pos_list[-1]),
+                    meta_dict=META_DICT_OPT_TYPE,
+                    WORD=True,
+                    match_middle=True,
+                ),
+                WORD=False,
+            ).get_completions(document=document, complete_event=complete_event)

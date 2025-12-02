@@ -29,7 +29,7 @@ LANG_MAP: dict[str, str] = {
         "执行初始化函数\n"  # .
         "例如你可以在修改动态翻译文件后执行它"
     ),
-    Cmd_type.log.value.opt_str: "log [<日志级别>] <string>",
+    Cmd_type.log.value.param: "[<日志级别>] <string>",
     Cmd_type.log.value.description: (
         "输出自定义日志\n"
         "日志级别:\n"
@@ -50,7 +50,7 @@ LANG_MAP: dict[str, str] = {
     Cmd_type.dir.value.description: "打印当前目录的所有文件和文件夹的名字",
     Cmd_type.mkdir.value.description: "新建文件目录",
     Cmd_type.cls.value.description: "清屏",
-    Cmd_type.list.value.opt_str: "list <list 选项>",
+    Cmd_type.list.value.param: "<list 选项>",
     Cmd_type.list.value.description: (
         "操作 Ripper list\n"
         " \n"
@@ -71,7 +71,7 @@ LANG_MAP: dict[str, str] = {
         "<int> <int>:\n"
         "  交换指定索引"
     ),
-    Cmd_type.run.value.opt_str: "run <run 选项>",
+    Cmd_type.run.value.param: "<run 选项>",
     Cmd_type.run.value.description: (
         "执行 Ripper list 中的 Ripper\n"
         " \n"
@@ -85,13 +85,13 @@ LANG_MAP: dict[str, str] = {
         "  执行后关机\n"
         "  默认: 60"
     ),
-    Cmd_type.server.value.opt_str: "server [[-a | -address] <地址>[:<端口>] [[-p | -password] <密码>]]",
+    Cmd_type.server.value.param: "[[-a | -address] <地址>[:<端口>] [[-p | -password] <密码>]]",
     Cmd_type.server.value.description: (
         "启动 web 服务\n"
         "默认: server localhost:0\n"
         "客户端发送命令 'kill' 可以退出 Ripper 的运行, 注意, FFmpeg需要接受多次^C信号才能强制终止, 单次^C会等待文件输出完才会终止"
     ),
-    Cmd_type.config.value.opt_str: "config <config 选项>",
+    Cmd_type.config.value.param: "<config 选项>",
     Cmd_type.config.value.description: (
         "regenerate | clear | clean | reset\n"
         "  重新生成 config 文件\n"
@@ -103,7 +103,7 @@ LANG_MAP: dict[str, str] = {
         "  设置 config\n"
         "  例如 config set language en"
     ),
-    Cmd_type.translate.value.opt_str: "translate <中缀> <目标语言标签> [-overwrite]",
+    Cmd_type.translate.value.param: "<中缀> <目标语言标签> [-overwrite]",
     Cmd_type.translate.value.description: (
         "翻译字幕文件\n"
         "例如 'translate zh-Hans zh-Hant' 将翻译所有 '*.zh-Hans.ass' 文件为 zh-Hant"
@@ -198,7 +198,7 @@ LANG_MAP: dict[str, str] = {
         "子集化时报错则中断\n"  # .
         "默认: 0"
     ),
-    Opt_type._translate_sub.value.opt_str: "-translate-sub <中缀>:<语言标签>",
+    Opt_type._translate_sub.value.param: "<中缀>:<语言标签>",
     Opt_type._translate_sub.value.description: (
         "临时生成字幕的翻译文件\n"  # .
         "例如 'zh-Hans:zh-Hant' 将临时生成繁体字幕"

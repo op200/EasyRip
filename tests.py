@@ -26,6 +26,7 @@ from easyrip import (
 from easyrip.easyrip_command import Cmd_type, Opt_type
 from easyrip.easyrip_mlang import Lang_tag_val, all_supported_lang_map
 from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
+from easyrip.ripper.font_subset.font import load_fonts, load_windows_fonts
 
 if sys.stdout.encoding != "UTF-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -251,12 +252,16 @@ class TestRip(unittest.TestCase):
         )
 
 
-class TestSubtitle(unittest.TestCase):
+class TestSubset(unittest.TestCase):
     def test_ass_class(self):
         TEST_ASS_NUMBER = 100
         log.info(
             f"Test ASS class {TEST_ASS_NUMBER} times: {timeit.timeit(lambda: Ass('test.zh-Hans.ass'), number=TEST_ASS_NUMBER):.4f}sec"
         )
+
+    def test_load_font(self):
+        self.assertFalse(load_fonts(":&?"))
+        self.assertTrue(load_windows_fonts())
 
 
 class TestThirdPartyApi(unittest.TestCase):

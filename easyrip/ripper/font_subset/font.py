@@ -1,6 +1,6 @@
 import enum
+import itertools
 import os
-import winreg
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -125,43 +125,17 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
     return res_font_list
 
 
-def get_font_path_from_registry(font_name: str) -> list[str]:
-    """
-    通过Windows注册表获取字体文件路径
+def load_windows_fonts(lazy: bool = True) -> list[Font]:
+    paths: tuple[str, ...] = (
+        os.path.join(os.environ["SYSTEMROOT"], "Fonts"),
+        os.path.join(os.environ["LOCALAPPDATA"], "Microsoft/Windows/Fonts"),
+    )
 
-    :param font_name: 字体名称（如"Arial"）
-    :return: 字体文件完整路径，如果找不到返回None
-    """
-    res: Final[list[str]] = []
-    try:
-        # 打开字体注册表键
-        with winreg.OpenKey(
-            winreg.HKEY_LOCAL_MACHINE,
-            r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts",
-        ) as key:
-            i = 0
-            while True:
-                try:
-                    # 枚举所有字体值
-                    value_name, value_data, _ = winreg.EnumValue(key, i)
-                    i += 1
-
-                    # 检查字体名称是否匹配（去掉可能的"(TrueType)"等后缀）
-                    if value_name.startswith(font_name):
-                        # 获取字体文件路径
-                        fonts_dir = os.path.join(os.environ["SYSTEMROOT"], "Fonts")
-                        font_path = os.path.join(fonts_dir, value_data)
-
-                        # 检查文件是否存在
-                        if os.path.isfile(font_path):
-                            res.append(font_path)
-                except OSError:
-                    # 没有更多条目时退出循环
-                    break
-    except Exception as e:
-        log.warning("Error accessing registry: {}", e)
-
-    return res
+    return list(
+        itertools.chain.from_iterable(
+            load_fonts(path=path, lazy=lazy) for path in paths
+        )
+    )
 
 
 def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:

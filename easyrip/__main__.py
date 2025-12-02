@@ -1,21 +1,23 @@
-import itertools
 import sys
-from typing import Final, NoReturn
+from collections.abc import Iterable
+from typing import NoReturn
 
 import Crypto
 import fontTools
 import prompt_toolkit
 from prompt_toolkit import ANSI, prompt
-from prompt_toolkit.completion import (
-    FuzzyWordCompleter,
-    NestedCompleter,
-    PathCompleter,
-    merge_completers,
-)
+from prompt_toolkit.completion import FuzzyCompleter, PathCompleter, merge_completers
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings
 
-from .easyrip_command import Cmd_type, Cmd_type_val, Opt_type
+from .easyrip_command import (
+    Cmd_type,
+    Cmd_type_val,
+    CmdCompleter,
+    Opt_type,
+    OptCompleter,
+    nested_dict,
+)
 from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
 
 
@@ -36,12 +38,12 @@ def run() -> NoReturn:
 
     @key_bindings.add("c-d")
     def _(event) -> None:
-        event.app.current_buffer.insert_text("\x04")
+        event.app.current_buffer.insert_text("\x04")  # ^D
 
-    path_completer = PathCompleter()
+    path_completer = FuzzyCompleter(PathCompleter())
 
-    def _ctv_to_nc(ctv_tuple: tuple[Cmd_type_val, ...]) -> NestedCompleter:
-        return NestedCompleter(
+    def _ctv_to_nc(ctvs: Iterable[Cmd_type_val]) -> CmdCompleter:
+        return CmdCompleter(
             {
                 name: (
                     merge_completers(completer_tuple)
@@ -54,14 +56,6 @@ def run() -> NoReturn:
                                 in {
                                     *Cmd_type.cd.value.names,
                                     *Cmd_type.mediainfo.value.names,
-                                    *Opt_type._i.value.names,
-                                    *Opt_type._o_dir.value.names,
-                                    *Opt_type._o.value.names,
-                                    *Opt_type._sub.value.names,
-                                    *Opt_type._only_mux_sub_path.value.names,
-                                    *Opt_type._soft_sub.value.names,
-                                    *Opt_type._subset_font_dir.value.names,
-                                    *Opt_type._chapters.value.names,
                                 }
                                 else ()
                             ),
@@ -69,45 +63,53 @@ def run() -> NoReturn:
                     )
                     else None
                 )
-                for ctv in ctv_tuple
+                for ctv in ctvs
                 for name in ctv.names
             }
         )
 
-    all_ctv: Final = tuple(
-        ct.value
-        for ct in itertools.chain(Cmd_type, Opt_type)
-        if ct not in {Cmd_type.Option}
-    )
-    merged_completer: Final = merge_completers(
-        (
-            FuzzyWordCompleter(
-                words=tuple(name for ctv in all_ctv for name in ctv.names),
-                WORD=True,
-            ),
-            _ctv_to_nc(all_ctv),
-        )
-    )
+    def _ctv_to_nd(ctvs: Iterable[Cmd_type_val]) -> nested_dict:
+        return {
+            name: (
+                merge_completers(
+                    (OptCompleter(opt_tree=_ctv_to_nd(ctv.childs)), path_completer)
+                )
+                if name
+                in {
+                    *Opt_type._i.value.names,
+                    *Opt_type._o_dir.value.names,
+                    *Opt_type._o.value.names,
+                    *Opt_type._sub.value.names,
+                    *Opt_type._only_mux_sub_path.value.names,
+                    *Opt_type._soft_sub.value.names,
+                    *Opt_type._subset_font_dir.value.names,
+                    *Opt_type._chapters.value.names,
+                }
+                else _ctv_to_nd(ctv.childs)
+            )
+            for ctv in ctvs
+            for name in ctv.names
+        }
 
+    cmd_ctv_tuple = tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
     prompt_history = InMemoryHistory()
     while True:
         try:
             command = prompt(
                 ANSI(get_input_prompt(is_color=True)),
                 key_bindings=key_bindings,
-                completer=merged_completer,
+                completer=merge_completers(
+                    (
+                        _ctv_to_nc(cmd_ctv_tuple),
+                        OptCompleter(opt_tree=_ctv_to_nd(ct.value for ct in Opt_type)),
+                    )
+                ),
                 history=prompt_history,
                 complete_while_typing=True,
             )
-            if command.startswith("\x1a"):
+            if command.startswith("\x1a"):  # ^Z
                 raise EOFError
-            # sys.stdout.flush()
-            # sys.stderr.flush()
         except KeyboardInterrupt:
-            # print(
-            #     f"\033[{91 if log.default_background_color == 41 else 31}m^C\033[{log.default_foreground_color}m\n",
-            #     end="",
-            # )
             continue
         except EOFError:
             log.debug("Manually force exit")
