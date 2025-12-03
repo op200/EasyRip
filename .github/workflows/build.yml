@@ -35,23 +35,27 @@ jobs:
           cache: "pip"
       - run: pip install -U . && pip install -U nuitka
 
-      - name: Build - nuitka
-        run: |
-          python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico --output-dir=./easyrip_nuitka_output easyrip.py
-
       - name: Build - zipapp
         run: |
           python -m compileall -f easyrip
           python -m zipapp easyrip --output easyrip.pyz --compress
 
-      - name: Create 7z archive
+      - name: Upload pyz
+        uses: actions/upload-artifact@v5
+        with:
+          name: easyrip.pyz
+          path: ./easyrip.pyz
+
+      - name: Build - nuitka
+        run: |
+          python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico -o easyrip --output-dir=./easyrip_nuitka_output --python-flag=-m easyrip
+
+      - name: exe -> 7z
         run: |
           7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z ./easyrip_nuitka_output/*.exe
 
-      - name: Upload artifact
+      - name: Upload exe.7z
         uses: actions/upload-artifact@v5
         with:
-          name: easyrip_x64
-          path: |
-            ./easyrip.7z
-            ./easyrip.pyz
+          name: easyrip.exe
+          path: ./easyrip.7z
