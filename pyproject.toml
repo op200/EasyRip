@@ -43,9 +43,6 @@ easyrip = "easyrip.__main__:run"
 [tool.setuptools.dynamic]
 version = { attr = "easyrip.global_val.PROJECT_VERSION" }
 
-[tool.setuptools]
-packages = ["easyrip"]
-
 [tool.setuptools.package-dir]
 easyrip = "easyrip"
 

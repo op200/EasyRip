@@ -3,7 +3,7 @@ import itertools
 import textwrap
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Final, Self, TypeAlias, final
+from typing import Final, Self, final
 
 from prompt_toolkit.completion import (
     Completer,
@@ -683,7 +683,7 @@ def get_help_doc() -> str:
     )
 
 
-nested_dict: TypeAlias = dict[str, "nested_dict | Completer"]
+type nested_dict = dict[str, "nested_dict | Completer"]
 META_DICT_OPT_TYPE = {
     name: opt.value.param for opt in Opt_type for name in opt.value.names
 }
