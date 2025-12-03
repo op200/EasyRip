@@ -9,7 +9,7 @@
 !resources/
 !requirements.txt
 !tests.py
-!setup.py
+!pyproject.toml
 !ruff.toml
 
 __pycache__
