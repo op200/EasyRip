@@ -23,7 +23,7 @@ import tomllib
 
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
-from .easyrip_config import config
+from .easyrip_config.config import Config_key, config
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
 from .easyrip_mlang import (
@@ -34,6 +34,7 @@ from .easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
+from .easyrip_prompt import easyrip_prompt
 from .ripper import Media_info, Ripper
 from .ripper.ripper import DEFAULT_PRESET_PARAMS
 from .utils import change_title, check_ver, read_text
@@ -73,7 +74,7 @@ def check_env() -> None:
     try:
         change_title(f"{gettext('Check env...')} {PROJECT_TITLE}")
 
-        if config.get_user_profile("check_dependent"):
+        if config.get_user_profile(Config_key.check_dependent):
             _url = "https://ffmpeg.org/download.html"
             for _name in ("FFmpeg", "FFprobe"):
                 if not shutil.which(_name):
@@ -198,7 +199,7 @@ def check_env() -> None:
             # ).stdout:
             #     log.error("The MediaInfo must be CLI ver")
 
-        if config.get_user_profile("check_update"):
+        if config.get_user_profile(Config_key.check_update):
             log_new_ver(
                 easyrip_web.github.get_latest_release_ver(
                     global_val.PROJECT_RELEASE_API
@@ -657,7 +658,7 @@ def run_command(command: list[str] | str) -> bool:
             match cmd_list[1]:
                 case "list" | "":
                     config.show_config_list()
-                case "clear" | "clean" | "reset" | "regenerate":
+                case "regenerate" | "clear" | "clean":
                     config.regenerate_config()
                     init()
                 case "open":
@@ -702,6 +703,17 @@ def run_command(command: list[str] | str) -> bool:
                 case _ as param:
                     log.error("Unsupported param: {}", param)
                     return False
+
+        case Cmd_type.prompt:
+            match cmd_list[1]:
+                case "history":
+                    with easyrip_prompt.PROMPT_HISTORY_FILE.open(
+                        "rt", encoding="utf-8"
+                    ) as f:
+                        for line in f.read().splitlines():
+                            log.send(line, is_format=False)
+                case "clear" | "clean":
+                    easyrip_prompt.clear()
 
         case Cmd_type.translate:
             if not (_infix := cmd_list[1]):
@@ -1045,7 +1057,10 @@ def init(is_first_run: bool = False) -> None:
     # 设置语言
     _sys_lang = get_system_language()
     Global_lang_val.gettext_target_lang = _sys_lang
-    if (_lang_config := config.get_user_profile("language")) not in {"auto", None}:
+    if (_lang_config := config.get_user_profile(Config_key.language)) not in {
+        "auto",
+        None,
+    }:
         Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
 
     # 设置日志文件路径名
@@ -1056,10 +1071,10 @@ def init(is_first_run: bool = False) -> None:
     # 设置日志级别
     try:
         log.print_level = getattr(
-            log.LogLevel, str(config.get_user_profile("log_print_level"))
+            log.LogLevel, str(config.get_user_profile(Config_key.log_print_level))
         )
         log.write_level = getattr(
-            log.LogLevel, str(config.get_user_profile("log_write_level"))
+            log.LogLevel, str(config.get_user_profile(Config_key.log_write_level))
         )
     except Exception as e:
         log.error(f"{e!r} {e}", deep=True)
@@ -1067,7 +1082,7 @@ def init(is_first_run: bool = False) -> None:
     if is_first_run:
         # 设置启动目录
         try:
-            if _path := str(config.get_user_profile("startup_directory")):
+            if _path := str(config.get_user_profile(Config_key.startup_directory)):
                 os.chdir(_path)
         except Exception as e:
             log.error(f"{e!r} {e}", deep=True)

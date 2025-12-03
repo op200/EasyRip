@@ -18,7 +18,10 @@ from .easyrip_command import (
     OptCompleter,
     nested_dict,
 )
+from .easyrip_config.config import Config_key, config
 from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
+from .easyrip_prompt import ConfigFileHistory, easyrip_prompt
+from .global_val import C_D, C_Z
 
 
 def run() -> NoReturn:
@@ -38,7 +41,7 @@ def run() -> NoReturn:
 
     @key_bindings.add("c-d")
     def _(event) -> None:
-        event.app.current_buffer.insert_text("\x04")  # ^D
+        event.app.current_buffer.insert_text(C_D)
 
     path_completer = FuzzyCompleter(PathCompleter())
 
@@ -92,7 +95,11 @@ def run() -> NoReturn:
         }
 
     cmd_ctv_tuple = tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
-    prompt_history = InMemoryHistory()
+    prompt_history = (
+        ConfigFileHistory(easyrip_prompt.PROMPT_HISTORY_FILE)
+        if config.get_user_profile(Config_key.prompt_history_save_file)
+        else InMemoryHistory()
+    )
     while True:
         try:
             command = prompt(
@@ -107,7 +114,7 @@ def run() -> NoReturn:
                 history=prompt_history,
                 complete_while_typing=True,
             )
-            if command.startswith("\x1a"):  # ^Z
+            if command.startswith(C_Z):
                 raise EOFError
         except KeyboardInterrupt:
             continue

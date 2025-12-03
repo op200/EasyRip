@@ -17,6 +17,7 @@ from prompt_toolkit.completion.base import CompleteEvent, Completion
 from prompt_toolkit.document import Document
 
 from . import global_val
+from .easyrip_config.config_key import Config_key
 
 
 @final
@@ -211,7 +212,7 @@ class Cmd_type(enum.Enum):
         ("config",),
         param="<config option>",
         description=(
-            "regenerate | clear | clean | reset\n"
+            "regenerate | clear | clean\n"
             "  Regenerate config file\n"
             "open\n"
             "  Open the directory where the config file is located\n"
@@ -222,10 +223,27 @@ class Cmd_type(enum.Enum):
             "  e.g. config set language zh"
         ),
         childs=(
-            Cmd_type_val(("regenerate", "clear", "clean", "reset")),
+            Cmd_type_val(("regenerate", "clear", "clean")),
             Cmd_type_val(("open",)),
             Cmd_type_val(("list",)),
-            Cmd_type_val(("set",)),
+            Cmd_type_val(
+                ("set",),
+                childs=tuple(Cmd_type_val((k,)) for k in Config_key._value2member_map_),
+            ),
+        ),
+    )
+    prompt = Cmd_type_val(
+        ("prompt",),
+        param="<prompt option>",
+        description=(
+            "history\n"  # .
+            "  Show prompt history\n"
+            "clear | clean\n"
+            "  Delete history file"
+        ),
+        childs=(
+            Cmd_type_val(("history",)),
+            Cmd_type_val(("clear", "clean")),
         ),
     )
     translate = Cmd_type_val(

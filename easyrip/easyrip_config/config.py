@@ -1,26 +1,11 @@
-import enum
 import json
 import os
-import sys
 from pathlib import Path
 
-from . import global_val
-from .easyrip_log import log
-from .easyrip_mlang import all_supported_lang_map, gettext
-
-PROJECT_NAME = global_val.PROJECT_NAME
-CONFIG_VERSION = "2.9.4"
-
-
-class Config_key(enum.Enum):
-    language = "language"
-    check_update = "check_update"
-    check_dependent = "check_dependent"
-    startup_directory = "startup_directory"
-    force_log_file_path = "force_log_file_path"
-    log_print_level = "log_print_level"
-    log_write_level = "log_write_level"
-
+from ..easyrip_log import log
+from ..easyrip_mlang import all_supported_lang_map, gettext
+from ..global_val import CONFIG_DIR
+from .config_key import CONFIG_VERSION, Config_key
 
 CONFIG_DEFAULT_DICT: dict[Config_key, str | bool] = {
     Config_key.language: "auto",
@@ -30,6 +15,7 @@ CONFIG_DEFAULT_DICT: dict[Config_key, str | bool] = {
     Config_key.force_log_file_path: "",
     Config_key.log_print_level: log.LogLevel.send.name,
     Config_key.log_write_level: log.LogLevel.send.name,
+    Config_key.prompt_history_save_file: True,
 }
 
 
@@ -40,19 +26,8 @@ class config:
 
     @classmethod
     def init(cls) -> None:
-        if sys.platform == "win32":
-            # Windows: C:\Users\<用户名>\AppData\Roaming\<app_name>
-            cls._config_dir = Path(os.getenv("APPDATA", ""))
-        elif sys.platform == "darwin":
-            # macOS: ~/Library/Application Support/<app_name>
-            cls._config_dir = (
-                Path(os.path.expanduser("~")) / "Library" / "Application Support"
-            )
-        else:
-            # Linux: ~/.config/<app_name>
-            cls._config_dir = Path(os.path.expanduser("~")) / ".config"
-        cls._config_dir = Path(cls._config_dir) / PROJECT_NAME
-        cls._config_file = Path(cls._config_dir) / "config.json"
+        cls._config_dir = CONFIG_DIR
+        cls._config_file = cls._config_dir / "config.json"
 
         if not cls._config_file.is_file():
             cls._config_dir.mkdir(exist_ok=True)
@@ -149,7 +124,11 @@ class config:
         return cls._write_config()
 
     @classmethod
-    def get_user_profile(cls, key: str) -> str | int | float | bool | None:
+    def get_user_profile(
+        cls, config_key: Config_key | str
+    ) -> str | int | float | bool | None:
+        key = config_key.value if isinstance(config_key, Config_key) else config_key
+
         if cls._config is None:
             cls._read_config()
         if cls._config is None:
@@ -215,6 +194,10 @@ class config:
                     log.LogLevel.send.name,
                     CONFIG_DEFAULT_DICT[Config_key.log_write_level],
                     ", ".join(log.LogLevel._member_names_),
+                ),
+                Config_key.prompt_history_save_file.value: gettext(
+                    "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.prompt_history_save_file],
                 ),
             }
             | (cls._config or {})

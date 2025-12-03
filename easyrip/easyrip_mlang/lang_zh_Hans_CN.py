@@ -103,6 +103,7 @@ LANG_MAP: dict[str, str] = {
         "  设置 config\n"
         "  例如 config set language en"
     ),
+    Cmd_type.prompt.value.param: "<prompt 选项>",
     Cmd_type.translate.value.param: "<中缀> <目标语言标签> [-overwrite]",
     Cmd_type.translate.value.description: (
         "翻译字幕文件\n"
@@ -353,6 +354,7 @@ LANG_MAP: dict[str, str] = {
     "User profile is not a valid dictionary": "用户配置文件不是有效的字典",
     "User profile is not found": "用户配置文件不存在",
     "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
+    "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}": "将 prompt 历史保存到 config 目录，否则保存到内存。重启后生效。默认: {}",
     # config about
     "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}": "Easy Rip 的语言, 支持不完整匹配。默认: {}。支持: {}",
     "Auto check the update of Easy Rip. Default: {}": "自动检测 Easy Rip 更新。默认: {}",
