@@ -71,21 +71,24 @@ LANG_MAP: dict[str, str] = {
         "<int> <int>:\n"
         "  交换指定索引"
     ),
-    Cmd_type.run.value.param: "<run 选项>",
+    Cmd_type.run.value.param: "[<run 选项>] [-multithreading <0 | 1>]",
     Cmd_type.run.value.description: (
         "执行 Ripper list 中的 Ripper\n"
-        " \n"
+        "\n"
         "默认:\n"
         "  仅执行\n"
-        " \n"
+        "\n"
         "exit:\n"
         "  执行后退出程序\n"
-        " \n"
+        "\n"
         "shutdown [<秒数>]:\n"
         "  执行后关机\n"
-        "  默认: 60"
+        "  默认: 60\n"
+        "\n"
+        "server [<地址>]:[<端口>]@[<密码>]:\n"
+        "  详见对应的 help"
     ),
-    Cmd_type.server.value.param: "[[-a | -address] <地址>[:<端口>] [[-p | -password] <密码>]]",
+    Cmd_type.server.value.param: "[<地址>]:[<端口>]@[<密码>]",
     Cmd_type.server.value.description: (
         "启动 web 服务\n"
         "默认: server localhost:0\n"
@@ -239,16 +242,19 @@ LANG_MAP: dict[str, str] = {
     ),
     Opt_type._run.value.description: (
         "执行 Ripper list 中的 Ripper\n"
-        " \n"
+        "\n"
         "默认:\n"
         "  仅执行\n"
-        " \n"
+        "\n"
         "exit:\n"
         "  执行后退出程序\n"
-        " \n"
+        "\n"
         "shutdown [<秒数>]:\n"
         "  执行后关机\n"
-        "  默认: 60"
+        "  默认: 60\n"
+        "\n"
+        "server [<地址>]:[<端口>]@[<密码>]:\n"
+        "  详见对应的 help"
     ),
     Opt_type._ff_params_ff.value.description: (
         "设置 FFmpeg 的全局选项\n"  # .

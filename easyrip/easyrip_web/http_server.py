@@ -4,6 +4,7 @@ import os
 import secrets
 import signal
 from collections import deque
+from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from threading import Thread
 from time import sleep
@@ -204,7 +205,13 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
         )
 
 
-def run_server(host: str = "", port: int = 0, password: str | None = None) -> None:
+def run_server(
+    host: str = "",
+    port: int = 0,
+    password: str | None = None,
+    *,
+    after_start_server_hook: Callable[[], None] = lambda: None,
+) -> None:
     from ..easyrip_log import log
 
     MainHTTPRequestHandler.token = secrets.token_urlsafe(16)
@@ -222,6 +229,15 @@ def run_server(host: str = "", port: int = 0, password: str | None = None) -> No
     httpd = HTTPServer(server_address, MainHTTPRequestHandler)
 
     protocol = "HTTP"
+
+    def _hook() -> None:
+        try:
+            after_start_server_hook()
+        finally:
+            Event.is_run_command = False
+
+    Event.is_run_command = True
+    Thread(target=_hook, daemon=True).start()
 
     log.info(
         "Starting {protocol} service on port {port}...",

@@ -18,7 +18,7 @@ from pathlib import Path
 from threading import Thread
 from time import sleep
 from tkinter import filedialog
-from typing import Final
+from typing import Final, Literal
 
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
@@ -369,6 +369,36 @@ def run_ripper_list(
     log.info("Run completed")
 
 
+def get_web_server_params(
+    opt: str,
+) -> Literal[False] | tuple[str, int, str | None]:
+    """[<address>]:[<port>]@[<password>]"""
+    if easyrip_web.http_server.Event.is_run_command:
+        log.error("Can not start multiple services")
+        return False
+
+    if ":" not in opt:
+        log.error("{} param illegal", f"':' not in '{opt}':")
+        return False
+
+    opt_list: list[str] = opt.split(":")
+    opt_list = [opt_list[0], *opt_list[1].split("@")]
+
+    if len(opt_list) != 3:
+        log.error("{} param illegal", f"len('{opt}') != 3:")
+        return False
+
+    host, port, password = opt_list
+
+    port = port or "0"
+
+    if not port.isdigit():
+        log.error("{} param illegal", f"The port in '{opt}' not a digit:")
+        return False
+
+    return (host or "", int(port), password)
+
+
 def run_command(command: list[str] | str) -> bool:
     if isinstance(command, list):
         cmd_list = command
@@ -564,8 +594,12 @@ def run_command(command: list[str] | str) -> bool:
                         log.error("list index out of range")
 
         case Cmd_type.run:
-            is_run_exit = False
+            is_run_exit: bool = False
+
+            _web_server_params = None
+
             _enable_multithreading: bool = False
+
             _shutdown_sec_str: str | None = None
 
             _skip_run_param: int = 0
@@ -594,6 +628,13 @@ def run_command(command: list[str] | str) -> bool:
                             log.error("{} need param", cmd)
                             return False
 
+                    case "server":
+                        _skip_run_param += 1
+                        if (
+                            _web_server_params := get_web_server_params(cmd_list[2])
+                        ) is False:
+                            return False
+
                     case "-multithreading":
                         _skip_run_param += 1
                         if i + 1 < len(cmd_list[1:]):
@@ -606,52 +647,26 @@ def run_command(command: list[str] | str) -> bool:
                         log.error("Unsupported param: {}", param)
                         return False
 
-            run_ripper_list(
-                is_exit_when_run_finished=is_run_exit,
-                shutdow_sec_str=_shutdown_sec_str,
-                enable_multithreading=_enable_multithreading,
-            )
+            if _web_server_params is None:
+                run_ripper_list(
+                    is_exit_when_run_finished=is_run_exit,
+                    shutdow_sec_str=_shutdown_sec_str,
+                    enable_multithreading=_enable_multithreading,
+                )
+            else:
+                easyrip_web.run_server(
+                    *_web_server_params,
+                    after_start_server_hook=lambda: run_ripper_list(
+                        is_exit_when_run_finished=is_run_exit,
+                        shutdow_sec_str=_shutdown_sec_str,
+                        enable_multithreading=_enable_multithreading,
+                    ),
+                )
 
         case Cmd_type.server:
-            if easyrip_web.http_server.Event.is_run_command:
-                log.error("Can not start multiple services")
+            if (_params := get_web_server_params(cmd_list[1])) is False:
                 return False
-
-            address, password = None, None
-
-            for i in range(1, len(cmd_list)):
-                match cmd_list[i]:
-                    case "-a" | "-address":
-                        address = cmd_list[i + 1]
-                    case "-p" | "-password":
-                        password = cmd_list[i + 1]
-                    case _:
-                        if address is None:
-                            address = cmd_list[i]
-                        elif password is None:
-                            password = cmd_list[i]
-            if address:
-                res = re.match(
-                    r"^([a-zA-Z0-9.-]+)(:(\d+))?$",
-                    address,
-                )
-                if res:
-                    host = res.group(1)
-                    port = res.group(2)
-                    if port:
-                        port = int(port.lstrip(":"))
-                    elif host.isdigit():
-                        port = int(host)
-                        host = None
-                    else:
-                        port = None
-                        host = None
-                else:
-                    host, port = "localhost", 0
-            else:
-                host, port = "localhost", 0
-
-            easyrip_web.run_server(host=host or "", port=port or 0, password=password)
+            easyrip_web.run_server(*_params)
 
         case Cmd_type.config:
             match cmd_list[1]:
@@ -772,6 +787,7 @@ def run_command(command: list[str] | str) -> bool:
             preset_name: str | Ripper.PresetName | None = None
             option_map: dict[str, str] = {}
             is_run: bool = False
+            web_server_params = None
             is_exit_when_run_finished: bool = False
             shutdown_sec_str: str | None = None
             enable_multithreading: bool = False
@@ -839,6 +855,13 @@ def run_command(command: list[str] | str) -> bool:
                                 is_exit_when_run_finished = True
                             case "shutdown":
                                 shutdown_sec_str = cmd_list[i + 2] or "60"
+                                _skip += 1
+                            case "server":
+                                web_server_params = get_web_server_params(
+                                    cmd_list[i + 2]
+                                )
+                                if web_server_params is False:
+                                    return False
                                 _skip += 1
                             case _:
                                 _skip -= 1
@@ -1034,11 +1057,21 @@ def run_command(command: list[str] | str) -> bool:
                 return False
 
             if is_run:
-                run_ripper_list(
-                    is_exit_when_run_finished=is_exit_when_run_finished,
-                    shutdow_sec_str=shutdown_sec_str,
-                    enable_multithreading=enable_multithreading,
-                )
+                if web_server_params is None:
+                    run_ripper_list(
+                        is_exit_when_run_finished=is_exit_when_run_finished,
+                        shutdow_sec_str=shutdown_sec_str,
+                        enable_multithreading=enable_multithreading,
+                    )
+                else:
+                    easyrip_web.run_server(
+                        *web_server_params,
+                        after_start_server_hook=lambda: run_ripper_list(
+                            is_exit_when_run_finished=is_exit_when_run_finished,
+                            shutdow_sec_str=shutdown_sec_str,
+                            enable_multithreading=enable_multithreading,
+                        ),
+                    )
 
     return True
 

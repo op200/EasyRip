@@ -5,14 +5,14 @@
             "name": "Python 调试",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/easyrip.py",
+            "module": "easyrip",
             "console": "integratedTerminal",
         },
         {
             "name": "Python 调试 CLI 传参",
             "type": "debugpy",
             "request": "launch",
-            "program": "${workspaceFolder}/easyrip.py",
+            "module": "easyrip",
             "console": "integratedTerminal",
             "args": [
                 "help",

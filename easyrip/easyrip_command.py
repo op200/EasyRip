@@ -7,6 +7,7 @@ from typing import Final, Self, final
 
 from prompt_toolkit.completion import (
     Completer,
+    DeduplicateCompleter,
     FuzzyCompleter,
     FuzzyWordCompleter,
     NestedCompleter,
@@ -176,19 +177,22 @@ class Cmd_type(enum.Enum):
     )
     run = Cmd_type_val(
         ("run",),
-        param="[<run option>]",
+        param="[<run option>] [-multithreading <0 | 1>]",
         description=(
             "Run the Ripper in the Ripper list\n"
-            " \n"
+            "\n"
             "Default:\n"
             "  Only run\n"
-            " \n"
+            "\n"
             "exit:\n"
             "  Close program when run finished\n"
-            " \n"
+            "\n"
             "shutdown [<sec>]:\n"
             "  Shutdown when run finished\n"
-            "  Default: 60"
+            "  Default: 60\n"
+            "\n"
+            "server [<address>]:[<port>]@[<password>]:\n"
+            "  See the corresponding help for details"
         ),
         childs=(
             Cmd_type_val(("exit",)),
@@ -197,15 +201,11 @@ class Cmd_type(enum.Enum):
     )
     server = Cmd_type_val(
         ("server",),
-        param="[[-a | -address] <address>[:<port>] [[-p | -password] <password>]]",
+        param="[<address>]:[<port>]@[<password>]",
         description=(
             "Boot web service\n"
             "Default: server localhost:0\n"
             "Client send command 'kill' can exit Ripper's run, note that FFmpeg needs to accept multiple ^C signals to forcibly terminate, and a single ^C signal will wait for the file output to be complete before terminating"
-        ),
-        childs=(
-            Cmd_type_val(("-a", "-address")),
-            Cmd_type_val(("-p", "-password")),
         ),
     )
     config = Cmd_type_val(
@@ -563,16 +563,19 @@ class Opt_type(enum.Enum):
         param="[<string>]",
         description=(
             "Run the Ripper from the Ripper list\n"
-            " \n"
+            "\n"
             "Default:\n"
             "  Only run\n"
-            " \n"
+            "\n"
             "exit:\n"
             "  Close program when run finished\n"
-            " \n"
+            "\n"
             "shutdown [<sec>]:\n"
             "  Shutdown when run finished\n"
             "  Default: 60\n"
+            "\n"
+            "server [<address>]:[<port>]@[<password>]:\n"
+            "  See the corresponding help for details"
         ),
         childs=(
             Cmd_type_val(("exit",)),
@@ -764,7 +767,17 @@ class OptCompleter(Completer):
                     )
                 )
 
-        if isinstance(opt_tree_pos_list[-1], Completer):
+        if opt_tree_pos_list[-1] is not self.opt_tree and not text.endswith(" "):
+            yield from (
+                Completion(
+                    text=words[-1],
+                    start_position=-len(words[-1]),
+                    display_meta=META_DICT_OPT_TYPE.get(words[-1], ""),
+                ),
+                Completion(text="", display="✔"),
+            )
+
+        elif isinstance(opt_tree_pos_list[-1], Completer):
             # 直接使用 PathCompleter 会因为上下文问题失效，所以将上文套进 NestedCompleter
             new_nd: nested_dict = {}
             new_nd_pos: nested_dict = new_nd
@@ -785,11 +798,22 @@ class OptCompleter(Completer):
 
             yield from merge_completers(
                 (
-                    _nested_dict_to_nc(new_nd),
-                    FuzzyWordCompleter(
-                        words=tuple(opt_tree_pos_list[-1]),
-                        meta_dict=META_DICT_OPT_TYPE,
-                        WORD=True,
+                    DeduplicateCompleter(
+                        merge_completers(
+                            (
+                                _nested_dict_to_nc(new_nd),
+                                FuzzyCompleter(_nested_dict_to_nc(new_nd), WORD=True),
+                            )
+                        )
+                    ),
+                    FuzzyCompleter(
+                        WordCompleter(
+                            words=tuple(opt_tree_pos_list[-1]),
+                            meta_dict=META_DICT_OPT_TYPE,
+                            WORD=True,  # 匹配标点
+                            match_middle=True,
+                        ),
+                        WORD=False,
                     ),
                 )
             ).get_completions(document=document, complete_event=complete_event)
@@ -797,10 +821,16 @@ class OptCompleter(Completer):
         else:
             yield from FuzzyCompleter(
                 WordCompleter(
-                    words=tuple(opt_tree_pos_list[-1]),
+                    words=tuple(
+                        opt_tree_pos_list[-1] | {}
+                        if text.endswith(" ")
+                        or len(words) <= 1
+                        or isinstance(opt_tree_pos_list[-2], Completer)
+                        else opt_tree_pos_list[-2]
+                    ),
                     meta_dict=META_DICT_OPT_TYPE,
-                    WORD=True,
+                    WORD=True,  # 匹配标点
                     match_middle=True,
                 ),
-                WORD=False,
+                WORD=not text.endswith(" "),
             ).get_completions(document=document, complete_event=complete_event)

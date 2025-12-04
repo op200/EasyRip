@@ -6,9 +6,10 @@ import Crypto
 import fontTools
 import prompt_toolkit
 from prompt_toolkit import ANSI, prompt
-from prompt_toolkit.completion import FuzzyCompleter, PathCompleter, merge_completers
+from prompt_toolkit.completion import PathCompleter, merge_completers
 from prompt_toolkit.history import InMemoryHistory
-from prompt_toolkit.key_binding import KeyBindings
+from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
+from prompt_toolkit.keys import Keys
 
 from .easyrip_command import (
     Cmd_type,
@@ -39,11 +40,15 @@ def run() -> NoReturn:
 
     key_bindings = KeyBindings()
 
-    @key_bindings.add("c-d")
-    def _(event) -> None:
+    @key_bindings.add(Keys.ControlC)
+    def _(event: KeyPressEvent) -> None:
+        event.app.exit(exception=KeyboardInterrupt, style="class:exiting")
+
+    @key_bindings.add(Keys.ControlD)
+    def _(event: KeyPressEvent) -> None:
         event.app.current_buffer.insert_text(C_D)
 
-    path_completer = FuzzyCompleter(PathCompleter())
+    path_completer = PathCompleter()
 
     def _ctv_to_nc(ctvs: Iterable[Cmd_type_val]) -> CmdCompleter:
         return CmdCompleter(
