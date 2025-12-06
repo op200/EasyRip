@@ -16,7 +16,7 @@ from ..easyrip_log import log
 from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
 from ..utils import get_base62_time
 from .font_subset import subset
-from .media_info import Media_info
+from .media_info import Media_info, Stream_error
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
@@ -248,6 +248,11 @@ class Ripper:
 
         # Audio
         if audio_encoder_str := self.option_map.get("c:a"):
+            if not self.media_info.audio_info:
+                raise Stream_error(
+                    "There is no audio stream in the video, so '-c:a' cannot be used"
+                )
+
             if audio_encoder_str not in Ripper.AudioCodec._member_map_:
                 raise ValueError(
                     gettext("Unsupported '{}' param: {}", "-c:a", audio_encoder_str)

@@ -313,6 +313,7 @@ LANG_MAP: dict[str, str] = {
     "'{}' successfully: {}": "'{}' 成功: {}",
     "Unsupported option: {}": "不支持的选项: {}",
     "Unsupported param: {}": "不支持的参数: {}",
+    "There is no audio stream in the video, so '-c:a' cannot be used": "视频中没有音频流，所以无法使用 '-c:a'",
     "Unsupported '{}' param: {}": "'{}' 不支持此参数: {}",
     "Manually force exit": "手动强制退出",
     "or run this command to update using pip: {}": "或运行以下命令以使用 pip 更新: {}",
@@ -380,4 +381,5 @@ LANG_MAP: dict[str, str] = {
     "Run {} failed": "执行 {} 失败",
     "Unknown error": "未知错误",
     "'{}' execution failed: {}": "'{}' 执行失败: {}",
+    "No closing quotation": "没有闭合引号",
 }

@@ -25,9 +25,23 @@ from .easyrip_config.config_key import Config_key
 @dataclass(slots=True, init=False, eq=False)
 class Cmd_type_val:
     names: tuple[str, ...]
-    param: str
+    _param: str
     _description: str
     childs: tuple["Cmd_type_val", ...]
+
+    @property
+    def param(self) -> str:
+        try:
+            from .easyrip_mlang import gettext
+
+            return gettext(self._param, is_format=False)
+
+        except ImportError:  # 启动时，原字符串导入翻译文件
+            return self._param
+
+    @param.setter
+    def param(self, val: str) -> None:
+        self._param = val
 
     @property
     def description(self) -> str:
@@ -688,10 +702,14 @@ def get_help_doc() -> str:
 
 type nested_dict = dict[str, "nested_dict | Completer"]
 META_DICT_OPT_TYPE = {
-    name: opt.value.param for opt in Opt_type for name in opt.value.names
+    name: lambda opt=opt: opt.value.param
+    for opt in Opt_type
+    for name in opt.value.names
 }
 META_DICT_CMD_TYPE = {
-    name: opt.value.param for opt in Cmd_type for name in opt.value.names
+    name: lambda opt=opt: opt.value.param
+    for opt in Cmd_type
+    for name in opt.value.names
 }
 
 
@@ -710,6 +728,7 @@ class CmdCompleter(NestedCompleter):
     ) -> Iterable[Completion]:
         # Split document.
         text = document.text_before_cursor.lstrip()
+        words = text.split(" ")
         stripped_len = len(document.text_before_cursor) - len(text)
 
         # If there is a space, check for the first term, and use a
@@ -730,12 +749,30 @@ class CmdCompleter(NestedCompleter):
 
                 yield from completer.get_completions(new_document, complete_event)
 
+        elif words and (_cmd := Cmd_type.from_str(words[-1])) is not None:
+            yield from (
+                Completion(
+                    text=words[-1],
+                    start_position=-len(words[-1]),
+                    display_meta=META_DICT_CMD_TYPE.get(words[-1], ""),
+                ),
+                Completion(
+                    text="",
+                    display="✔",
+                    display_meta=(
+                        f"{_desc_list[0]}..."
+                        if len(_desc_list := _cmd.value.description.split("\n")) > 1
+                        else _desc_list[0]
+                    ),
+                ),
+            )
+
         # No space in the input: behave exactly like `WordCompleter`.
         else:
             # custom
             completer = FuzzyWordCompleter(
                 tuple(self.options),
-                meta_dict=META_DICT_CMD_TYPE,
+                meta_dict=META_DICT_CMD_TYPE,  # pyright: ignore[reportArgumentType]
                 WORD=True,
             )
             yield from completer.get_completions(document, complete_event)
@@ -750,7 +787,7 @@ class OptCompleter(Completer):
     ) -> Iterable[Completion]:
         text = document.text_before_cursor.lstrip()
 
-        words = text.split()
+        words = text.split(" ")
 
         if len(words) >= 1 and not text.startswith("-"):
             return
@@ -774,7 +811,17 @@ class OptCompleter(Completer):
                     start_position=-len(words[-1]),
                     display_meta=META_DICT_OPT_TYPE.get(words[-1], ""),
                 ),
-                Completion(text="", display="✔"),
+                Completion(
+                    text="",
+                    display="✔",
+                    display_meta=(
+                        ""
+                        if (_opt := Opt_type.from_str(text)) is None
+                        else f"{_desc_list[0]}..."
+                        if len(_desc_list := _opt.value.description.split("\n")) > 1
+                        else _desc_list[0]
+                    ),
+                ),
             )
 
         elif isinstance(opt_tree_pos_list[-1], Completer):

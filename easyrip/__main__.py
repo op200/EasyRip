@@ -6,7 +6,7 @@ import Crypto
 import fontTools
 import prompt_toolkit
 from prompt_toolkit import ANSI, prompt
-from prompt_toolkit.completion import PathCompleter, merge_completers
+from prompt_toolkit.completion import merge_completers
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
 from prompt_toolkit.keys import Keys
@@ -21,7 +21,7 @@ from .easyrip_command import (
 )
 from .easyrip_config.config import Config_key, config
 from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
-from .easyrip_prompt import ConfigFileHistory, easyrip_prompt
+from .easyrip_prompt import ConfigFileHistory, SmartPathCompleter, easyrip_prompt
 from .global_val import C_D, C_Z
 
 
@@ -48,7 +48,7 @@ def run() -> NoReturn:
     def _(event: KeyPressEvent) -> None:
         event.app.current_buffer.insert_text(C_D)
 
-    path_completer = PathCompleter()
+    path_completer = SmartPathCompleter()
 
     def _ctv_to_nc(ctvs: Iterable[Cmd_type_val]) -> CmdCompleter:
         return CmdCompleter(
@@ -105,6 +105,7 @@ def run() -> NoReturn:
         if config.get_user_profile(Config_key.prompt_history_save_file)
         else InMemoryHistory()
     )
+
     while True:
         try:
             command = prompt(

@@ -5,7 +5,12 @@ from pathlib import Path
 from typing import Self, final
 
 from ..easyrip_log import log
+from ..easyrip_mlang import Mlang_exception
 from ..utils import time_str_to_sec
+
+
+class Stream_error(Mlang_exception):
+    pass
 
 
 @final

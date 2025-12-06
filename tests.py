@@ -251,6 +251,13 @@ class TestRip(unittest.TestCase):
             )
         )
 
+    def test_c_a_flac(self):
+        self.assertTrue(
+            run_command(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a flac -o {TestRip.TEST_AUDIO_OUTPUT_BASENAME} -run"
+            )
+        )
+
 
 class TestSubset(unittest.TestCase):
     def test_ass_class(self):

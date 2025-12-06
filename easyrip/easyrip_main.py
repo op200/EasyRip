@@ -10,7 +10,7 @@ import sys
 import threading
 import tkinter as tk
 import tomllib
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from multiprocessing import shared_memory
@@ -399,19 +399,16 @@ def get_web_server_params(
     return (host or "", int(port), password)
 
 
-def run_command(command: list[str] | str) -> bool:
-    if isinstance(command, list):
-        cmd_list = command
-
-    else:
-        try:
-            cmd_list = [
-                cmd.strip('"').strip("'").replace("\\\\", "\\")
-                for cmd in shlex.split(command, posix=False)
-            ]
-        except ValueError as e:
-            log.error(e)
-            return False
+def run_command(command: Iterable[str] | str) -> bool:
+    try:
+        cmd_list: list[str] = (
+            shlex.split(command.replace("\\", "\\\\") if os.name == "nt" else command)
+            if isinstance(command, str)
+            else list(command)
+        )
+    except ValueError as e:
+        log.error(e)
+        return False
 
     if len(cmd_list) == 0:
         return True

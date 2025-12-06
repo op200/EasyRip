@@ -4,7 +4,8 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ...easyrip_log import gettext, log
+from ...easyrip_log import log
+from ...easyrip_mlang import Mlang_exception
 from ...utils import read_text, uudecode_ssa, uuencode_ssa
 
 
@@ -584,18 +585,8 @@ class Unknown_data:
         )
 
 
-class Ass_generate_error(Exception):
-    def __init__(
-        self,
-        *args: object,
-        **kwargs: object,
-    ) -> None:
-        msg = args[0]
-        if isinstance(msg, str):
-            new_msg: str = gettext(msg, *args[1:], is_format=True, **kwargs)
-            super().__init__(new_msg)
-        else:
-            super().__init__(msg, *args[1:])
+class Ass_generate_error(Mlang_exception):
+    pass
 
 
 class Ass:
