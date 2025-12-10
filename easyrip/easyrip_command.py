@@ -211,6 +211,7 @@ class Cmd_type(enum.Enum):
         childs=(
             Cmd_type_val(("exit",)),
             Cmd_type_val(("shutdown",)),
+            Cmd_type_val(("server",)),
         ),
     )
     server = Cmd_type_val(
@@ -594,6 +595,7 @@ class Opt_type(enum.Enum):
         childs=(
             Cmd_type_val(("exit",)),
             Cmd_type_val(("shutdown",)),
+            Cmd_type_val(("server",)),
         ),
     )
     _ff_params_ff = _ff_params = Cmd_type_val(
@@ -869,11 +871,14 @@ class OptCompleter(Completer):
             yield from FuzzyCompleter(
                 WordCompleter(
                     words=tuple(
-                        opt_tree_pos_list[-1] | {}
-                        if text.endswith(" ")
-                        or len(words) <= 1
-                        or isinstance(opt_tree_pos_list[-2], Completer)
-                        else opt_tree_pos_list[-2]
+                        opt_tree_pos_list[-1]
+                        | (
+                            {}
+                            if text.endswith(" ")
+                            or len(words) <= 1
+                            or isinstance(opt_tree_pos_list[-2], Completer)
+                            else opt_tree_pos_list[-2]
+                        )
                     ),
                     meta_dict=META_DICT_OPT_TYPE,
                     WORD=True,  # 匹配标点
