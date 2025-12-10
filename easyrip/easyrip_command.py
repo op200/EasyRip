@@ -728,7 +728,7 @@ class CmdCompleter(NestedCompleter):
     ) -> Iterable[Completion]:
         # Split document.
         text = document.text_before_cursor.lstrip()
-        words = text.split(" ")
+        words = text.split()
         stripped_len = len(document.text_before_cursor) - len(text)
 
         # If there is a space, check for the first term, and use a
@@ -787,7 +787,7 @@ class OptCompleter(Completer):
     ) -> Iterable[Completion]:
         text = document.text_before_cursor.lstrip()
 
-        words = text.split(" ")
+        words = text.split()
 
         if len(words) >= 1 and not text.startswith("-"):
             return

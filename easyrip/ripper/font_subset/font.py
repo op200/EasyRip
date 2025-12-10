@@ -12,6 +12,11 @@ from fontTools.ttLib.tables._n_a_m_e import NameRecord, makeName, table__n_a_m_e
 from fontTools.ttLib.ttFont import TTLibError
 
 from ...easyrip_log import log
+from ...easyrip_mlang import Mlang_exception
+
+
+class Font_error(Mlang_exception):
+    pass
 
 
 class Font_type(enum.Enum):
@@ -142,13 +147,16 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
     subset_font = deepcopy(font.font)
 
     # 检查哪些字符不存在于字体中
-    cmap = subset_font.getBestCmap()
-    available_chars = {chr(key) for key in cmap.keys()}  # noqa: SIM118
+    try:
+        cmap = subset_font.getBestCmap()
+        available_chars = {chr(key) for key in cmap.keys()}  # noqa: SIM118
+    except Exception as e:
+        raise Font_error("Can not read best cmap from '{}'", font.pathname) from e
     input_chars = set(subset_str)
     missing_chars = input_chars - available_chars
 
     if missing_chars:
-        # 将缺失字符按Unicode码点排序
+        # 将缺失字符按 Unicode 码点排序
         sorted_missing = sorted(missing_chars, key=lambda c: ord(c))
         missing_info = ", ".join(f"'{c}' (U+{ord(c):04X})" for c in sorted_missing)
         log.warning(

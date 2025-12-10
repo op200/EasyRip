@@ -258,6 +258,13 @@ class TestRip(unittest.TestCase):
             )
         )
 
+    def test_soft_sub(self):
+        self.assertTrue(
+            run_command(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a libopus -soft-sub auto -o {TestRip.TEST_VIDEO_OUTPUT_BASENAME} -run"
+            )
+        )
+
 
 class TestSubset(unittest.TestCase):
     def test_ass_class(self):

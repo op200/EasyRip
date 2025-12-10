@@ -502,7 +502,7 @@ def run_command(command: Iterable[str] | str) -> bool:
                     )
                 case _:
                     if isinstance(command, str):
-                        _path = command.split(" ", maxsplit=1)
+                        _path = command.split(None, maxsplit=1)
                         _path_tuple = (
                             None
                             if len(_path) <= 1

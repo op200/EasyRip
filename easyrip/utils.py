@@ -88,14 +88,10 @@ def read_text(path: Path) -> str:
 
     if data.startswith(codecs.BOM_UTF8):
         return data.decode("utf-8-sig")
-    if data.startswith(codecs.BOM_UTF16_LE):
-        return data.decode("utf-16-le")
-    if data.startswith(codecs.BOM_UTF16_BE):
-        return data.decode("utf-16-be")
-    if data.startswith(codecs.BOM_UTF32_LE):
-        return data.decode("utf-32-le")
-    if data.startswith(codecs.BOM_UTF32_BE):
-        return data.decode("utf-32-be")
+    if data.startswith((codecs.BOM_UTF16_LE, codecs.BOM_UTF16_BE)):
+        return data.decode("utf-16")
+    if data.startswith((codecs.BOM_UTF32_LE, codecs.BOM_UTF32_BE)):
+        return data.decode("utf-32")
 
     log.warning("Can not find the BOM from {}. Defaulting to UTF-8", path)
     return data.decode("utf-8")

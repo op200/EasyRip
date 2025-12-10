@@ -248,7 +248,10 @@ class Ripper:
 
         # Audio
         if audio_encoder_str := self.option_map.get("c:a"):
-            if not self.media_info.audio_info:
+            if (
+                not self.media_info.audio_info
+                and self.preset_name != Ripper.PresetName.subset
+            ):
                 raise Stream_error(
                     "There is no audio stream in the video, so '-c:a' cannot be used"
                 )
@@ -260,6 +263,7 @@ class Ripper:
 
             audio_encoder = Ripper.AudioCodec[audio_encoder_str]
 
+            # 通知别名映射
             if audio_encoder_str not in Ripper.AudioCodec._member_names_:
                 log.info(
                     "Auto mapping encoder name: {} -> {}",
