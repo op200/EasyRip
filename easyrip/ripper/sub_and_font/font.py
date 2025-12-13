@@ -40,7 +40,13 @@ class Font:
         self.font.close()
 
 
-def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
+def load_fonts(
+    path: str | Path,
+    *,
+    lazy: bool = True,
+    strict: bool = False,
+) -> list[Font]:
+    """strict: Skip UnicodeDecodeError font file"""
     if isinstance(path, str):
         path = Path(path)
 
@@ -59,6 +65,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                 if suffix == ".ttc"
                 else [TTFont(file=file, lazy=lazy)]
             ):
+                skip_this_font: bool = False
                 table_name: table__n_a_m_e | None = font.get("name")
 
                 if table_name is None:
@@ -76,7 +83,16 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                     if name_id not in {1, 2}:
                         continue
 
-                    name_str: str = record.toUnicode()
+                    try:
+                        name_str: str = record.toUnicode()
+                    except UnicodeDecodeError as e:
+                        error_text = f"Unicode decode error in font \"{file}\": {e}: '{record.toUnicode('replace')}'. Skip this {'font' if strict else 'name record'}."
+                        if strict:
+                            log.error(error_text, is_format=False)
+                            skip_this_font = True
+                            break
+                        log.warning(error_text, is_format=False)
+                        continue
 
                     match name_id:
                         case 1:  # Font Family Name
@@ -93,6 +109,9 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                                         is_bold = True
                                     case "italic" | "oblique":
                                         is_italic = True
+
+                if skip_this_font:
+                    continue
 
                 if not res_font.familys:
                     log.warning(f"Font {file} has no family names. Skip this font")
@@ -121,16 +140,18 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                 res_font_list.append(res_font)
 
         except TTLibError as e:
-            log.warning(f'Error loading font file "{file}": {e}')
-        except UnicodeDecodeError as e:
-            log.warning(f"Unicode decode error for font {file}: {e}")
+            log.error(f'Error loading font file "{file}": {e}')
         except Exception as e:
             log.error(f"Unexpected error for font {file}: {e}")
 
     return res_font_list
 
 
-def load_windows_fonts(lazy: bool = True) -> list[Font]:
+def load_windows_fonts(
+    *,
+    lazy: bool = True,
+    strict: bool = False,
+) -> list[Font]:
     paths: tuple[str, ...] = (
         os.path.join(os.environ["SYSTEMROOT"], "Fonts"),
         os.path.join(os.environ["LOCALAPPDATA"], "Microsoft/Windows/Fonts"),
@@ -138,7 +159,7 @@ def load_windows_fonts(lazy: bool = True) -> list[Font]:
 
     return list(
         itertools.chain.from_iterable(
-            load_fonts(path=path, lazy=lazy) for path in paths
+            load_fonts(path, lazy=lazy, strict=strict) for path in paths
         )
     )
 

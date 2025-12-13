@@ -64,6 +64,7 @@ def run() -> NoReturn:
                                 in {
                                     *Cmd_type.cd.value.names,
                                     *Cmd_type.mediainfo.value.names,
+                                    *Cmd_type.fontinfo.value.names,
                                 }
                                 else ()
                             ),

@@ -282,9 +282,9 @@ def subset(
     # 加载 Font
     fonts: Final[list[Font]] = []
     for _path in font_path_list:
-        fonts.extend(load_fonts(_path))
+        fonts.extend(load_fonts(_path, strict=strict))
     if use_win_font:
-        fonts.extend(load_windows_fonts())
+        fonts.extend(load_windows_fonts(strict=strict))
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
     for _font in fonts:
