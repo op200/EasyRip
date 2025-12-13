@@ -1,4 +1,4 @@
-from ..easyrip_command import Cmd_type, Opt_type
+from ..easyrip_command import Audio_codec, Cmd_type, Opt_type, Preset_name
 from .global_lang_val import (
     Lang_tag,
     Lang_tag_language,
@@ -135,18 +135,8 @@ LANG_MAP: dict[str, str] = {
     ),
     Opt_type._preset.value.description: (
         "设置预设\n"
-        "预设名:\n"
-        "  custom\n"
-        "  subset\n"
-        "  copy\n"
-        "  flac\n"
-        "  x264fast x264slow\n"
-        "  x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
-        "  svtav1\n"
-        "  vvenc\n"
-        "  h264_amf h264_nvenc h264_qsv\n"
-        "  hevc_amf hevc_nvenc hevc_qsv\n"
-        "  av1_amf av1_nvenc av1_qsv"
+        "预设名:\n"  # .
+        f"{Preset_name.to_help_string('  ')}"
     ),
     Opt_type._pipe.value.description: (
         "选择一个 vpy 文件作为管道的输入, 这个 vpy 必须有 input 全局变量\n"
@@ -209,11 +199,8 @@ LANG_MAP: dict[str, str] = {
     ),
     Opt_type._c_a.value.description: (
         "设置音频编码器\n"
-        " \n"  # .
-        "音频编码器:\n"
-        "  copy\n"
-        "  libopus\n"
-        "  flac"
+        "音频编码器:\n"  # .
+        f"{Audio_codec.to_help_string('  ')}"
     ),
     Opt_type._b_a.value.description: "设置音频码率。默认值 '160k'",
     Opt_type._muxer.value.description: (

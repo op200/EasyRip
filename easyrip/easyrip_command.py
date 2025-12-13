@@ -490,7 +490,7 @@ class Opt_type(enum.Enum):
             "Audio encoder:\n"  # .
             f"{Audio_codec.to_help_string('  ')}"
         ),
-        childs=(Cmd_type_val(("copy", "libopus", "flac")),),
+        childs=(Cmd_type_val(tuple(Audio_codec._value2member_map_)),),
     )
     _b_a = Cmd_type_val(
         ("-b:a",),
