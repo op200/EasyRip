@@ -14,7 +14,6 @@ from .. import easyrip_web
 from ..easyrip_log import log
 from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
 from ..utils import get_base62_time
-from .font_subset import subset
 from .media_info import Media_info, Stream_error
 from .param import (
     DEFAULT_PRESET_PARAMS,
@@ -23,6 +22,7 @@ from .param import (
     X264_PARAMS_NAME,
     X265_PARAMS_NAME,
 )
+from .sub_and_font import subset
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")

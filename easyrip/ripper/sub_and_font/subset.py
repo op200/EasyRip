@@ -140,22 +140,32 @@ def subset(
                     for tag, value in re.findall(
                         r"\\\s*(fn|b(?![a-zA-Z])|i(?![a-zA-Z])|r)([^\\}]*)", text
                     ):
+                        assert isinstance(tag, str) and isinstance(value, str)
+
+                        proc_value = value.strip()
+                        if proc_value.startswith("("):
+                            proc_value = proc_value[1:]
+                            if (_index := proc_value.find(")")) != -1:
+                                proc_value = proc_value[:_index]
+                            proc_value = proc_value.strip()
+
                         match tag:
                             case "fn":
-                                tag_fn = value
+                                tag_fn = proc_value
                             case "b":
-                                tag_bold = value
+                                tag_bold = proc_value
                             case "i":
-                                tag_italic = value
+                                tag_italic = proc_value
                             case "r":
-                                if value in style__font_sign:
-                                    current_font_sign = style__font_sign[value]
+                                r_value = proc_value if "(" in value else value.rstrip()
+                                if r_value in style__font_sign:
+                                    current_font_sign = style__font_sign[r_value]
                                 else:
                                     # 空为还原样式, 非样式表内样式名效果同空, 但发出不规范警告
                                     current_font_sign = default_font_sign
-                                    if value != "":
+                                    if r_value != "":
                                         log.warning(
-                                            "The \\r style '{}' not in Styles", value
+                                            "The \\r style '{}' not in Styles", r_value
                                         )
 
                     new_fontname: str = current_font_sign[0]
@@ -164,12 +174,12 @@ def subset(
                     new_bold, new_italic = current_font_sign[1].value
 
                     if tag_fn is not None:
-                        match _tag_fn := tag_fn.strip():
+                        match tag_fn:
                             case "":
                                 new_fontname = default_font_sign[0]
                             case _:
-                                _is_vertical: bool = _tag_fn[0] == "@"
-                                new_fontname = _tag_fn[1:] if _is_vertical else _tag_fn
+                                _is_vertical: bool = tag_fn.startswith("@")
+                                new_fontname = tag_fn[1:] if _is_vertical else tag_fn
 
                                 # 修改
                                 text = text.replace(
@@ -178,7 +188,7 @@ def subset(
                                 )
 
                     if tag_bold is not None:
-                        match tag_bold.strip():
+                        match tag_bold:
                             case "":
                                 new_bold = default_font_sign[1].value[0]
                             case "0":
@@ -195,7 +205,7 @@ def subset(
                                 return_res = not strict
 
                     if tag_italic is not None:
-                        match tag_italic.strip():
+                        match tag_italic:
                             case "":
                                 new_italic = default_font_sign[1].value[1]
                             case "0":
@@ -361,6 +371,10 @@ def subset(
             "Font family auto mapping: {}",
             f"( {key[0]} / {key[1].name} ){mapping_res}",
             deep=(strict and bool(mapping_res)),
+        )
+        log.debug(
+            f"{_font.pathname}: {_font.familys} {_font.font_type.name}",
+            is_format=False,
         )
 
     # 子集化字体

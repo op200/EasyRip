@@ -36,6 +36,7 @@ from .easyrip_mlang import (
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import DEFAULT_PRESET_PARAMS, Ripper
+from .ripper.sub_and_font import load_fonts
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -488,7 +489,7 @@ def run_command(command: Iterable[str] | str) -> bool:
         case Cmd_type.exit:
             sys.exit(0)
 
-        case Cmd_type.cd | Cmd_type.mediainfo:
+        case Cmd_type.cd | Cmd_type.mediainfo | Cmd_type.fontinfo:
             _path_tuple: tuple[str, ...] | None = None
 
             match cmd_list[1]:
@@ -521,6 +522,13 @@ def run_command(command: Iterable[str] | str) -> bool:
                 case Cmd_type.mediainfo:
                     for _path in _path_tuple:
                         log.send(f"{_path}: {Media_info.from_path(_path)}")
+                case Cmd_type.fontinfo:
+                    for _font in itertools.chain.from_iterable(
+                        load_fonts(_path) for _path in _path_tuple
+                    ):
+                        log.send(
+                            f"{_font.pathname}: {_font.familys} / {_font.font_type.name}"
+                        )
 
         case Cmd_type.dir:
             files = os.listdir(os.getcwd())

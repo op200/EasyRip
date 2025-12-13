@@ -28,8 +28,8 @@ classifiers = [
 requires-python = ">=3.12"
 dependencies = [
     "prompt-toolkit>=3.0.52",
-    "fonttools>=4.61.0",
-    "pycryptodome>=3.21.0",
+    "fonttools>=4.61.1",
+    "pycryptodome>=3.23.0",
 ]
 authors = [{ name = "op200" }]
 

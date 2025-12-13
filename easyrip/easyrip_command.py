@@ -19,7 +19,7 @@ from prompt_toolkit.document import Document
 
 from . import global_val
 from .easyrip_config.config_key import Config_key
-from .ripper.param import Preset_name, Audio_codec
+from .ripper.param import Audio_codec, Preset_name
 
 
 @final
@@ -275,6 +275,15 @@ class Cmd_type(enum.Enum):
         ("mediainfo",),
         param="<<path> | 'fd' | 'cfd'>",
         description="Get the media info by the Media_info class",
+        childs=(
+            Cmd_type_val(("fd",)),
+            Cmd_type_val(("cfd",)),
+        ),
+    )
+    fontinfo = Cmd_type_val(
+        ("fontinfo",),
+        param="<<path> | 'fd' | 'cfd'>",
+        description="Get the font info by the Font class",
         childs=(
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),

@@ -26,7 +26,7 @@ from easyrip import (
 from easyrip.easyrip_command import Cmd_type, Opt_type
 from easyrip.easyrip_mlang import Lang_tag_val, all_supported_lang_map
 from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
-from easyrip.ripper.font_subset.font import load_fonts, load_windows_fonts
+from easyrip.ripper.sub_and_font.font import load_fonts, load_windows_fonts
 
 if sys.stdout.encoding != "UTF-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")

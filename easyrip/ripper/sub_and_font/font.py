@@ -59,7 +59,7 @@ def load_fonts(path: str | Path, lazy: bool = True) -> list[Font]:
                 if suffix == ".ttc"
                 else [TTFont(file=file, lazy=lazy)]
             ):
-                table_name: table__n_a_m_e | None = font.get("name")  # pyright: ignore[reportAssignmentType]
+                table_name: table__n_a_m_e | None = font.get("name")
 
                 if table_name is None:
                     log.warning(f"No 'name' table found in font {file}")
@@ -149,7 +149,9 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
     # 检查哪些字符不存在于字体中
     try:
         cmap = subset_font.getBestCmap()
-        available_chars = {chr(key) for key in cmap.keys()}  # noqa: SIM118
+        if cmap is None:
+            raise Exception("cmap is None")
+        available_chars = set(map(chr, cmap))
     except Exception as e:
         raise Font_error("Can not read best cmap from '{}'", font.pathname) from e
     input_chars = set(subset_str)
@@ -191,8 +193,13 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
     # 修改 Name Record
     affix_ascii = affix.encode("ascii")
     affix_utf16be = affix.encode("utf-16-be")
-    table_name: table__n_a_m_e = font.font.get("name")  # pyright: ignore[reportAssignmentType]
-    subset_table_name: table__n_a_m_e = subset_font.get("name")  # pyright: ignore[reportAssignmentType]
+    table_name: table__n_a_m_e | None = font.font.get("name")
+    subset_table_name: table__n_a_m_e | None = subset_font.get("name")
+
+    # 这两个都是复制的，所以不可能是 None
+    assert table_name is not None
+    assert subset_table_name is not None
+
     subset_table_name.names = list[NameRecord]()  # 重写 name table
     for record in table_name.names:
         name_id = int(record.nameID)
