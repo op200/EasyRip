@@ -1,4 +1,3 @@
-import enum
 import os
 import re
 import shutil
@@ -17,6 +16,13 @@ from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
 from ..utils import get_base62_time
 from .font_subset import subset
 from .media_info import Media_info, Stream_error
+from .param import (
+    DEFAULT_PRESET_PARAMS,
+    FONT_SUFFIX_SET,
+    SUBTITLE_SUFFIX_SET,
+    X264_PARAMS_NAME,
+    X265_PARAMS_NAME,
+)
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
@@ -32,7 +38,7 @@ class Ripper:
         input_path: Iterable[str | Path],
         output_prefix: Iterable[str | None],
         output_dir: str | None,
-        option: "Option | PresetName",
+        option: "Option | Preset_name",
         option_map: dict[str, str],
     ):
         try:
@@ -42,94 +48,13 @@ class Ripper:
         except Exception as e:
             log.error("Failed to add Ripper: {}", e, deep=True)
 
-    class PresetName(enum.Enum):
-        custom = "custom"
-
-        copy = "copy"
-
-        subset = "subset"
-
-        flac = "flac"
-
-        x264fast = "x264fast"
-        x264slow = "x264slow"
-
-        x265fast4 = "x265fast4"
-        x265fast3 = "x265fast3"
-        x265fast2 = "x265fast2"
-        x265fast = "x265fast"
-        x265slow = "x265slow"
-        x265full = "x265full"
-
-        svtav1 = "svtav1"
-
-        vvenc = "vvenc"
-
-        h264_amf = "h264_amf"
-        h264_nvenc = "h264_nvenc"
-        h264_qsv = "h264_qsv"
-
-        hevc_amf = "hevc_amf"
-        hevc_nvenc = "hevc_nvenc"
-        hevc_qsv = "hevc_qsv"
-
-        av1_amf = "av1_amf"
-        av1_nvenc = "av1_nvenc"
-        av1_qsv = "av1_qsv"
-
-        @classmethod
-        def _missing_(cls, value: object):
-            DEFAULT = cls.custom
-            log.error(
-                "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
-                value,
-                cls.__name__,
-                DEFAULT.name,
-                list(cls.__members__.values()),
-            )
-            return DEFAULT
-
-    class AudioCodec(enum.Enum):
-        copy = "copy"
-        libopus = "libopus"
-        flac = "flac"
-
-        # 别名
-        opus = libopus
-
-        @classmethod
-        def _missing_(cls, value: object):
-            DEFAULT = cls.copy
-            log.error(
-                "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
-                value,
-                cls.__name__,
-                DEFAULT.name,
-                list(cls.__members__.values()),
-            )
-            return DEFAULT
-
-    class Muxer(enum.Enum):
-        mp4 = "mp4"
-        mkv = "mkv"
-
-        @classmethod
-        def _missing_(cls, value: object):
-            DEFAULT = cls.mkv
-            log.error(
-                "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}",
-                value,
-                cls.__name__,
-                DEFAULT.name,
-                list(cls.__members__.values()),
-            )
-            return DEFAULT
+    from .param import Audio_codec, Muxer, Preset_name
 
     @dataclass(slots=True)
     class Option:
-        preset_name: "Ripper.PresetName"
+        preset_name: "Ripper.Preset_name"
         encoder_format_str: str
-        audio_encoder: "Ripper.AudioCodec | None"
+        audio_encoder: "Ripper.Audio_codec | None"
         muxer: "Ripper.Muxer | None"
         muxer_format_str: str
 
@@ -142,7 +67,7 @@ class Ripper:
     option: Option
     option_map: dict[str, str]
 
-    preset_name: PresetName
+    preset_name: Preset_name
 
     media_info: Media_info
 
@@ -165,7 +90,7 @@ class Ripper:
         input_path: Iterable[str | Path],
         output_prefix: Iterable[str | None],
         output_dir: str | None,
-        option: Option | PresetName,
+        option: Option | Preset_name,
         option_map: dict[str, str],
     ) -> None:
         self.input_path_list = [Path(path) for path in input_path]
@@ -190,11 +115,11 @@ class Ripper:
                 "The muxer must be 'mkv' when mux subtitle and font. Auto modified"
             )
 
-        if isinstance(option, Ripper.PresetName):
+        if isinstance(option, Ripper.Preset_name):
             self.preset_name = option
             self.option = self.preset_name_to_option(option)
         else:
-            self.preset_name = Ripper.PresetName.custom
+            self.preset_name = Ripper.Preset_name.custom
             self.option = option
 
         self._progress: dict[str, int | float] = {}
@@ -208,7 +133,7 @@ class Ripper:
             f"  option_map: {self.option_map}"
         )
 
-    def preset_name_to_option(self, preset_name: PresetName) -> Option:
+    def preset_name_to_option(self, preset_name: Preset_name) -> Option:
         if (
             force_fps := self.option_map.get("r") or self.option_map.get("fps")
         ) == "auto":
@@ -250,21 +175,21 @@ class Ripper:
         if audio_encoder_str := self.option_map.get("c:a"):
             if (
                 not self.media_info.audio_info
-                and self.preset_name != Ripper.PresetName.subset
+                and self.preset_name != Ripper.Preset_name.subset
             ):
                 raise Stream_error(
                     "There is no audio stream in the video, so '-c:a' cannot be used"
                 )
 
-            if audio_encoder_str not in Ripper.AudioCodec._member_map_:
+            if audio_encoder_str not in Ripper.Audio_codec._member_map_:
                 raise ValueError(
                     gettext("Unsupported '{}' param: {}", "-c:a", audio_encoder_str)
                 )
 
-            audio_encoder = Ripper.AudioCodec[audio_encoder_str]
+            audio_encoder = Ripper.Audio_codec[audio_encoder_str]
 
             # 通知别名映射
-            if audio_encoder_str not in Ripper.AudioCodec._member_names_:
+            if audio_encoder_str not in Ripper.Audio_codec._member_names_:
                 log.info(
                     "Auto mapping encoder name: {} -> {}",
                     audio_encoder_str,
@@ -278,15 +203,15 @@ class Ripper:
                 ff_stream_option.append("0:a")
 
             match audio_encoder:
-                case Ripper.AudioCodec.copy:
+                case Ripper.Audio_codec.copy:
                     _encoder_str = (
                         ""
-                        if self.preset_name == Ripper.PresetName.copy
+                        if self.preset_name == Ripper.Preset_name.copy
                         else "-c:a copy "
                     )
-                case Ripper.AudioCodec.flac:
+                case Ripper.Audio_codec.flac:
                     _encoder_str = "-an "
-                case Ripper.AudioCodec.libopus:
+                case Ripper.Audio_codec.libopus:
                     _encoder_str = "-c:a libopus "
                     for opt in (
                         "application",
@@ -302,7 +227,7 @@ class Ripper:
 
             _bitrate_str = (
                 ""
-                if audio_encoder in {Ripper.AudioCodec.copy, Ripper.AudioCodec.flac}
+                if audio_encoder in {Ripper.Audio_codec.copy, Ripper.Audio_codec.flac}
                 else f"-b:a {self.option_map.get('b:a') or '160k'} "
             )
 
@@ -327,7 +252,7 @@ class Ripper:
                         )
                         + (
                             ""
-                            if self.preset_name == Ripper.PresetName.flac
+                            if self.preset_name == Ripper.Preset_name.flac
                             else (
                                 "&& mp4fpsmod "
                                 + (f"-r 0:{force_fps}" if force_fps else "")
@@ -366,22 +291,13 @@ class Ripper:
                                     )
                                     == 1
                                     else "--attach-file "
-                                    if _file.suffix in {".otf", ".ttf", ".ttc"}
+                                    if _file.suffix in FONT_SUFFIX_SET
                                     else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} "
                                 )
                                 + f'"{_file.absolute()}"'
                                 for _file in only_mux_sub_path.iterdir()
                                 if _file.suffix
-                                in {
-                                    ".srt",
-                                    ".ass",
-                                    ".ssa",
-                                    ".sup",
-                                    ".idx",
-                                    ".otf",
-                                    ".ttf",
-                                    ".ttc",
-                                }
+                                in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET)
                             )
                             if only_mux_sub_path
                             else ""
@@ -427,7 +343,7 @@ class Ripper:
         FFMPEG_HEADER = f"ffmpeg {'-hide_banner ' if self.option_map.get('_sub_ripper_num') else ''}-progress {FF_PROGRESS_LOG_FILE} -report {ffparams_ff} {ffparams_in}"
 
         match preset_name:
-            case Ripper.PresetName.custom:
+            case Ripper.Preset_name.custom:
                 if not (
                     encoder_format_str := self.option_map.get(
                         "custom:format",
@@ -454,7 +370,7 @@ class Ripper:
                         )
                     )
 
-            case Ripper.PresetName.copy:
+            case Ripper.Preset_name.copy:
                 hwaccel = (
                     f"-hwaccel {hwaccel}"
                     if (hwaccel := self.option_map.get("hwaccel"))
@@ -487,7 +403,7 @@ class Ripper:
                             else 'mkvmerge -o "{output}" "{input}"'
                         )
 
-            case Ripper.PresetName.flac:
+            case Ripper.Preset_name.flac:
                 _ff_encode_str: str = ""
                 _flac_encode_str: str = ""
                 _mux_flac_input_list: list[str] = []
@@ -559,30 +475,18 @@ class Ripper:
                             f"&& {_mux_str} " + _del_flac_str
                         )
 
-            case Ripper.PresetName.x264fast | Ripper.PresetName.x264slow:
+            case (
+                Ripper.Preset_name.x264
+                | Ripper.Preset_name.x264fast
+                | Ripper.Preset_name.x264slow
+            ):
                 _custom_option_map: dict[str, str] = {
                     k: v
                     for k, v in {
-                        "threads": self.option_map.get("threads"),
-                        # Select
-                        "crf": self.option_map.get("crf"),
-                        "psy-rd": self.option_map.get("psy-rd"),
-                        "qcomp": self.option_map.get("qcomp"),
-                        "keyint": self.option_map.get("keyint"),
-                        "deblock": self.option_map.get("deblock"),
-                        # Default
-                        "qpmin": self.option_map.get("qpmin"),
-                        "qpmax": self.option_map.get("qpmax"),
-                        "bframes": self.option_map.get("bframes"),
-                        "ref": self.option_map.get("ref"),
-                        "subme": self.option_map.get("subme"),
-                        "me": self.option_map.get("me"),
-                        "merange": self.option_map.get("merange"),
-                        "aq-mode": self.option_map.get("aq-mode"),
-                        "rc-lookahead": self.option_map.get("rc-lookahead"),
-                        "min-keyint": self.option_map.get("min-keyint"),
-                        "trellis": self.option_map.get("trellis"),
-                        "fast-pskip": self.option_map.get("fast-pskip"),
+                        **{
+                            _param_name: self.option_map.get(_param_name)
+                            for _param_name in X264_PARAMS_NAME
+                        },
                         **dict(
                             s.split("=", maxsplit=1)
                             for s in str(self.option_map.get("x264-params", "")).split(
@@ -594,7 +498,9 @@ class Ripper:
                     if v is not None
                 }
 
-                _option_map = DEFAULT_PRESET_PARAMS[preset_name] | _custom_option_map
+                _option_map = (
+                    DEFAULT_PRESET_PARAMS.get(preset_name, {}) | _custom_option_map
+                )
 
                 if (
                     (_crf := _option_map.get("crf"))
@@ -616,55 +522,21 @@ class Ripper:
                 )
 
             case (
-                Ripper.PresetName.x265fast4
-                | Ripper.PresetName.x265fast3
-                | Ripper.PresetName.x265fast2
-                | Ripper.PresetName.x265fast
-                | Ripper.PresetName.x265slow
-                | Ripper.PresetName.x265full
+                Ripper.Preset_name.x265
+                | Ripper.Preset_name.x265fast4
+                | Ripper.Preset_name.x265fast3
+                | Ripper.Preset_name.x265fast2
+                | Ripper.Preset_name.x265fast
+                | Ripper.Preset_name.x265slow
+                | Ripper.Preset_name.x265full
             ):
                 _custom_option_map: dict[str, str] = {
                     k: v
                     for k, v in {
-                        "crf": self.option_map.get("crf"),
-                        "qpmin": self.option_map.get("qpmin"),
-                        "qpmax": self.option_map.get("qpmax"),
-                        "psy-rd": self.option_map.get("psy-rd"),
-                        "rd": self.option_map.get("rd"),
-                        "rdoq-level": self.option_map.get("rdoq-level"),
-                        "psy-rdoq": self.option_map.get("psy-rdoq"),
-                        "qcomp": self.option_map.get("qcomp"),
-                        "keyint": self.option_map.get("keyint"),
-                        "min-keyint": self.option_map.get("min-keyint"),
-                        "deblock": self.option_map.get("deblock"),
-                        "me": self.option_map.get("me"),
-                        "merange": self.option_map.get("merange"),
-                        "hme": self.option_map.get("hme"),
-                        "hme-search": self.option_map.get("hme-search"),
-                        "hme-range": self.option_map.get("hme-range"),
-                        "aq-mode": self.option_map.get("aq-mode"),
-                        "aq-strength": self.option_map.get("aq-strength"),
-                        "tu-intra-depth": self.option_map.get("tu-intra-depth"),
-                        "tu-inter-depth": self.option_map.get("tu-inter-depth"),
-                        "limit-tu": self.option_map.get("limit-tu"),
-                        "bframes": self.option_map.get("bframes"),
-                        "ref": self.option_map.get("ref"),
-                        "subme": self.option_map.get("subme"),
-                        "open-gop": self.option_map.get("open-gop"),
-                        "gop-lookahead": self.option_map.get("gop-lookahead"),
-                        "rc-lookahead": self.option_map.get("rc-lookahead"),
-                        "rect": self.option_map.get("rect"),
-                        "amp": self.option_map.get("amp"),
-                        "cbqpoffs": self.option_map.get("cbqpoffs"),
-                        "crqpoffs": self.option_map.get("crqpoffs"),
-                        "ipratio": self.option_map.get("ipratio"),
-                        "pbratio": self.option_map.get("pbratio"),
-                        "early-skip": self.option_map.get("early-skip"),
-                        "ctu": self.option_map.get("ctu"),
-                        "min-cu-size": self.option_map.get("min-cu-size"),
-                        "max-tu-size": self.option_map.get("max-tu-size"),
-                        "level-idc": self.option_map.get("level-idc"),
-                        "sao": self.option_map.get("sao"),
+                        **{
+                            _param_name: self.option_map.get(_param_name)
+                            for _param_name in X265_PARAMS_NAME
+                        },
                         **dict(
                             s.split("=", maxsplit=1)
                             for s in str(self.option_map.get("x265-params", "")).split(
@@ -676,7 +548,9 @@ class Ripper:
                     if v is not None
                 }
 
-                _option_map = DEFAULT_PRESET_PARAMS[preset_name] | _custom_option_map
+                _option_map = (
+                    DEFAULT_PRESET_PARAMS.get(preset_name, {}) | _custom_option_map
+                )
 
                 # HEVC 规范
                 if self.option_map.get(
@@ -729,15 +603,15 @@ class Ripper:
                 )
 
             case (
-                Ripper.PresetName.h264_amf
-                | Ripper.PresetName.h264_nvenc
-                | Ripper.PresetName.h264_qsv
-                | Ripper.PresetName.hevc_amf
-                | Ripper.PresetName.hevc_nvenc
-                | Ripper.PresetName.hevc_qsv
-                | Ripper.PresetName.av1_amf
-                | Ripper.PresetName.av1_nvenc
-                | Ripper.PresetName.av1_qsv
+                Ripper.Preset_name.h264_amf
+                | Ripper.Preset_name.h264_nvenc
+                | Ripper.Preset_name.h264_qsv
+                | Ripper.Preset_name.hevc_amf
+                | Ripper.Preset_name.hevc_nvenc
+                | Ripper.Preset_name.hevc_qsv
+                | Ripper.Preset_name.av1_amf
+                | Ripper.Preset_name.av1_nvenc
+                | Ripper.Preset_name.av1_qsv
             ):
                 _option_map = {
                     "q:v": self.option_map.get("q:v"),
@@ -746,9 +620,9 @@ class Ripper:
                 }
                 match preset_name:
                     case (
-                        Ripper.PresetName.h264_qsv
-                        | Ripper.PresetName.hevc_qsv
-                        | Ripper.PresetName.av1_qsv
+                        Ripper.Preset_name.h264_qsv
+                        | Ripper.Preset_name.hevc_qsv
+                        | Ripper.Preset_name.av1_qsv
                     ):
                         _option_map["qsv_params"] = self.option_map.get("qsv_params")
 
@@ -765,7 +639,7 @@ class Ripper:
                     + ' "{output}"'
                 )
 
-            case Ripper.PresetName.svtav1:
+            case Ripper.Preset_name.svtav1:
                 _option_map = {
                     "crf": self.option_map.get("crf"),
                     "qp": self.option_map.get("qp"),
@@ -787,7 +661,7 @@ class Ripper:
                     + ' "{output}"'
                 )
 
-            case Ripper.PresetName.vvenc:
+            case Ripper.Preset_name.vvenc:
                 _option_map = {
                     "qp": self.option_map.get("qp"),
                     "pix_fmt": self.option_map.get("pix_fmt"),
@@ -808,7 +682,7 @@ class Ripper:
                     + ' "{output}"'
                 )
 
-            case Ripper.PresetName.subset:
+            case Ripper.Preset_name.subset:
                 encoder_format_str = ""
 
         return Ripper.Option(
@@ -889,7 +763,7 @@ class Ripper:
 
         # 根据格式判断
         match self.option.preset_name:
-            case Ripper.PresetName.custom:
+            case Ripper.Preset_name.custom:
                 suffix = (
                     f".{_suffix}"
                     if (_suffix := self.option_map.get("custom:suffix"))
@@ -903,7 +777,7 @@ class Ripper:
                     }
                 )
 
-            case Ripper.PresetName.flac:
+            case Ripper.Preset_name.flac:
                 if self.option.muxer is not None or len(self.media_info.audio_info) > 1:
                     suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
@@ -923,7 +797,7 @@ class Ripper:
                         }
                     )
 
-            case Ripper.PresetName.subset:
+            case Ripper.Preset_name.subset:
                 _output_dir = Path(self.output_dir) / basename
                 _output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -1073,7 +947,7 @@ class Ripper:
 
         Thread(target=self._flush_progress, args=(1,), daemon=True).start()
 
-        if self.preset_name is not Ripper.PresetName.custom:
+        if self.preset_name is not Ripper.Preset_name.custom:
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
 
         log.info(cmd)
@@ -1097,8 +971,8 @@ class Ripper:
         else:  # 多文件合成
             # flac 音频轨合成
             if (
-                self.preset_name != Ripper.PresetName.flac
-                and self.option.audio_encoder == Ripper.AudioCodec.flac
+                self.preset_name != Ripper.Preset_name.flac
+                and self.option.audio_encoder == Ripper.Audio_codec.flac
             ):
                 _flac_basename = f"flac_temp_{get_base62_time()}"
                 _flac_fullname = _flac_basename + ".flac.mkv"
@@ -1106,7 +980,7 @@ class Ripper:
                     [self.input_path_list[0]],
                     [_flac_basename],
                     self.output_dir,
-                    Ripper.PresetName.flac,
+                    Ripper.Preset_name.flac,
                     {
                         k: v
                         for k, v in (
@@ -1142,7 +1016,7 @@ class Ripper:
                         (_mux_temp_name,),
                         (Path(temp_name).stem,),
                         self.output_dir,
-                        Ripper.PresetName.copy,
+                        Ripper.Preset_name.copy,
                         {
                             k: v
                             for k, v in dict[str, str | None](
@@ -1186,14 +1060,7 @@ class Ripper:
                     for _file_basename in os.listdir(self.output_dir):
                         _file_basename_list = os.path.splitext(_file_basename)
                         if (
-                            _file_basename_list[1]
-                            in {
-                                ".srt",
-                                ".ass",
-                                ".ssa",
-                                ".sup",
-                                ".idx",
-                            }
+                            _file_basename_list[1] in SUBTITLE_SUFFIX_SET
                             and _file_basename_list[0].startswith(_input_prefix)
                             and (
                                 len(soft_sub_map_list) == 1
@@ -1203,9 +1070,7 @@ class Ripper:
                                 in soft_sub_map_list[1:]
                             )
                         ):
-                            soft_sub_list.append(
-                                Path(os.path.join(self.output_dir, _file_basename))
-                            )
+                            soft_sub_list.append(Path(self.output_dir) / _file_basename)
                 else:
                     soft_sub_list = [Path(s) for s in soft_sub.split("?")]
 
@@ -1224,9 +1089,7 @@ class Ripper:
                                 Path(self.output_dir),
                                 _tr[0],
                                 _tr[1],
-                                file_intersection_selector=(
-                                    Path(s) for s in soft_sub_list
-                                ),
+                                file_intersection_selector=soft_sub_list,
                             )
                         except Exception as e:
                             log.error(e, is_format=False)
@@ -1249,7 +1112,7 @@ class Ripper:
                     soft_sub_list + add_tr_files,
                     (subset_folder.name,),
                     self.output_dir,
-                    Ripper.PresetName.subset,
+                    Ripper.Preset_name.subset,
                     self.option_map,
                 ).run():
                     # 合成 MKV
@@ -1263,7 +1126,7 @@ class Ripper:
                         [new_full_name],
                         [os.path.splitext(org_full_name)[0]],
                         self.output_dir,
-                        Ripper.PresetName.copy,
+                        Ripper.Preset_name.copy,
                         {
                             k: v
                             for k, v in dict[str, str | None](
@@ -1332,256 +1195,3 @@ class Ripper:
         os.environ.pop("FFREPORT", None)
 
         return True
-
-
-_DEFAULT_X265_PARAMS: dict[str, str] = {
-    "crf": "20",
-    "qpmin": "6",
-    "qpmax": "32",
-    "rd": "3",
-    "psy-rd": "2",
-    "rdoq-level": "0",
-    "psy-rdoq": "0",
-    "qcomp": "0.68",
-    "keyint": "250",
-    "min-keyint": "2",
-    "deblock": "0,0",
-    "me": "umh",
-    "merange": "57",
-    "hme": "1",
-    "hme-search": "hex,hex,hex",
-    "hme-range": "16,57,92",
-    "aq-mode": "2",
-    "aq-strength": "1",
-    "tu-intra-depth": "1",
-    "tu-inter-depth": "1",
-    "limit-tu": "0",
-    "bframes": "16",
-    "ref": "8",
-    "subme": "2",
-    "open-gop": "1",
-    "gop-lookahead": "0",
-    "rc-lookahead": "20",
-    "rect": "0",
-    "amp": "0",
-    "cbqpoffs": "0",
-    "crqpoffs": "0",
-    "ipratio": "1.4",
-    "pbratio": "1.3",
-    "early-skip": "1",
-    "ctu": "64",
-    "min-cu-size": "8",
-    "max-tu-size": "32",
-    "level-idc": "0",
-    "sao": "0",
-    "weightb": "1",
-    "info": "1",
-}
-DEFAULT_PRESET_PARAMS: dict[Ripper.PresetName, dict[str, str]] = {
-    Ripper.PresetName.x264fast: {
-        "threads": "auto",
-        "crf": "20",
-        "psy-rd": "0.6,0.15",
-        "qcomp": "0.66",
-        "keyint": "250",
-        "deblock": "0,0",
-        "qpmin": "8",
-        "qpmax": "32",
-        "bframes": "8",
-        "ref": "4",
-        "subme": "5",
-        "me": "hex",
-        "merange": "16",
-        "aq-mode": "1",
-        "rc-lookahead": "60",
-        "min-keyint": "2",
-        "trellis": "1",
-        "fast-pskip": "1",
-        "weightb": "1",
-    },
-    Ripper.PresetName.x264slow: {
-        "threads": "auto",
-        "crf": "21",
-        "psy-rd": "0.6,0.15",
-        "qcomp": "0.66",
-        "keyint": "250",
-        "deblock": "-1,-1",
-        "qpmin": "8",
-        "qpmax": "32",
-        "bframes": "16",
-        "ref": "8",
-        "subme": "7",
-        "me": "umh",
-        "merange": "24",
-        "aq-mode": "3",
-        "rc-lookahead": "120",
-        "min-keyint": "2",
-        "trellis": "2",
-        "fast-pskip": "0",
-        "weightb": "1",
-    },
-    Ripper.PresetName.x265fast4: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "18",
-        "qpmin": "12",
-        "qpmax": "28",
-        "rd": "2",
-        "rdoq-level": "1",
-        "me": "hex",
-        "merange": "57",
-        "hme-search": "hex,hex,hex",
-        "hme-range": "16,32,48",
-        "aq-mode": "1",
-        "tu-intra-depth": "1",
-        "tu-inter-depth": "1",
-        "limit-tu": "4",
-        "bframes": "8",
-        "ref": "6",
-        "subme": "3",
-        "open-gop": "0",
-        "gop-lookahead": "0",
-        "rc-lookahead": "48",
-        "cbqpoffs": "-1",
-        "crqpoffs": "-1",
-        "pbratio": "1.28",
-    },
-    Ripper.PresetName.x265fast3: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "18",
-        "qpmin": "12",
-        "qpmax": "28",
-        "rdoq-level": "1",
-        "deblock": "-0.5,-0.5",
-        "me": "hex",
-        "merange": "57",
-        "hme-search": "hex,hex,hex",
-        "hme-range": "16,32,57",
-        "aq-mode": "3",
-        "tu-intra-depth": "2",
-        "tu-inter-depth": "2",
-        "limit-tu": "4",
-        "bframes": "12",
-        "ref": "6",
-        "subme": "3",
-        "open-gop": "0",
-        "gop-lookahead": "0",
-        "rc-lookahead": "120",
-        "cbqpoffs": "-1",
-        "crqpoffs": "-1",
-        "pbratio": "1.27",
-    },
-    Ripper.PresetName.x265fast2: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "18",
-        "qpmin": "12",
-        "qpmax": "28",
-        "rdoq-level": "2",
-        "deblock": "-1,-1",
-        "me": "hex",
-        "merange": "57",
-        "hme-search": "hex,hex,hex",
-        "hme-range": "16,57,92",
-        "aq-mode": "3",
-        "tu-intra-depth": "3",
-        "tu-inter-depth": "2",
-        "limit-tu": "4",
-        "ref": "6",
-        "subme": "4",
-        "open-gop": "0",
-        "gop-lookahead": "0",
-        "rc-lookahead": "192",
-        "cbqpoffs": "-1",
-        "crqpoffs": "-1",
-        "pbratio": "1.25",
-    },
-    Ripper.PresetName.x265fast: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "18",
-        "qpmin": "12",
-        "qpmax": "28",
-        "psy-rd": "1.8",
-        "rdoq-level": "2",
-        "psy-rdoq": "0.4",
-        "keyint": "312",
-        "deblock": "-1,-1",
-        "me": "umh",
-        "merange": "57",
-        "hme-search": "umh,hex,hex",
-        "hme-range": "16,57,92",
-        "aq-mode": "4",
-        "tu-intra-depth": "4",
-        "tu-inter-depth": "3",
-        "limit-tu": "4",
-        "subme": "5",
-        "gop-lookahead": "8",
-        "rc-lookahead": "216",
-        "cbqpoffs": "-2",
-        "crqpoffs": "-2",
-        "pbratio": "1.2",
-    },
-    Ripper.PresetName.x265slow: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "17.5",
-        "qpmin": "12",
-        "qpmax": "28",
-        "rd": "5",
-        "psy-rd": "1.8",
-        "rdoq-level": "2",
-        "psy-rdoq": "0.4",
-        "qcomp": "0.7",
-        "keyint": "312",
-        "deblock": "-1,-1",
-        "me": "umh",
-        "merange": "57",
-        "hme-search": "umh,hex,hex",
-        "hme-range": "16,57,184",
-        "aq-mode": "4",
-        "aq-strength": "1",
-        "tu-intra-depth": "4",
-        "tu-inter-depth": "3",
-        "limit-tu": "2",
-        "subme": "6",
-        "gop-lookahead": "14",
-        "rc-lookahead": "250",
-        "rect": "1",
-        "min-keyint": "2",
-        "cbqpoffs": "-2",
-        "crqpoffs": "-2",
-        "pbratio": "1.2",
-        "early-skip": "0",
-    },
-    Ripper.PresetName.x265full: _DEFAULT_X265_PARAMS
-    | {
-        "crf": "17",
-        "qpmin": "3",
-        "qpmax": "21.5",
-        "psy-rd": "2.2",
-        "rd": "5",
-        "rdoq-level": "2",
-        "psy-rdoq": "1.6",
-        "qcomp": "0.72",
-        "keyint": "266",
-        "min-keyint": "2",
-        "deblock": "-1,-1",
-        "me": "umh",
-        "merange": "160",
-        "hme-search": "full,umh,hex",
-        "hme-range": "16,92,320",
-        "aq-mode": "4",
-        "aq-strength": "1.2",
-        "tu-intra-depth": "4",
-        "tu-inter-depth": "4",
-        "limit-tu": "2",
-        "subme": "7",
-        "open-gop": "1",
-        "gop-lookahead": "14",
-        "rc-lookahead": "250",
-        "rect": "1",
-        "amp": "1",
-        "cbqpoffs": "-3",
-        "crqpoffs": "-3",
-        "ipratio": "1.43",
-        "pbratio": "1.2",
-        "early-skip": "0",
-    },
-}

@@ -34,8 +34,8 @@ from .easyrip_mlang import (
     translate_subtitles,
 )
 from .easyrip_prompt import easyrip_prompt
-from .ripper import Media_info, Ripper
-from .ripper.ripper import DEFAULT_PRESET_PARAMS
+from .ripper.media_info import Media_info
+from .ripper.ripper import DEFAULT_PRESET_PARAMS, Ripper
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -433,8 +433,8 @@ def run_command(command: Iterable[str] | str) -> bool:
                     case Opt_type._preset:
                         if not cmd_list[2]:
                             log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
-                        elif cmd_list[2] in Ripper.PresetName._value2member_map_:
-                            _preset = Ripper.PresetName(cmd_list[2])
+                        elif cmd_list[2] in Ripper.Preset_name._value2member_map_:
+                            _preset = Ripper.Preset_name(cmd_list[2])
                             if _preset in DEFAULT_PRESET_PARAMS:
                                 log.send(
                                     json.dumps(
@@ -781,7 +781,7 @@ def run_command(command: Iterable[str] | str) -> bool:
             input_pathname_org_list: list[str] = []
             output_basename: str | None = None
             output_dir: str | None = None
-            preset_name: str | Ripper.PresetName | None = None
+            preset_name: str | Ripper.Preset_name | None = None
             option_map: dict[str, str] = {}
             is_run: bool = False
             web_server_params = None
@@ -882,19 +882,19 @@ def run_command(command: Iterable[str] | str) -> bool:
             if not preset_name:
                 log.warning("Missing '-preset' option, set to default value 'custom'")
                 preset_name = "custom"
-            if preset_name not in Ripper.PresetName._value2member_map_:
+            if preset_name not in Ripper.Preset_name._value2member_map_:
                 log.error("'{}' is not a member of preset", preset_name)
                 return False
 
-            preset_name = Ripper.PresetName(preset_name)
+            preset_name = Ripper.Preset_name(preset_name)
 
             if (
-                preset_name is Ripper.PresetName.custom
+                preset_name is Ripper.Preset_name.custom
                 and easyrip_web.http_server.Event.is_run_command
             ):
                 log.error(
                     "Disable the use of '{}' on the web",
-                    f"-preset {Ripper.PresetName.custom}",
+                    f"-preset {Ripper.Preset_name.custom}",
                 )
                 return False
 

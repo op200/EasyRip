@@ -14,7 +14,9 @@ from .easyrip_mlang import (
     Lang_tag_region,
     Lang_tag_script,
 )
-from .ripper import Ass, Media_info, Ripper
+from .ripper.font_subset import Ass
+from .ripper.media_info import Media_info
+from .ripper.ripper import Ripper
 
 __all__ = [
     "Ass",

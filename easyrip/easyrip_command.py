@@ -19,6 +19,7 @@ from prompt_toolkit.document import Document
 
 from . import global_val
 from .easyrip_config.config_key import Config_key
+from .ripper.param import Preset_name, Audio_codec
 
 
 @final
@@ -344,48 +345,10 @@ class Opt_type(enum.Enum):
         param="<string>",
         description=(
             "Setting preset\n"
-            "Preset name:\n"
-            "  custom\n"
-            "  subset\n"
-            "  copy\n"
-            "  flac\n"
-            "  x264fast x264slow\n"
-            "  x265fast4 x265fast3 x265fast2 x265fast x265slow x265full\n"
-            "  svtav1\n"
-            "  vvenc\n"
-            "  h264_qsv h264_nvenc h264_amf\n"
-            "  hevc_qsv hevc_nvenc hevc_amf\n"
-            "  av1_qsv av1_nvenc av1_amf"
+            "Preset name:\n"  # .
+            f"{Preset_name.to_help_string('  ')}"
         ),
-        childs=(
-            Cmd_type_val(
-                (
-                    "custom",
-                    "subset",
-                    "copy",
-                    "flac",
-                    "x264fast",
-                    "x264slow",
-                    "x265fast4",
-                    "x265fast3",
-                    "x265fast2",
-                    "x265fast",
-                    "x265slow",
-                    "x265full",
-                    "svtav1",
-                    "vvenc",
-                    "h264_qsv",
-                    "h264_nvenc",
-                    "h264_amf",
-                    "hevc_qsv",
-                    "hevc_nvenc",
-                    "hevc_amf",
-                    "av1_qsv",
-                    "av1_nvenc",
-                    "av1_amf",
-                )
-            ),
-        ),
+        childs=(Cmd_type_val(tuple(Preset_name._value2member_map_)),),
     )
     _pipe = Cmd_type_val(
         ("-pipe",),
@@ -515,11 +478,8 @@ class Opt_type(enum.Enum):
         param="<string>",
         description=(
             "Setting audio encoder\n"
-            " \n"  # .
-            "Audio encoder:\n"
-            "  copy\n"
-            "  libopus\n"
-            "  flac"
+            "Audio encoder:\n"  # .
+            f"{Audio_codec.to_help_string('  ')}"
         ),
         childs=(Cmd_type_val(("copy", "libopus", "flac")),),
     )
