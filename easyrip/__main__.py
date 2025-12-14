@@ -129,8 +129,11 @@ def run() -> NoReturn:
             log.debug("Manually force exit")
             sys.exit(0)
 
-        if not run_command(command):
-            log.warning("Stop run command")
+        try:
+            if not run_command(command):
+                log.warning("Stop run command")
+        except KeyboardInterrupt:
+            log.warning("Manually stop run command")
 
 
 if __name__ == "__main__":
