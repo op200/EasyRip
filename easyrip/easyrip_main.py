@@ -662,7 +662,6 @@ def run_command(command: Iterable[str] | str) -> bool:
             easyrip_web.run_server(*_params)
 
         case Cmd_type.config:
-            log.debug(cmd_list)
             match cmd_list[1]:
                 case "list" | "":
                     config.show_config_list()
