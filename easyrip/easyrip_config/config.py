@@ -1,22 +1,29 @@
 import json
 import os
 from pathlib import Path
+from typing import Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
 from ..global_val import CONFIG_DIR
-from .config_key import CONFIG_VERSION, Config_key
+from ..utils import type_match
+from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key
 
-CONFIG_DEFAULT_DICT: dict[Config_key, str | bool] = {
+CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str]] = {
     Config_key.language: "auto",
     Config_key.check_update: True,
     Config_key.check_dependent: True,
-    Config_key.startup_directory: "",
+    Config_key.startup_dir: "",
+    Config_key.startup_dir_blacklist: [],
     Config_key.force_log_file_path: "",
     Config_key.log_print_level: log.LogLevel.send.name,
     Config_key.log_write_level: log.LogLevel.send.name,
-    Config_key.prompt_history_save_file: True,
+    Config_key.save_prompt_history: True,
 }
+
+assert all(k in CONFIG_DEFAULT_DICT for k in Config_key), [
+    k.name for k in Config_key if k not in CONFIG_DEFAULT_DICT
+]
 
 
 class config:
@@ -32,8 +39,8 @@ class config:
         if not cls._config_file.is_file():
             cls._config_dir.mkdir(exist_ok=True)
             with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
-                config_default_dict: dict[str, str | bool] = {
-                    k.value: v for k, v in CONFIG_DEFAULT_DICT.items()
+                config_default_dict: dict[str, str | bool | list[str]] = {
+                    k.name: v for k, v in CONFIG_DEFAULT_DICT.items()
                 }
                 json.dump(
                     {
@@ -104,7 +111,11 @@ class config:
             return True
 
     @classmethod
-    def set_user_profile(cls, key: str, val: str | int | float | bool) -> bool:
+    def set_user_profile(
+        cls,
+        key: str,
+        val: str | bool | list[str],
+    ) -> bool:
         if cls._config is None and not cls._read_config():
             return False
 
@@ -113,21 +124,71 @@ class config:
             return False
 
         if "user_profile" not in cls._config:
-            log.error("User profile is not found in config")
+            log.error("User profile is not found in config file")
             return False
 
-        if key in Config_key:
+        if key in Config_key._member_map_:
+            need_type = CONFIG_TYPE_DICT[Config_key[key]]
+            if not type_match(val, need_type):
+                log.error(
+                    "Type mismatch: need '{}'",
+                    need_type if get_origin(need_type) else need_type.__name__,
+                )
+                return False
             cls._config["user_profile"][key] = val
         else:
             log.error("Key '{}' is not found in user profile", key)
             return False
         return cls._write_config()
 
+    @overload
     @classmethod
     def get_user_profile(
-        cls, config_key: Config_key | str
-    ) -> str | int | float | bool | None:
-        key = config_key.value if isinstance(config_key, Config_key) else config_key
+        cls,
+        config_key: Literal[
+            Config_key.language,
+            Config_key.startup_dir,
+            Config_key.force_log_file_path,
+            Config_key.log_print_level,
+            Config_key.log_write_level,
+        ],
+    ) -> str | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile(
+        cls,
+        config_key: Literal[
+            Config_key.check_update,
+            Config_key.check_dependent,
+            Config_key.save_prompt_history,
+        ],
+    ) -> bool | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile(
+        cls,
+        config_key: Literal[Config_key.startup_dir_blacklist],
+    ) -> list[str] | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile(
+        cls,
+        config_key: str,
+    ) -> str | bool | list[str] | None: ...
+
+    @classmethod
+    def get_user_profile(
+        cls,
+        config_key: Config_key | str,
+    ) -> str | bool | list[str] | None:
+        key = config_key.name if isinstance(config_key, Config_key) else config_key
+
+        if key not in Config_key._member_map_:
+            log.error("The key '{}' is not a config", key)
+            return None
 
         if cls._config is None:
             cls._read_config()
@@ -161,43 +222,47 @@ class config:
     def _get_config_about(cls, key: str) -> str:
         return (
             {
-                Config_key.language.value: gettext(
+                Config_key.language.name: gettext(
                     "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}",
                     CONFIG_DEFAULT_DICT[Config_key.language],
                     ", ".join(("auto", *(str(tag) for tag in all_supported_lang_map))),
                 ),
-                Config_key.check_update.value: gettext(
+                Config_key.check_update.name: gettext(
                     "Auto check the update of Easy Rip. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.check_update],
                 ),
-                Config_key.check_dependent.value: gettext(
+                Config_key.check_dependent.name: gettext(
                     "Auto check the versions of all dependent programs. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.check_dependent],
                 ),
-                Config_key.startup_directory.value: gettext(
+                Config_key.startup_dir.name: gettext(
                     "Program startup directory, when the value is empty, starts in the working directory. Default: {}",
-                    CONFIG_DEFAULT_DICT[Config_key.startup_directory] or '""',
+                    CONFIG_DEFAULT_DICT[Config_key.startup_dir] or '""',
                 ),
-                Config_key.force_log_file_path.value: gettext(
+                Config_key.startup_dir_blacklist.name: gettext(
+                    "Directory list. When the startup directory is a blacklisted directory, rollback to startup directory. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.startup_dir] or '""',
+                ),
+                Config_key.force_log_file_path.name: gettext(
                     "Force change of log file path, when the value is empty, it is the working directory. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.force_log_file_path] or '""',
                 ),
-                Config_key.log_print_level.value: gettext(
+                Config_key.log_print_level.name: gettext(
                     "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Default: {}. Supported: {}",
                     log.LogLevel.none.name,
                     CONFIG_DEFAULT_DICT[Config_key.log_print_level],
                     ", ".join(log.LogLevel._member_names_),
                 ),
-                Config_key.log_write_level.value: gettext(
+                Config_key.log_write_level.name: gettext(
                     "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Default: {}. Supported: {}",
                     log.LogLevel.none.name,
                     log.LogLevel.send.name,
                     CONFIG_DEFAULT_DICT[Config_key.log_write_level],
                     ", ".join(log.LogLevel._member_names_),
                 ),
-                Config_key.prompt_history_save_file.value: gettext(
+                Config_key.save_prompt_history.name: gettext(
                     "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}",
-                    CONFIG_DEFAULT_DICT[Config_key.prompt_history_save_file],
+                    CONFIG_DEFAULT_DICT[Config_key.save_prompt_history],
                 ),
             }
             | (cls._config or {})

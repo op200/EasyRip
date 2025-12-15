@@ -103,7 +103,7 @@ def run() -> NoReturn:
     cmd_ctv_tuple = tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
     prompt_history = (
         ConfigFileHistory(easyrip_prompt.PROMPT_HISTORY_FILE)
-        if config.get_user_profile(Config_key.prompt_history_save_file)
+        if config.get_user_profile(Config_key.save_prompt_history)
         else InMemoryHistory()
     )
 

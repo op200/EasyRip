@@ -273,7 +273,7 @@ LANG_MAP: dict[str, str] = {
         "例如 -p subset 或 -p copy"
     ),
     # utils
-    "{} has new version {}. You can download it: {}": "检测到 {} 有新版本 {}。可在此下载: {}",
+    "{} has new version ({} -> {}). Suggest upgrading it: {}": "检测到 {} 有新版本 ({} -> {})。建议更新: {}",
     "{} not found, download it: {}": "没找到 {}, 在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
     # main
@@ -303,7 +303,7 @@ LANG_MAP: dict[str, str] = {
     "There is no audio stream in the video, so '-c:a' cannot be used": "视频中没有音频流，所以无法使用 '-c:a'",
     "Unsupported '{}' param: {}": "'{}' 不支持此参数: {}",
     "Manually force exit": "手动强制退出",
-    "or run this command to update using pip: {}": "或运行以下命令以使用 pip 更新: {}",
+    "Suggest running the following command to upgrade using pip: {}": "建议运行以下命令以使用 pip 更新: {}",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误, 改为默认值 60s",
     "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
     "Stop run command": "命令执行终止",
@@ -346,7 +346,8 @@ LANG_MAP: dict[str, str] = {
     "Config data is not found": "配置文件数据不存在",
     "User profile is not found, regenerate config": "用户配置文件不存在, 重新生成配置",
     "User profile is not a valid dictionary": "用户配置文件不是有效的字典",
-    "User profile is not found": "用户配置文件不存在",
+    "User profile is not found in config file": "用户配置文件不存在于配置文件",
+    "Type mismatch: need '{}'": "类型不匹配: 需要 '{}'",
     "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
     "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}": "将 prompt 历史保存到 config 目录，否则保存到内存。重启后生效。默认: {}",
     # config about

@@ -244,7 +244,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("list",)),
             Cmd_type_val(
                 ("set",),
-                childs=tuple(Cmd_type_val((k,)) for k in Config_key._value2member_map_),
+                childs=tuple(Cmd_type_val((k,)) for k in Config_key._member_map_),
             ),
         ),
     )

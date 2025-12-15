@@ -1,3 +1,4 @@
+import ast
 import ctypes
 import itertools
 import json
@@ -58,16 +59,15 @@ def log_new_ver(
             log.info(
                 "\n"
                 + gettext(
-                    "{} has new version {}. You can download it: {}",
+                    "{} has new version ({} -> {}). Suggest upgrading it: {}",
                     program_name,
+                    old_ver,
                     new_ver,
                     dl_url,
                 )
             )
-            # print(get_input_prompt(True), end="")
     except Exception as e:
         log.warning(f"\n{e}", is_format=False, deep=True)
-        # print(get_input_prompt(True), end="")
 
 
 def check_env() -> None:
@@ -185,20 +185,6 @@ def check_env() -> None:
                         _url,
                     )
 
-            # _name, _url = "MediaInfo", "https://mediaarea.net/en/MediaInfo/Download"
-            # if not shutil.which(_name):
-            #     log.warning(
-            #         "\n"
-            #         + gettext(
-            #             "{} not found, download it: {}", _name, f"(CLI ver) {_url}"
-            #         )
-            #     )
-            #     log.print(get_input_prompt(), end="")
-            # elif not subprocess.run(
-            #     "mediainfo --version", capture_output=True, text=True
-            # ).stdout:
-            #     log.error("The MediaInfo must be CLI ver")
-
         if config.get_user_profile(Config_key.check_update):
             log_new_ver(
                 easyrip_web.github.get_latest_release_ver(
@@ -208,18 +194,20 @@ def check_env() -> None:
                 PROJECT_NAME,
                 f"{global_val.PROJECT_URL}\n{
                     gettext(
-                        'or run this command to update using pip: {}',
-                        f'{sys.executable + " -m " if sys.executable[-10:].lower() == "python.exe" else ""}pip install -U easyrip',
+                        'Suggest running the following command to upgrade using pip: {}',
+                        f'{f'"{sys.executable}" -m ' if sys.executable.lower().endswith("python.exe") else ""}pip install -U easyrip',
                     )
                 }",
             )
 
-        # sys.stdout.flush()
-        # sys.stderr.flush()
         change_title(PROJECT_TITLE)
 
     except Exception as e:
-        log.error(f"The def check_env error: {e!r} {e}", deep=True)
+        log.error(
+            f"The function {check_env.__name__} error: {e!r} {e}",
+            is_format=False,
+            deep=True,
+        )
 
 
 def get_input_prompt(is_color: bool = False) -> str:
@@ -674,6 +662,7 @@ def run_command(command: Iterable[str] | str) -> bool:
             easyrip_web.run_server(*_params)
 
         case Cmd_type.config:
+            log.debug(cmd_list)
             match cmd_list[1]:
                 case "list" | "":
                     config.show_config_list()
@@ -685,25 +674,16 @@ def run_command(command: Iterable[str] | str) -> bool:
                 case "set":
                     _key = cmd_list[2]
                     _val = cmd_list[3]
-                    _old_val = config.get_user_profile(_key)
+
+                    if (_old_val := config.get_user_profile(_key)) is None:
+                        return False
 
                     try:
-                        _val = float(_val)
-                    except ValueError:
-                        match _val:
-                            case "true" | "True":
-                                _val = True
-                            case "false" | "False":
-                                _val = False
-                    else:
-                        if (_val_int := int(_val)) == _val:
-                            _val = _val_int
+                        _val = ast.literal_eval(_val)
+                    except (ValueError, SyntaxError):
+                        pass
 
-                    if (
-                        (_old_val is _val)
-                        if isinstance(_val, bool) or isinstance(_old_val, bool)
-                        else (_old_val == _val)
-                    ):
+                    if _old_val == _val:
                         log.info(
                             "The new value is the same as the old value, cancel the modification",
                         )
@@ -1102,7 +1082,7 @@ def init(is_first_run: bool = False) -> None:
 
     # 设置日志文件路径名
     log.html_filename = gettext("encoding_log.html")
-    if _path := str(config.get_user_profile("force_log_file_path") or ""):
+    if _path := str(config.get_user_profile(Config_key.force_log_file_path) or ""):
         log.html_filename = os.path.join(_path, log.html_filename)
 
     # 设置日志级别
@@ -1119,8 +1099,18 @@ def init(is_first_run: bool = False) -> None:
     if is_first_run:
         # 设置启动目录
         try:
-            if _path := str(config.get_user_profile(Config_key.startup_directory)):
-                os.chdir(_path)
+            if _startup_dir := config.get_user_profile(Config_key.startup_dir):
+                if _startup_dir_blacklist := config.get_user_profile(
+                    Config_key.startup_dir_blacklist
+                ):
+                    if any(
+                        Path.cwd().samefile(d)
+                        for d in map(Path, _startup_dir_blacklist)
+                        if d.is_dir()
+                    ):
+                        os.chdir(_startup_dir)
+                else:
+                    os.chdir(_startup_dir)
         except Exception as e:
             log.error(f"{e!r} {e}", deep=True)
 
