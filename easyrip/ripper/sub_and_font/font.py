@@ -55,7 +55,7 @@ def load_fonts(
     for file in path.iterdir() if path.is_dir() else (path,):
         if not (
             file.is_file()
-            and ((suffix := file.suffix.lower()) in {".ttf", ".otf", ".ttc"})
+            and (suffix := file.suffix.lower()) in {".ttf", ".otf", ".ttc"}
         ):
             continue
 
@@ -120,7 +120,7 @@ def load_fonts(
                 if is_regular:
                     if is_bold or is_italic:
                         log.error(
-                            "Font {} is Regular but Bold={} and Italic={}. Skip this font",
+                            'Font "{}" is Regular but Bold={} and Italic={}. Skip this font',
                             file,
                             is_bold,
                             is_italic,
@@ -134,15 +134,15 @@ def load_fonts(
                 else:
                     res_font.font_type = Font_type.Regular
                     log.warning(
-                        f"Font {file} does not have an English subfamily name. Defaulting to Regular"
+                        f'Font "{file}" does not have an English subfamily name. Defaulting to Regular'
                     )
 
                 res_font_list.append(res_font)
 
         except TTLibError as e:
-            log.error(f'Error loading font file "{file}": {e}')
+            log.error(f'Failed to load font file "{file}": {e}')
         except Exception as e:
-            log.error(f"Unexpected error for font {file}: {e}")
+            log.error(f'Unexpected error when load font "{file}": {e}')
 
     return res_font_list
 
