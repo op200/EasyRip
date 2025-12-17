@@ -308,7 +308,7 @@ LANG_MAP: dict[str, str] = {
     "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
     "Stop run command": "命令执行终止",
     # log
-    "encoding_log.html": "编码日志.html",
+    "EasyRip_log.html": "EasyRip日志.html",
     "Start": "开始",
     "Input file pathname": "输入文件路径名",
     "Output directory": "输出目录",

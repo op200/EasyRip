@@ -1080,7 +1080,7 @@ def init(is_first_run: bool = False) -> None:
         Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
 
     # 设置日志文件路径名
-    log.html_filename = gettext("encoding_log.html")
+    log.html_filename = gettext(log.html_filename)
     if _path := str(config.get_user_profile(Config_key.force_log_file_path) or ""):
         log.html_filename = os.path.join(_path, log.html_filename)
 

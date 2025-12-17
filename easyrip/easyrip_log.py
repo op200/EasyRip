@@ -106,7 +106,7 @@ class log:
         only_print = enum.auto()
         only_write = enum.auto()
 
-    html_filename: str = "encoding_log.html"  # 在调用前覆写
+    html_filename: str = "EasyRip_log.html"  # 在调用前覆写
     print_level: LogLevel = LogLevel.send
     write_level: LogLevel = LogLevel.send
 

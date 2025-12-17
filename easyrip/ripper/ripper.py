@@ -643,7 +643,9 @@ class Ripper:
                 _option_map = {
                     "crf": self.option_map.get("crf"),
                     "qp": self.option_map.get("qp"),
-                    "pix_fmt": self.option_map.get("pix_fmt"),
+                    "pix_fmt": self.option_map.get(
+                        "pix_fmt", None if is_pipe_input else "yuv420p10le"
+                    ),
                     "preset:v": self.option_map.get("preset:v"),
                     "svtav1-params": self.option_map.get("svtav1-params"),
                 }
@@ -664,7 +666,9 @@ class Ripper:
             case Ripper.Preset_name.vvenc:
                 _option_map = {
                     "qp": self.option_map.get("qp"),
-                    "pix_fmt": self.option_map.get("pix_fmt"),
+                    "pix_fmt": self.option_map.get(
+                        "pix_fmt", None if is_pipe_input else "yuv420p10le"
+                    ),
                     "preset:v": self.option_map.get("preset:v"),
                     "vvenc-params": self.option_map.get("vvenc-params"),
                 }
