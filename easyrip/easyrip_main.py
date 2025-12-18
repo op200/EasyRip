@@ -8,6 +8,7 @@ import shlex
 import shutil
 import subprocess
 import sys
+import textwrap
 import threading
 import tkinter as tk
 import tomllib
@@ -36,7 +37,8 @@ from .easyrip_mlang import (
 )
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
-from .ripper.ripper import DEFAULT_PRESET_PARAMS, Ripper
+from .ripper.ripper import Ripper
+from .ripper.param import DEFAULT_PRESET_PARAMS, PRESET_OPT_NAME
 from .ripper.sub_and_font import load_fonts
 from .utils import change_title, check_ver, read_text
 
@@ -424,16 +426,39 @@ def run_command(command: Iterable[str] | str) -> bool:
                             log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
                         elif cmd_list[2] in Ripper.Preset_name._value2member_map_:
                             _preset = Ripper.Preset_name(cmd_list[2])
-                            if _preset in DEFAULT_PRESET_PARAMS:
-                                log.send(
-                                    json.dumps(
-                                        DEFAULT_PRESET_PARAMS[_preset], indent=2
-                                    ),
-                                    is_format=False,
-                                )
+                            if (
+                                _preset in DEFAULT_PRESET_PARAMS
+                                or _preset in PRESET_OPT_NAME
+                            ):
+                                if _preset in PRESET_OPT_NAME:
+                                    log.send(
+                                        "Params that can be directly used:\n{}",
+                                        textwrap.indent(
+                                            "\n".join(
+                                                f"-{n}"
+                                                for n in PRESET_OPT_NAME[_preset]
+                                            ),
+                                            prefix="  ",
+                                        ),
+                                    )
+                                if _preset in DEFAULT_PRESET_PARAMS:
+                                    _default_params = DEFAULT_PRESET_PARAMS[_preset]
+                                    max_name_len = (
+                                        max(len(str(n)) for n in _default_params) + 1
+                                    )
+                                    log.send(
+                                        "Default val:\n{}",
+                                        textwrap.indent(
+                                            "\n".join(
+                                                f"{f'-{n}':>{max_name_len}}  {v}"
+                                                for n, v in _default_params.items()
+                                            ),
+                                            prefix="  ",
+                                        ),
+                                    )
                             else:
                                 log.send(
-                                    "The preset '{}' has no default val", cmd_list[2]
+                                    "The preset '{}' has no separate help", cmd_list[2]
                                 )
                         else:
                             log.error("'{}' is not a member of preset", cmd_list[2])
