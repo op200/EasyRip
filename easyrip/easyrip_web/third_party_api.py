@@ -82,8 +82,13 @@ class github:
 
         try:
             with urllib.request.urlopen(req) as response:
-                data = json.loads(response.read().decode("utf-8"))
-                return data.get("tag_name")
+                data: dict = json.loads(response.read().decode("utf-8"))
+                ver = data.get("tag_name")
+                if ver is None:
+                    return None
+                if isinstance(ver, str):
+                    return ver.lstrip("v")
+                raise ValueError(f"ver = {ver!r}")
         except Exception as e:
             log.debug(
                 "'{}' execution failed: {}",
