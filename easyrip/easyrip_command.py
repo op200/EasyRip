@@ -393,7 +393,7 @@ class Opt_type(enum.Enum):
             "'auto:...' can only select which match infix.\n"
             "  e.g. 'auto:zh-Hans:zh-Hant'"
         ),
-        childs=(Cmd_type_val(("atuo",)),),
+        childs=(Cmd_type_val(("auto",)),),
     )
     _only_mux_sub_path = Cmd_type_val(
         ("-only-mux-sub-path",),
@@ -407,7 +407,7 @@ class Opt_type(enum.Enum):
             "Mux ASS subtitles in MKV with subset\n"  # .
             "The usage of 'auto' is detailed in '-sub'"
         ),
-        childs=(Cmd_type_val(("atuo",)),),
+        childs=(Cmd_type_val(("auto",)),),
     )
     _subset_font_dir = Cmd_type_val(
         ("-subset-font-dir",),
@@ -515,7 +515,7 @@ class Opt_type(enum.Enum):
             "Setting FPS when muxing\n"
             "When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point"
         ),
-        childs=(Cmd_type_val(("atuo",)),),
+        childs=(Cmd_type_val(("auto",)),),
     )
     _chapters = Cmd_type_val(
         ("-chapters",),
