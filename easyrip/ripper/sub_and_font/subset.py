@@ -133,6 +133,7 @@ def subset(
             current_font_sign: tuple[str, Font_type] = default_font_sign
             for is_tag, text in Event_data.parse_text(event.Text, use_libass_spec):
                 if is_tag:
+                    tag_fn_org: str | None = None
                     tag_fn: str | None = None
                     tag_bold: str | None = None
                     tag_italic: str | None = None
@@ -151,7 +152,7 @@ def subset(
 
                         match tag:
                             case "fn":
-                                tag_fn = proc_value
+                                tag_fn_org, tag_fn = value, proc_value
                             case "b":
                                 tag_bold = proc_value
                             case "i":
@@ -183,7 +184,7 @@ def subset(
 
                                 # 修改
                                 text = text.replace(
-                                    f"\\fn{tag_fn}",
+                                    f"\\fn{tag_fn_org}",
                                     f"\\fn{'@' if _is_vertical else ''}{get_font_new_name(new_fontname)}",
                                 )
 
@@ -309,44 +310,49 @@ def subset(
                 case Font_type.Regular:
                     if (
                         (_k := (key[0], Font_type.Bold)) in font_sign__font
-                        or (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
                         or (_k := (key[0], Font_type.Italic)) in font_sign__font
+                        or (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
                     ):
                         _font = font_sign__font[_k]
 
                 case Font_type.Bold:
                     if (
-                        (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
-                        or (_k := (key[0], Font_type.Regular)) in font_sign__font
+                        (_k := (key[0], Font_type.Regular)) in font_sign__font
+                        or (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
                         or (_k := (key[0], Font_type.Italic)) in font_sign__font
                     ):
                         _font = font_sign__font[_k]
 
                 case Font_type.Italic:
-                    if (_k := (key[0], Font_type.Regular)) in font_sign__font or (
-                        _k := (key[0], Font_type.Bold)
-                    ) in font_sign__font:
+                    if (
+                        (_k := (key[0], Font_type.Regular)) in font_sign__font
+                        or (_k := (key[0], Font_type.Bold_Italic)) in font_sign__font
+                        or (_k := (key[0], Font_type.Bold)) in font_sign__font
+                    ):
                         _font = font_sign__font[_k]
 
                 case Font_type.Bold_Italic:
-                    if (_k := (key[0], Font_type.Bold)) in font_sign__font or (
-                        _k := (key[0], Font_type.Regular)
-                    ) in font_sign__font:
+                    if (
+                        (_k := (key[0], Font_type.Bold)) in font_sign__font
+                        or (_k := (key[0], Font_type.Italic)) in font_sign__font
+                        or (_k := (key[0], Font_type.Regular)) in font_sign__font
+                    ):
                         _font = font_sign__font[_k]
 
             # 模糊字重也找不到字体
             if _font is None:
+                _want_font_sign_str = f"( {key[0]} / {key[1].name} )"
                 if (_f_low := key[0].lower()) in family_lower__family:
                     log.error(
                         "{} not found. Skip it. Perhaps you want the {}",
-                        f"( {key[0]} / {key[1].name} )",
+                        _want_font_sign_str,
                         f"'{family_lower__family[_f_low]}'",
                         deep=strict,
                     )
                 else:
                     log.error(
                         "{} not found. Skip it",
-                        f"( {key[0]} / {key[1].name} )",
+                        _want_font_sign_str,
                         deep=strict,
                     )
                 return_res = False

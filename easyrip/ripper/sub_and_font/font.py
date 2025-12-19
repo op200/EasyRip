@@ -190,17 +190,8 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
 
     # 创建子集化选项
     options = subset.Options()
-    options.drop_tables = ["DSIG", "PCLT", "EBDT", "EBSC"]  # 不移除任何可能有用的表
     options.hinting = True  # 保留 hinting
     options.name_IDs = []  # 不保留 name 表记录
-    options.no_subset_tables = subset.Options._no_subset_tables_default + [
-        "BASE",
-        "mort",
-    ]
-    # options.drop_tables = []
-    options.name_legacy = True
-    # options.retain_gids = True
-    options.layout_features = ["*"]
 
     # 创建子集化器
     subsetter = subset.Subsetter(options=options)
