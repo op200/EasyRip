@@ -287,10 +287,11 @@ def subset(
         fonts.extend(load_windows_fonts(strict=strict))
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
+    family_lower__family = {}  # 存储小写 family 用于判断 ASS 的大小写不敏感语法
     for _font in fonts:
         for family in _font.familys:
-            if family not in font_sign__font:
-                font_sign__font[(family, _font.font_type)] = _font
+            family_lower__family[family.lower()] = family
+            font_sign__font[(family, _font.font_type)] = _font
 
     # 子集化映射
     font__subset_str: dict[Font, dict[str, str]] = {}
@@ -335,11 +336,19 @@ def subset(
 
             # 模糊字重也找不到字体
             if _font is None:
-                log.error(
-                    "{} not found. Skip it",
-                    f"( {key[0]} / {key[1].name} )",
-                    deep=strict,
-                )
+                if (_f_low := key[0].lower()) in family_lower__family:
+                    log.error(
+                        "{} not found. Skip it. Perhaps you want the {}",
+                        f"( {key[0]} / {key[1].name} )",
+                        f"'{family_lower__family[_f_low]}'",
+                        deep=strict,
+                    )
+                else:
+                    log.error(
+                        "{} not found. Skip it",
+                        f"( {key[0]} / {key[1].name} )",
+                        deep=strict,
+                    )
                 return_res = False
                 continue
 

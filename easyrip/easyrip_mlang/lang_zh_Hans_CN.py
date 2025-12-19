@@ -329,6 +329,7 @@ LANG_MAP: dict[str, str] = {
     "Subset faild, cancel mux": "子集化失败, 取消混流",
     "FFmpeg report: {}": "FFmpeg 报告: {}",
     "{} not found. Skip it": "没找到 {}。默认跳过",
+    "{} not found. Skip it. Perhaps you want the {}": "没找到 {}。默认跳过。或许你想要的是 {}",
     'The font "{}" does not contain these characters: {}': '字体 "{}" 不包含字符: {}',
     "The style '{}' not in Styles. Defaulting to the style '{}'": "样式 '{}' 不在 Styles 中。默认使用样式 '{}'",
     "The style '{}' and the style 'Default' not in Styles. Defaulting to no font": "样式 '{}' 和样式 'Default' 都不在 Styles 中。默认不使用字体",
