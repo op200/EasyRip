@@ -1051,6 +1051,7 @@ class Ripper:
                 # 处理 soft-sub
                 soft_sub_list: list[Path]
                 soft_sub_map_list: list[str] = soft_sub.split(":")
+
                 if soft_sub_map_list[0] == "auto":
                     soft_sub_list = []
 
@@ -1075,6 +1076,7 @@ class Ripper:
                             )
                         ):
                             soft_sub_list.append(Path(self.output_dir) / _file_basename)
+
                 else:
                     soft_sub_list = [Path(s) for s in soft_sub.split("?")]
 

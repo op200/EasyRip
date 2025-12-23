@@ -37,8 +37,8 @@ from .easyrip_mlang import (
 )
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
-from .ripper.ripper import Ripper
 from .ripper.param import DEFAULT_PRESET_PARAMS, PRESET_OPT_NAME
+from .ripper.ripper import Ripper
 from .ripper.sub_and_font import load_fonts
 from .utils import change_title, check_ver, read_text
 

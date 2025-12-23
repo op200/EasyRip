@@ -1,6 +1,6 @@
 import sys
-from collections.abc import Iterable
-from typing import NoReturn
+from collections.abc import Coroutine, Iterable
+from typing import Any, NoReturn
 
 import Crypto
 import fontTools
@@ -8,7 +8,9 @@ import prompt_toolkit
 from prompt_toolkit import ANSI, prompt
 from prompt_toolkit.completion import merge_completers
 from prompt_toolkit.history import InMemoryHistory
+from prompt_toolkit.input.ansi_escape_sequences import ANSI_SEQUENCES
 from prompt_toolkit.key_binding import KeyBindings, KeyPressEvent
+from prompt_toolkit.key_binding.bindings import named_commands
 from prompt_toolkit.keys import Keys
 
 from .easyrip_command import (
@@ -47,6 +49,14 @@ def run() -> NoReturn:
     @key_bindings.add(Keys.ControlD)
     def _(event: KeyPressEvent) -> None:
         event.app.current_buffer.insert_text(C_D)
+
+    ANSI_SEQUENCES["\x08"] = Keys.F24
+
+    @key_bindings.add(Keys.F24)
+    def _(
+        event: KeyPressEvent,
+    ) -> object | Coroutine[Any, Any, object]:
+        return named_commands.get_by_name("unix-word-rubout").handler(event)
 
     path_completer = SmartPathCompleter()
 
