@@ -1081,6 +1081,8 @@ class Ripper:
                     soft_sub_list = [Path(s) for s in soft_sub.split("?")]
 
                 subset_folder = Path(self.output_dir) / f"subset_temp_{temp_name}"
+                if not soft_sub_list:
+                    log.warning("-soft-sub is empty")
                 log.info("-soft-sub list = {}", soft_sub_list)
 
                 # 临时翻译

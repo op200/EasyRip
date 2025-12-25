@@ -63,7 +63,7 @@ class Script_info:
 class Style_data:
     Name: str
     Fontname: str
-    Fontsize: int
+    Fontsize: float
     PrimaryColour: str
     SecondaryColour: str
     OutlineColour: str
@@ -212,7 +212,7 @@ class Styles:
             res = Style_data(
                 Name=style_tuple[self.fmt_index[Style_fmt_it.Name]],
                 Fontname=style_tuple[self.fmt_index[Style_fmt_it.Fontname]],
-                Fontsize=int(style_tuple[self.fmt_index[Style_fmt_it.Fontsize]]),
+                Fontsize=float(style_tuple[self.fmt_index[Style_fmt_it.Fontsize]]),
                 PrimaryColour=style_tuple[self.fmt_index[Style_fmt_it.PrimaryColour]],
                 SecondaryColour=style_tuple[
                     self.fmt_index[Style_fmt_it.SecondaryColour]
@@ -613,137 +613,149 @@ class Ass:
         new_unknown_data: Unknown_data | None = None
 
         for line in filter(bool, map(str.strip, read_text(path).splitlines())):
-            if line.startswith("[") and line.endswith("]"):
-                if new_unknown_data is not None:
-                    self.unknown_data.append(new_unknown_data)
-                    new_unknown_data = None
+            try:
+                if line.startswith("[") and line.endswith("]"):
+                    if new_unknown_data is not None:
+                        self.unknown_data.append(new_unknown_data)
+                        new_unknown_data = None
 
-                match head := line[1:-1]:
-                    case "Script Info":
-                        state = State.script_info
-                    case "V4+ Styles":
-                        state = State.styles
-                    case "Fonts":
-                        state = State.fonts
-                    case "Graphics":
-                        state = State.graphics
-                    case "Events":
-                        state = State.events
-                    case _:
-                        if bool(re.search(r"[a-z]", head)):
-                            state = State.unknown
-                            new_unknown_data = Unknown_data(head=head)
+                    match head := line[1:-1]:
+                        case "Script Info":
+                            state = State.script_info
+                        case "V4+ Styles":
+                            state = State.styles
+                        case "Fonts":
+                            state = State.fonts
+                        case "Graphics":
+                            state = State.graphics
+                        case "Events":
+                            state = State.events
+                        case _:
+                            if bool(re.search(r"[a-z]", head)):
+                                state = State.unknown
+                                new_unknown_data = Unknown_data(head=head)
 
-            elif line.startswith("Format:"):
-                formats_tuple = tuple(map(str.strip, line[7:].split(",")))
-                match state:
-                    case State.styles:
-                        format_order = tuple(map(Style_fmt_it, formats_tuple))
-                        if len(format_order) != 23:
-                            raise Ass_generate_error("Style Format len != 23")
+                elif line.startswith("Format:"):
+                    formats_tuple = tuple(map(str.strip, line[7:].split(",")))
+                    match state:
+                        case State.styles:
+                            format_order = tuple(map(Style_fmt_it, formats_tuple))
+                            if len(format_order) != 23:
+                                raise Ass_generate_error("Style Format len != 23")
 
-                        self.styles.fmt_order = format_order
+                            self.styles.fmt_order = format_order
 
-                    case State.events:
-                        try:
-                            format_order = tuple(
-                                map(Event_fmt_it.__getitem__, formats_tuple)
-                            )
-                        except ValueError as e:
-                            raise Ass_generate_error from e
+                        case State.events:
+                            try:
+                                format_order = tuple(
+                                    map(Event_fmt_it.__getitem__, formats_tuple)
+                                )
+                            except ValueError as e:
+                                raise Ass_generate_error from e
 
-                        if len(format_order) != 10:
-                            raise Ass_generate_error("Event Format len != 10")
+                            if len(format_order) != 10:
+                                raise Ass_generate_error("Event Format len != 10")
 
-                        if "Marked" in formats_tuple:
-                            log.error(
-                                "The ASS Events Format version too old: {}",
-                                "It used 'Marked' instead of 'Layer'. 'Marked' has been replaced with 'Layer', which will result in irreversible info loss",
-                            )
+                            if "Marked" in formats_tuple:
+                                log.error(
+                                    "The ASS Events Format version too old: {}",
+                                    "It used 'Marked' instead of 'Layer'. 'Marked' has been replaced with 'Layer', which will result in irreversible info loss",
+                                )
 
-                        self.events.fmt_order = format_order
+                            self.events.fmt_order = format_order
 
-            else:
-                match state:
-                    case State.script_info:
-                        self.script_info.data.append(Script_info_data(raw_str=line))
+                else:
+                    match state:
+                        case State.script_info:
+                            self.script_info.data.append(Script_info_data(raw_str=line))
 
-                    case State.styles:
-                        if not line.startswith("Style:"):
-                            log.warning("Skip a Style line (illegal format): {}", line)
-                            continue
+                        case State.styles:
+                            if not line.startswith("Style:"):
+                                log.warning(
+                                    "Skip a Style line (illegal format): {}", line
+                                )
+                                continue
 
-                        style_tuple = tuple(map(str.strip, line[6:].split(",")))
-                        if len(style_tuple) != 23:
-                            log.warning(
-                                "Skip a Style line (Style Format len != 23): {}", line
-                            )
-                            continue
+                            style_tuple = tuple(map(str.strip, line[6:].split(",")))
+                            if len(style_tuple) != 23:
+                                log.warning(
+                                    "Skip a Style line (Style Format len != 23): {}",
+                                    line,
+                                )
+                                continue
 
-                        self.styles.data.append(self.styles.new_data(style_tuple))
+                            self.styles.data.append(self.styles.new_data(style_tuple))
 
-                    case State.graphics:
-                        if line.startswith("filename:"):
-                            self.attachments.data.append(
-                                Attachment_data(
-                                    type=Attach_type.Graphics,
-                                    name=line[9:].strip(),
-                                    data="",
+                        case State.graphics:
+                            if line.startswith("filename:"):
+                                self.attachments.data.append(
+                                    Attachment_data(
+                                        type=Attach_type.Graphics,
+                                        name=line[9:].strip(),
+                                        data="",
+                                    )
+                                )
+                            else:
+                                if self.attachments.data[-1].data is None:
+                                    log.error("Unknown error", deep=True)
+                                    continue
+                                self.attachments.data[-1].data += line + "\n"
+
+                        case State.fonts:
+                            if line.startswith("fontname:"):
+                                self.attachments.data.append(
+                                    Attachment_data(
+                                        type=Attach_type.Fonts,
+                                        name=line[9:].strip(),
+                                        data="",
+                                    )
+                                )
+                            else:
+                                if self.attachments.data[-1].data is None:
+                                    log.error("Unknown error", deep=True)
+                                    continue
+                                self.attachments.data[-1].data += line + "\n"
+
+                        case State.events:
+                            event_type: Event_type
+                            if line.startswith("Dialogue:"):
+                                event_type = Event_type.Dialogue
+                            elif line.startswith("Comment:"):
+                                event_type = Event_type.Comment
+                            else:
+                                log.warning(
+                                    "Skip a Event line (illegal format): {}", line
+                                )
+                                continue
+
+                            event_tuple = tuple(
+                                map(
+                                    str.strip,
+                                    line.split(":", maxsplit=1)[1].split(
+                                        ",", maxsplit=9
+                                    ),
                                 )
                             )
-                        else:
-                            if self.attachments.data[-1].data is None:
-                                log.error("Unknown error", deep=True)
-                                continue
-                            self.attachments.data[-1].data += line + "\n"
-
-                    case State.fonts:
-                        if line.startswith("fontname:"):
-                            self.attachments.data.append(
-                                Attachment_data(
-                                    type=Attach_type.Fonts,
-                                    name=line[9:].strip(),
-                                    data="",
+                            if len(event_tuple) != 10:
+                                log.warning(
+                                    "Skip a Event line (Event Format len != 10): {}",
+                                    line,
                                 )
-                            )
-                        else:
-                            if self.attachments.data[-1].data is None:
-                                log.error("Unknown error", deep=True)
                                 continue
-                            self.attachments.data[-1].data += line + "\n"
 
-                    case State.events:
-                        event_type: Event_type
-                        if line.startswith("Dialogue:"):
-                            event_type = Event_type.Dialogue
-                        elif line.startswith("Comment:"):
-                            event_type = Event_type.Comment
-                        else:
-                            log.warning("Skip a Event line (illegal format): {}", line)
-                            continue
-
-                        event_tuple = tuple(
-                            map(
-                                str.strip,
-                                line.split(":", maxsplit=1)[1].split(",", maxsplit=9),
+                            self.events.data.append(
+                                self.events.new_data(event_tuple, event_type)
                             )
-                        )
-                        if len(event_tuple) != 10:
-                            log.warning(
-                                "Skip a Event line (Event Format len != 10): {}", line
-                            )
-                            continue
 
-                        self.events.data.append(
-                            self.events.new_data(event_tuple, event_type)
-                        )
+                        case State.unknown:
+                            if new_unknown_data is None:
+                                raise Ass_generate_error(
+                                    "Unknown error occurred when read line: {}", line
+                                )
+                            new_unknown_data.data.append(line)
 
-                    case State.unknown:
-                        if new_unknown_data is None:
-                            raise Ass_generate_error(
-                                "Unknown error occurred when read line: {}", line
-                            )
-                        new_unknown_data.data.append(line)
+            except Exception as e:
+                raise Ass_generate_error("Unkown error in line: {}", line) from e
 
         if new_unknown_data is not None:
             self.unknown_data.append(new_unknown_data)

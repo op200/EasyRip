@@ -397,8 +397,6 @@ class log:
             **fmt_kwargs,
         )
 
-    warn = warning
-
     @classmethod
     def error(
         cls,
@@ -427,8 +425,6 @@ class log:
             http_send_header="",
             **fmt_kwargs,
         )
-
-    err = error
 
     @classmethod
     def send(
