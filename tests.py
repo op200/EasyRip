@@ -270,7 +270,16 @@ class TestSubset(unittest.TestCase):
     def test_ass_class(self):
         TEST_ASS_NUMBER = 100
         log.info(
-            f"Test ASS class {TEST_ASS_NUMBER} times: {timeit.timeit(lambda: Ass('test.zh-Hans.ass'), number=TEST_ASS_NUMBER):.4f}sec"
+            f"Test ASS class {TEST_ASS_NUMBER} times: {
+                timeit.timeit(
+                    lambda: Ass('test.zh-Hans.ass').__str__(
+                        drop_non_render=True,
+                        drop_unkow_data=True,
+                        drop_fonts=False,
+                        drop_graphics=False,
+                    ),
+                    number=TEST_ASS_NUMBER,
+                ):.4f}sec"
         )
 
     def test_load_font(self):

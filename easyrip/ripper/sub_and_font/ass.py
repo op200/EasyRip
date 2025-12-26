@@ -2,11 +2,13 @@ import enum
 import itertools
 import re
 from dataclasses import dataclass, field
+from functools import total_ordering
 from pathlib import Path
+from typing import Self
 
 from ...easyrip_log import log
 from ...easyrip_mlang import Mlang_exception
-from ...utils import read_text, uudecode_ssa, uuencode_ssa
+from ...utils import read_text, time_str_to_sec, uudecode_ssa, uuencode_ssa
 
 
 class Style_fmt_it(enum.Enum):
@@ -264,6 +266,75 @@ class Styles:
         )
 
 
+@total_ordering
+class Ass_time:
+    def __init__(
+        self,
+        h: int = 0,
+        m: int = 0,
+        s: int = 0,
+        ms: int = 0,
+    ) -> None:
+        self.h = h
+        self.m = m
+        self.s = s
+        self.ms = ms
+
+    def __str__(self) -> str:
+        return f"{self.h:02d}:{self.m:02d}:{self.s:02d}.{self.ms // 10:02d}"
+
+    def __hash__(self) -> int:
+        return hash((self.h, self.m, self.s, self.ms))
+
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Ass_time):
+            return (self.h, self.m, self.s, self.ms) == (
+                value.h,
+                value.m,
+                value.s,
+                value.ms,
+            )
+        return NotImplemented
+
+    def __lt__(self, value: object) -> bool:
+        if isinstance(value, Ass_time):
+            return (self.h, self.m, self.s, self.ms) < (
+                value.h,
+                value.m,
+                value.s,
+                value.ms,
+            )
+        return NotImplemented
+
+    def __add__(self, other: object) -> Self:
+        if isinstance(other, Ass_time):
+            return self.__class__.from_ms(self.total_ms() + other.total_ms())
+        return NotImplemented
+
+    def __sub__(self, other: object) -> Self:
+        if isinstance(other, Ass_time):
+            return self.__class__.from_ms(self.total_ms() - other.total_ms())
+        return NotImplemented
+
+    @classmethod
+    def from_ms(cls, ms: int) -> Self:
+        return cls(
+            ms // 3_600_000,
+            (ms % 3_600_000) // 60_000,
+            (ms % 60_000) // 1000,
+            ms % 1000,
+        )
+
+    @classmethod
+    def from_str(cls, ass_time_str: str) -> Self:
+        return cls.from_ms(
+            round(time_str_to_sec(ass_time_str) * 1000),
+        )
+
+    def total_ms(self) -> int:
+        return self.h * 3_600_000 + self.m * 60_000 + self.s * 1000 + self.ms
+
+
 class Event_fmt_it(enum.Enum):
     Layer = "Layer"
     Start = "Start"
@@ -291,8 +362,8 @@ class Event_data:
     type: Event_type
 
     Layer: int
-    Start: str
-    End: str
+    Start: Ass_time
+    End: Ass_time
     Style: str
     Name: str
     MarginL: int
@@ -451,8 +522,12 @@ class Events:
             res = Event_data(
                 type=event_type,
                 Layer=int(event_tuple[self.fmt_index[Event_fmt_it.Layer]]),
-                Start=event_tuple[self.fmt_index[Event_fmt_it.Start]],
-                End=event_tuple[self.fmt_index[Event_fmt_it.End]],
+                Start=Ass_time.from_str(
+                    event_tuple[self.fmt_index[Event_fmt_it.Start]],
+                ),
+                End=Ass_time.from_str(
+                    event_tuple[self.fmt_index[Event_fmt_it.End]],
+                ),
                 Style=event_tuple[self.fmt_index[Event_fmt_it.Style]],
                 Name=event_tuple[self.fmt_index[Event_fmt_it.Name]],
                 MarginL=int(event_tuple[self.fmt_index[Event_fmt_it.MarginL]]),
@@ -496,7 +571,11 @@ class Events:
                     )
                     for event in self.data
                     if (drop_non_render is False)
-                    or (event.type != Event_type.Comment and event.Text)
+                    or (
+                        event.type != Event_type.Comment
+                        and event.Text
+                        and event.Start < event.End
+                    )
                 ),
             )
         )
@@ -762,6 +841,7 @@ class Ass:
 
     def __str__(
         self,
+        *,
         drop_non_render: bool = False,
         drop_unkow_data: bool = False,
         drop_fonts: bool = False,
