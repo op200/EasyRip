@@ -5,7 +5,7 @@ from typing import Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
-from ..global_val import CONFIG_DIR
+from ..global_val import get_CONFIG_DIR
 from ..utils import type_match
 from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key
 
@@ -33,7 +33,7 @@ class config:
 
     @classmethod
     def init(cls) -> None:
-        cls._config_dir = CONFIG_DIR
+        cls._config_dir = get_CONFIG_DIR()
         cls._config_file = cls._config_dir / "config.json"
 
         if not cls._config_file.is_file():

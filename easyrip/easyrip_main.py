@@ -221,13 +221,6 @@ def get_input_prompt(is_color: bool = False) -> str:
     return f"{os.path.realpath(os.getcwd())}> {cmd_prompt}"
 
 
-if os.name == "nt":
-    try:
-        ctypes.windll.user32.SetProcessDPIAware()
-    except Exception:
-        log.warning("Windows DPI Aware failed")
-
-
 def file_dialog(
     *,
     is_askdir: bool = False,
@@ -1086,6 +1079,12 @@ def run_command(command: Iterable[str] | str) -> bool:
 
 
 def init(is_first_run: bool = False) -> None:
+    if os.name == "nt":
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            log.warning("Windows DPI Aware failed")
+
     if is_first_run:
         # 当前路径添加到环境变量
         new_path = os.path.realpath(os.getcwd())

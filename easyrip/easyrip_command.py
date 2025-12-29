@@ -19,7 +19,7 @@ from prompt_toolkit.document import Document
 
 from . import global_val
 from .easyrip_config.config_key import Config_key
-from .ripper.param import Audio_codec, Preset_name
+from .ripper.param import PRESET_OPT_NAME, Audio_codec, Preset_name
 
 
 @final
@@ -763,8 +763,24 @@ class OptCompleter(Completer):
         if len(words) >= 1 and not text.startswith("-"):
             return
 
-        opt_tree_pos_list: list[nested_dict | Completer] = [self.opt_tree]
+        add_comp_words: set[str] = set()
+        add_comp_meta_dict: dict[str, str] = {}
+        if _preset := tuple(
+            words[i + 1]
+            for i, word in enumerate(words[:-1])
+            for opt_p_name in Opt_type._preset.value.names
+            if word == opt_p_name
+        ):
+            _preset = _preset[-1]
+            _preset_name = None
+            if _preset in Preset_name._member_map_:
+                _preset_name = Preset_name[_preset]
+            if _preset_name is not None and _preset_name in PRESET_OPT_NAME:
+                add_set: set[str] = {f"-{n}" for n in PRESET_OPT_NAME[_preset_name]}
+                add_comp_words |= add_set
+                add_comp_meta_dict |= dict.fromkeys(add_set, f"{_preset} param")
 
+        opt_tree_pos_list: list[nested_dict | Completer] = [self.opt_tree]
         for word in words:
             if isinstance(opt_tree_pos_list[-1], Completer):
                 opt_tree_pos_list.append(self.opt_tree.get(word, self.opt_tree))
@@ -775,7 +791,14 @@ class OptCompleter(Completer):
                     )
                 )
 
-        if opt_tree_pos_list[-1] is not self.opt_tree and not text.endswith(" "):
+        if (
+            (opt_tree_pos_list[-1] is not self.opt_tree)
+            or (words[-1] in add_comp_words)
+        ) and not text.endswith(" "):
+            # 不在根(上个单词没让这个单词回退到根) or 匹配额外提示
+            # 且尾部不是空格
+            # 即当前单词完全匹配，输出匹配成功提示
+
             yield from (
                 Completion(
                     text=words[-1],
@@ -786,8 +809,10 @@ class OptCompleter(Completer):
                     text="",
                     display="✔",
                     display_meta=(
-                        ""
-                        if (_opt := Opt_type.from_str(text)) is None
+                        add_comp_meta_dict[words[-1]]
+                        if words[-1] in add_comp_meta_dict
+                        else ""
+                        if (_opt := Opt_type.from_str(words[-1])) is None
                         else f"{_desc_list[0]}..."
                         if len(_desc_list := _opt.value.description.split("\n")) > 1
                         else _desc_list[0]
@@ -796,6 +821,8 @@ class OptCompleter(Completer):
             )
 
         elif isinstance(opt_tree_pos_list[-1], Completer):
+            # 上个单词进入独立提示，意味着当前的提示可能会是路径提示
+
             # 直接使用 PathCompleter 会因为上下文问题失效，所以将上文套进 NestedCompleter
             new_nd: nested_dict = {}
             new_nd_pos: nested_dict = new_nd
@@ -808,6 +835,8 @@ class OptCompleter(Completer):
             )
 
         elif len(words) >= 2 and isinstance(opt_tree_pos_list[-2], Completer):
+            # 上上个单词进入独立提示
+
             new_nd: nested_dict = {}
             new_nd_pos: nested_dict = new_nd
             for word in words[:-2]:
@@ -837,19 +866,22 @@ class OptCompleter(Completer):
             ).get_completions(document=document, complete_event=complete_event)
 
         else:
+            # 没有独立提示
+
             yield from FuzzyCompleter(
                 WordCompleter(
                     words=tuple(
-                        opt_tree_pos_list[-1]
+                        set(opt_tree_pos_list[-1])
                         | (
-                            {}
+                            set()
                             if text.endswith(" ")
                             or len(words) <= 1
                             or isinstance(opt_tree_pos_list[-2], Completer)
-                            else opt_tree_pos_list[-2]
+                            else set(opt_tree_pos_list[-2])
                         )
+                        | add_comp_words
                     ),
-                    meta_dict=META_DICT_OPT_TYPE,
+                    meta_dict=META_DICT_OPT_TYPE | add_comp_meta_dict,
                     WORD=True,  # 匹配标点
                     match_middle=True,
                 ),

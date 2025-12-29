@@ -5,11 +5,11 @@ from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
 from prompt_toolkit.history import FileHistory
 
-from .global_val import C_Z, CONFIG_DIR
+from .global_val import C_Z, get_CONFIG_DIR
 
 
 class easyrip_prompt:
-    PROMPT_HISTORY_FILE = CONFIG_DIR / "prompt_history.txt"
+    PROMPT_HISTORY_FILE = get_CONFIG_DIR() / "prompt_history.txt"
 
     @classmethod
     def clear(cls) -> None:

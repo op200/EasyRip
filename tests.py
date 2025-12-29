@@ -121,25 +121,44 @@ class TestBasic(unittest.TestCase):
 class TestRip(unittest.TestCase):
     TEST_VA_BASENAME: Final = "testVideo1080p23.98"
     TEST_VA_SUFFIX: Final = "mkv"
-    TEST_VIDEO_OUTPUT_BASENAME: Final = "testVideoOutput"
-    TEST_AUDIO_OUTPUT_BASENAME: Final = "testAudioOutput"
+    test_media_file_dict: Final[dict[str, list[Path]]] = {}
+    """每个函数名对应一个文件 list"""
 
-    @staticmethod
-    def restore() -> None:
-        for path_str in (
-            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mp4",
-            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.va.mp4",
-            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mkv",
-            f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.va.mkv",
-            f"{TestRip.TEST_AUDIO_OUTPUT_BASENAME}.flac",
-        ):
-            Path(path_str).unlink(True)
+    @classmethod
+    def restore(cls):
+        for path in itertools.chain.from_iterable(cls.test_media_file_dict.values()):
+            for suffix in (
+                ".v.mp4",
+                ".va.mp4",
+                ".v.mkv",
+                ".va.mkv",
+                ".flac",
+            ):
+                output_path = path.with_suffix(path.suffix + suffix)
+                output_path.unlink(True)
 
         run_command("list clear")
 
-    def setUp(self):
-        TestRip.restore()
+    @classmethod
+    def setUpClass(cls):
+        for method in (
+            cls.test_x265,
+            cls.test_flac,
+            cls.test_c_a_flac,
+            cls.test_soft_sub,
+        ):
+            method_name = method.__name__
+            cls.test_media_file_dict[method_name] = [
+                Path(f"{cls.TEST_VA_BASENAME}_{method_name}")
+            ]
 
+        cls.restore()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.restore()
+
+    def setUp(self):
         self.assertTrue(
             os.path.exists(f"{TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX}")
         )
@@ -157,18 +176,17 @@ class TestRip(unittest.TestCase):
 
         easyrip.init(True)
 
-    def tearDown(self):
-        TestRip.restore()
-
     def test_x265(self):
         """测试 hme 关闭，以及其他标准传参"""
+        output_basename = TestRip.test_media_file_dict[self.test_x265.__name__][0]
+
         crf = "33.3"
         qpmin = "2"
         qpmax = "44"
         params: str = f"-hme 0 -crf {crf} -x265-params qpmin={qpmin}:qpmax={qpmax}::"
         self.assertTrue(
             run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {TestRip.TEST_VIDEO_OUTPUT_BASENAME} -muxer mp4 -run"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {output_basename} -muxer mp4 -run"
             )
         )
 
@@ -184,7 +202,7 @@ class TestRip(unittest.TestCase):
                     "-show_data",
                     "-print_format",
                     "json",
-                    f"{TestRip.TEST_VIDEO_OUTPUT_BASENAME}.v.mp4",
+                    f"{output_basename}.v.mp4",
                 ],
                 stdout=subprocess.PIPE,
                 text=True,
@@ -245,23 +263,29 @@ class TestRip(unittest.TestCase):
         self.assertEqual(qpmax, x265_options_dict["qpmax"])
 
     def test_flac(self):
+        output_basename = TestRip.test_media_file_dict[self.test_flac.__name__][0]
+
         self.assertTrue(
             run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -preset flac -o {TestRip.TEST_AUDIO_OUTPUT_BASENAME} -run"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -preset flac -o {output_basename} -run"
             )
         )
 
     def test_c_a_flac(self):
+        output_basename = TestRip.test_media_file_dict[self.test_c_a_flac.__name__][0]
+
         self.assertTrue(
             run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a flac -o {TestRip.TEST_VIDEO_OUTPUT_BASENAME} -run"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a flac -o {output_basename} -run"
             )
         )
 
     def test_soft_sub(self):
+        output_basename = TestRip.test_media_file_dict[self.test_soft_sub.__name__][0]
+
         self.assertTrue(
             run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a libopus -soft-sub auto -o {TestRip.TEST_VIDEO_OUTPUT_BASENAME} -run"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a libopus -soft-sub auto -o {output_basename} -run"
             )
         )
 
