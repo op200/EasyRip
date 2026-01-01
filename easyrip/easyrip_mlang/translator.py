@@ -42,20 +42,20 @@ def translate_subtitles(
 
     file_list: Final[list[tuple[Path, str]]] = []
     for f in directory.iterdir():
-        if f.suffix not in {".ass", ".ssa", ".srt"} or (
-            file_intersection_selector is not None
-            and f not in file_intersection_selector
+        if (
+            not f.is_file()
+            or f.suffix not in {".ass", ".ssa", ".srt"}
+            or (
+                file_intersection_selector is not None
+                and not all(map(f.samefile, file_intersection_selector))
+            )
         ):
             continue
 
-        if len(_stems := f.stem.split(".")) < 1:
-            continue
-        if infix == _stems[-1]:
+        if (_stems := f.stem.split(".")) and (infix == _stems[-1]):
             file_list.append(
                 (
-                    f.with_name(
-                        f"{'.'.join(f.stem.split('.')[:-1])}.{target_lang_tag}{f.suffix}"
-                    ),
+                    f.with_name(f"{'.'.join(_stems[:-1])}.{target_lang_tag}{f.suffix}"),
                     read_text(f),
                 )
             )

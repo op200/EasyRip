@@ -595,6 +595,21 @@ class Opt_type(enum.Enum):
         ("-hwaccel",),
         param="<string>",
         description="Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)",
+        childs=(
+            Cmd_type_val(
+                names=(
+                    "cuda",
+                    "vaapi",
+                    "dxva2",
+                    "qsv",
+                    "d3d11va",
+                    "opencl",
+                    "vulkan",
+                    "d3d12va",
+                    "amf",
+                )
+            ),
+        ),
     )
     _ss = Cmd_type_val(
         ("-ss",),
@@ -793,7 +808,7 @@ class OptCompleter(Completer):
 
         if (
             (opt_tree_pos_list[-1] is not self.opt_tree)
-            or (words[-1] in add_comp_words)
+            or (words and words[-1] in add_comp_words)
         ) and not text.endswith(" "):
             # 不在根(上个单词没让这个单词回退到根) or 匹配额外提示
             # 且尾部不是空格

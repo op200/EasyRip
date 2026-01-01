@@ -434,7 +434,7 @@ DEFAULT_PRESET_PARAMS: Final[dict[Preset_name, dict[LiteralString, LiteralString
         {
             "crf": "17",
             "qpmin": "3",
-            "qpmax": "21.5",
+            "qpmax": "23",
             "psy-rd": "2.2",
             "rd": "5",
             "rdoq-level": "2",

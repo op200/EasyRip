@@ -802,11 +802,42 @@ class Ripper:
                     )
 
             case Ripper.Preset_name.subset:
+                # 临时翻译
+                add_tr_file_list: Final[list[Path]] = []
+                if translate_sub := self.option_map.get("translate-sub"):
+                    _tr = translate_sub.split(":")
+                    if len(_tr) != 2:
+                        log.error("{} param illegal", "-translate-sub")
+                    else:
+                        try:
+                            _file_list = translate_subtitles(
+                                Path(self.output_dir),
+                                _tr[0],
+                                _tr[1],
+                                file_intersection_selector=self.input_path_list,
+                            )
+                        except Exception as e:
+                            log.error(e, is_format=False)
+                        else:
+                            for f_and_s in _file_list:
+                                if f_and_s[0].is_file():
+                                    log.warning(
+                                        'The file "{}" already exists, skip translating it',
+                                        f_and_s[0],
+                                    )
+                                    continue
+
+                                with f_and_s[0].open(
+                                    "wt", encoding="utf-8-sig", newline="\n"
+                                ) as f:
+                                    f.write(f_and_s[1])
+                                    add_tr_file_list.append(f_and_s[0])
+
                 _output_dir = Path(self.output_dir) / basename
                 _output_dir.mkdir(parents=True, exist_ok=True)
 
-                _ass_list: list[Path] = []
-                _other_sub_list: list[Path] = []
+                _ass_list: Final[list[Path]] = add_tr_file_list.copy()
+                _other_sub_list: Final[list[Path]] = []
 
                 for path in self.input_path_list:
                     if path.suffix == ".ass":
@@ -860,6 +891,13 @@ class Ripper:
 
                 for path in _other_sub_list:
                     shutil.copy2(path, _output_dir / path.name)
+
+                # 清理临时文件
+                for f in add_tr_file_list:
+                    try:
+                        f.unlink()
+                    except Exception as e:
+                        log.error(f"{e!r} {e}", deep=True, is_format=False)
 
                 if subset_res is False:
                     log.error("Run {} failed", "subset")
@@ -1085,39 +1123,9 @@ class Ripper:
                     log.warning("-soft-sub is empty")
                 log.info("-soft-sub list = {}", soft_sub_list)
 
-                # 临时翻译
-                add_tr_files: Final[list[Path]] = []
-                if translate_sub := self.option_map.get("translate-sub"):
-                    _tr = translate_sub.split(":")
-                    if len(_tr) != 2:
-                        log.error("{} param illegal", "-translate-sub")
-                    else:
-                        try:
-                            _file_list = translate_subtitles(
-                                Path(self.output_dir),
-                                _tr[0],
-                                _tr[1],
-                                file_intersection_selector=soft_sub_list,
-                            )
-                        except Exception as e:
-                            log.error(e, is_format=False)
-                        else:
-                            for f_and_s in _file_list:
-                                if f_and_s[0].is_file():
-                                    log.warning(
-                                        'The file "{}" already exists, skip translating it',
-                                        f_and_s[0],
-                                    )
-                                    continue
-                                with f_and_s[0].open(
-                                    "wt", encoding="utf-8-sig", newline="\n"
-                                ) as f:
-                                    f.write(f_and_s[1])
-                                    add_tr_files.append(f_and_s[0])
-
                 # 子集化
                 if Ripper(
-                    soft_sub_list + add_tr_files,
+                    soft_sub_list,
                     (subset_folder.name,),
                     self.output_dir,
                     Ripper.Preset_name.subset,
@@ -1161,11 +1169,6 @@ class Ripper:
 
                 # 清理临时文件
                 shutil.rmtree(subset_folder)
-                for f in add_tr_files:
-                    try:
-                        f.unlink()
-                    except Exception as e:
-                        log.error(f"{e!r} {e}", deep=True, is_format=False)
 
         # 获取 ffmpeg report 中的报错
         if FF_REPORT_LOG_FILE.is_file():
