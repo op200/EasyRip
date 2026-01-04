@@ -213,6 +213,7 @@ _DEFAULT_X265_PARAMS: Final[dict[LiteralString, LiteralString]] = {
     "open-gop": "1",
     "gop-lookahead": "0",
     "rc-lookahead": "20",
+    "lookahead-slices": "8",
     "rect": "0",
     "amp": "0",
     "cbqpoffs": "0",
@@ -227,6 +228,11 @@ _DEFAULT_X265_PARAMS: Final[dict[LiteralString, LiteralString]] = {
     "sao": "0",
     "weightb": "1",
     "info": "1",
+    # 性能
+    "lookahead-threads": "0",
+    "asm": "auto",
+    "frame-threads": "0",
+    "pools": "*",
 }
 
 
@@ -391,6 +397,7 @@ DEFAULT_PRESET_PARAMS: Final[dict[Preset_name, dict[LiteralString, LiteralString
             "subme": "5",
             "gop-lookahead": "8",
             "rc-lookahead": "216",
+            "lookahead-slices": "4",
             "cbqpoffs": "-2",
             "crqpoffs": "-2",
             "pbratio": "1.2",
@@ -421,6 +428,7 @@ DEFAULT_PRESET_PARAMS: Final[dict[Preset_name, dict[LiteralString, LiteralString
             "subme": "6",
             "gop-lookahead": "14",
             "rc-lookahead": "250",
+            "lookahead-slices": "2",
             "rect": "1",
             "min-keyint": "2",
             "cbqpoffs": "-2",
@@ -456,6 +464,7 @@ DEFAULT_PRESET_PARAMS: Final[dict[Preset_name, dict[LiteralString, LiteralString
             "open-gop": "1",
             "gop-lookahead": "14",
             "rc-lookahead": "250",
+            "lookahead-slices": "1",
             "rect": "1",
             "amp": "1",
             "cbqpoffs": "-3",

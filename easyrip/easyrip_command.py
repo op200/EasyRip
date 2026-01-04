@@ -7,7 +7,6 @@ from typing import Final, Self, final
 
 from prompt_toolkit.completion import (
     Completer,
-    DeduplicateCompleter,
     FuzzyCompleter,
     FuzzyWordCompleter,
     NestedCompleter,
@@ -860,14 +859,7 @@ class OptCompleter(Completer):
 
             yield from merge_completers(
                 (
-                    DeduplicateCompleter(
-                        merge_completers(
-                            (
-                                _nested_dict_to_nc(new_nd),
-                                FuzzyCompleter(_nested_dict_to_nc(new_nd), WORD=True),
-                            )
-                        )
-                    ),
+                    _nested_dict_to_nc(new_nd),
                     FuzzyCompleter(
                         WordCompleter(
                             words=tuple(opt_tree_pos_list[-1]),
