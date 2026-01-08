@@ -1,15 +1,10 @@
 from ..easyrip_command import Audio_codec, Cmd_type, Opt_type, Preset_name
-from .global_lang_val import (
-    Lang_tag,
-    Lang_tag_language,
-    Lang_tag_region,
-    Lang_tag_script,
-)
+from .global_lang_val import Lang_tag
 
 LANG_TAG = Lang_tag(
-    language=Lang_tag_language.zh,
-    script=Lang_tag_script.Hans,
-    region=Lang_tag_region.CN,
+    language=Lang_tag.Language.zh,
+    script=Lang_tag.Script.Hans,
+    region=Lang_tag.Region.CN,
 )
 
 LANG_MAP: dict[str, str] = {
@@ -135,7 +130,8 @@ LANG_MAP: dict[str, str] = {
     ),
     Opt_type._preset.value.description: (
         "设置预设\n"
-        "预设名:\n"  # .
+        "\n"  # .
+        "预设名:\n"
         f"{Preset_name.to_help_string('  ')}"
     ),
     Opt_type._pipe.value.description: (
@@ -199,13 +195,14 @@ LANG_MAP: dict[str, str] = {
     ),
     Opt_type._c_a.value.description: (
         "设置音频编码器\n"
-        "音频编码器:\n"  # .
+        "\n"  # .
+        "音频编码器:\n"
         f"{Audio_codec.to_help_string('  ')}"
     ),
     Opt_type._b_a.value.description: "设置音频码率。默认值 '160k'",
     Opt_type._muxer.value.description: (
         "设置复用器\n"
-        " \n"  # .
+        "\n"  # .
         "可用的复用器:\n"
         "  mp4\n"
         "  mkv"
@@ -323,6 +320,9 @@ LANG_MAP: dict[str, str] = {
     "Failed to add Ripper: {}": "添加 Ripper 失败: {}",
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}', 已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",
+    "Run the following commands in order:\n{}": "按顺序执行以下命令:\n{}",
+    "Run the command {}": "执行命令 {}",
+    "Command run failed: status code {}\n  Failed command: {}": "命令执行失败: 状态码 {}\n  失败的命令: {}",
     "There have error in running": "执行时出错",
     "{} param illegal": "{} 参数非法",
     'The file "{}" already exists, skip translating it': '文件 "{}" 已存在, 跳过翻译',

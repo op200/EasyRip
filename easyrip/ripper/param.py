@@ -29,6 +29,8 @@ class Preset_name(enum.Enum):
 
     vvenc = "vvenc"
 
+    ffv1 = "ffv1"
+
     h264_amf = "h264_amf"
     h264_nvenc = "h264_nvenc"
     h264_qsv = "h264_qsv"
@@ -65,6 +67,16 @@ class Preset_name(enum.Enum):
             ),
             prefix=prefix,
         )
+
+    def get_param_name_set[T: set[LiteralString] | None](
+        self, default: T = None, /
+    ) -> set[LiteralString] | T:
+        return _PRESET__PARAM_NAME_SET.get(self, default)
+
+    def get_param_default_dict[T: dict[LiteralString, LiteralString] | None](
+        self, default: T = None, /
+    ) -> dict[LiteralString, LiteralString] | T:
+        return _PRESET__DEFAULT_PARAMS.get(self, default)
 
 
 class Audio_codec(enum.Enum):
@@ -119,8 +131,19 @@ class Muxer(enum.Enum):
         )
         return DEFAULT
 
+    @classmethod
+    def to_help_string(cls, prefix: str = ""):
+        return textwrap.indent(
+            reduce(
+                lambda acc,
+                add: f"{acc}{' ' if add.endswith(acc.split()[-1][-4:]) else '\n'}{add}",
+                tuple[str](cls._member_map_),
+            ),
+            prefix=prefix,
+        )
 
-X265_PARAMS_NAME: Final[tuple[LiteralString, ...]] = (
+
+_X265_PARAM_NAME_SET: Final[set[LiteralString]] = {
     "crf",
     "qpmin",
     "qpmax",
@@ -148,6 +171,7 @@ X265_PARAMS_NAME: Final[tuple[LiteralString, ...]] = (
     "open-gop",
     "gop-lookahead",
     "rc-lookahead",
+    "lookahead-slices",
     "rect",
     "amp",
     "cbqpoffs",
@@ -160,8 +184,13 @@ X265_PARAMS_NAME: Final[tuple[LiteralString, ...]] = (
     "max-tu-size",
     "level-idc",
     "sao",
-)
-X264_PARAMS_NAME: Final[tuple[LiteralString, ...]] = (
+    # 性能
+    "lookahead-threads",
+    "asm",
+    "frame-threads",
+    "pools",
+}
+_X264_PARAM_NAME_SET: Final[set[LiteralString]] = {
     "threads",
     "crf",
     "psy-rd",
@@ -182,8 +211,29 @@ X264_PARAMS_NAME: Final[tuple[LiteralString, ...]] = (
     "fast-pskip",
     "partitions",
     "direct",
-)
+}
+_FFV1_PARAM_NAME_SET: Final[set[LiteralString]] = {
+    "slicecrc",
+    "coder",
+    "context",
+    "qtable",
+    "remap_mode",
+    "remap_optimizer",
+}
 
+_PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
+    Preset_name.x264: _X264_PARAM_NAME_SET,
+    Preset_name.x264fast: _X264_PARAM_NAME_SET,
+    Preset_name.x264slow: _X264_PARAM_NAME_SET,
+    Preset_name.x265: _X265_PARAM_NAME_SET,
+    Preset_name.x265fast4: _X265_PARAM_NAME_SET,
+    Preset_name.x265fast3: _X265_PARAM_NAME_SET,
+    Preset_name.x265fast2: _X265_PARAM_NAME_SET,
+    Preset_name.x265fast: _X265_PARAM_NAME_SET,
+    Preset_name.x265slow: _X265_PARAM_NAME_SET,
+    Preset_name.x265full: _X265_PARAM_NAME_SET,
+    Preset_name.ffv1: _FFV1_PARAM_NAME_SET,
+}
 
 _DEFAULT_X265_PARAMS: Final[dict[LiteralString, LiteralString]] = {
     "crf": "20",
@@ -236,19 +286,9 @@ _DEFAULT_X265_PARAMS: Final[dict[LiteralString, LiteralString]] = {
 }
 
 
-PRESET_OPT_NAME: Final[dict[Preset_name, tuple[LiteralString, ...]]] = {
-    Preset_name.x264: X264_PARAMS_NAME,
-    Preset_name.x264fast: X264_PARAMS_NAME,
-    Preset_name.x264slow: X264_PARAMS_NAME,
-    Preset_name.x265: X265_PARAMS_NAME,
-    Preset_name.x265fast4: X265_PARAMS_NAME,
-    Preset_name.x265fast3: X265_PARAMS_NAME,
-    Preset_name.x265fast2: X265_PARAMS_NAME,
-    Preset_name.x265fast: X265_PARAMS_NAME,
-    Preset_name.x265slow: X265_PARAMS_NAME,
-    Preset_name.x265full: X265_PARAMS_NAME,
-}
-DEFAULT_PRESET_PARAMS: Final[dict[Preset_name, dict[LiteralString, LiteralString]]] = {
+_PRESET__DEFAULT_PARAMS: Final[
+    dict[Preset_name, dict[LiteralString, LiteralString]]
+] = {
     Preset_name.x264fast: {
         "threads": "auto",
         "crf": "20",

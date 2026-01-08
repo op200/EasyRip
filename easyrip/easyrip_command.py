@@ -18,7 +18,7 @@ from prompt_toolkit.document import Document
 
 from . import global_val
 from .easyrip_config.config_key import Config_key
-from .ripper.param import PRESET_OPT_NAME, Audio_codec, Preset_name
+from .ripper.param import Audio_codec, Muxer, Preset_name
 
 
 @final
@@ -353,7 +353,8 @@ class Opt_type(enum.Enum):
         param="<string>",
         description=(
             "Setting preset\n"
-            "Preset name:\n"  # .
+            "\n"  # .
+            "Preset name:\n"
             f"{Preset_name.to_help_string('  ')}"
         ),
         childs=(Cmd_type_val(tuple(Preset_name._value2member_map_)),),
@@ -486,7 +487,8 @@ class Opt_type(enum.Enum):
         param="<string>",
         description=(
             "Setting audio encoder\n"
-            "Audio encoder:\n"  # .
+            "\n"  # .
+            "Audio encoder:\n"
             f"{Audio_codec.to_help_string('  ')}"
         ),
         childs=(Cmd_type_val(tuple(Audio_codec._value2member_map_)),),
@@ -501,11 +503,11 @@ class Opt_type(enum.Enum):
         param="<string>",
         description=(
             "Setting muxer\n"
-            " \n"  # .
+            "\n"  # .
             "Muxer:\n"
-            "  mp4\n"
-            "  mkv\n"
+            f"{Audio_codec.to_help_string('  ')}"
         ),
+        childs=(Cmd_type_val(tuple(Muxer._value2member_map_)),),
     )
     _r = _fps = Cmd_type_val(
         ("-r", "-fps"),
@@ -789,8 +791,10 @@ class OptCompleter(Completer):
             _preset_name = None
             if _preset in Preset_name._member_map_:
                 _preset_name = Preset_name[_preset]
-            if _preset_name is not None and _preset_name in PRESET_OPT_NAME:
-                add_set: set[str] = {f"-{n}" for n in PRESET_OPT_NAME[_preset_name]}
+            if _preset_name is not None:
+                add_set: set[str] = {
+                    f"-{n}" for n in _preset_name.get_param_name_set(set())
+                }
                 add_comp_words |= add_set
                 add_comp_meta_dict |= dict.fromkeys(add_set, f"{_preset} param")
 
@@ -859,7 +863,13 @@ class OptCompleter(Completer):
 
             yield from merge_completers(
                 (
-                    _nested_dict_to_nc(new_nd),
+                    merge_completers(
+                        (
+                            _nested_dict_to_nc(new_nd),
+                            FuzzyCompleter(_nested_dict_to_nc(new_nd), WORD=True),
+                        ),
+                        deduplicate=True,
+                    ),
                     FuzzyCompleter(
                         WordCompleter(
                             words=tuple(opt_tree_pos_list[-1]),

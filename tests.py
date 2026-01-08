@@ -16,9 +16,6 @@ import easyrip.easyrip_web
 from easyrip import (
     Ass,
     Lang_tag,
-    Lang_tag_language,
-    Lang_tag_region,
-    Lang_tag_script,
     gettext,
     log,
     run_command,
@@ -26,6 +23,7 @@ from easyrip import (
 from easyrip.easyrip_command import Cmd_type, Opt_type
 from easyrip.easyrip_mlang import Lang_tag_val, all_supported_lang_map
 from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
+from easyrip.ripper.ripper import Ripper
 from easyrip.ripper.sub_and_font.font import load_fonts, load_windows_fonts
 
 if sys.stdout.encoding != "UTF-8":
@@ -34,6 +32,19 @@ if sys.stdout.encoding != "UTF-8":
 
 log.print_level = log.LogLevel._detail
 log.write_level = log.LogLevel.none
+
+
+def run_command_and_run_ripper_list(cmd: str) -> bool:
+    if not (run_command(cmd)):
+        log.error("Run command failed: {}", cmd)
+        return False
+
+    for ripper in Ripper.ripper_list:
+        if not ripper.run():
+            log.error("Run ripper failed: {}", ripper)
+            return False
+
+    return True
 
 
 class TestBasic(unittest.TestCase):
@@ -185,8 +196,8 @@ class TestRip(unittest.TestCase):
         qpmax = "44"
         params: str = f"-hme 0 -crf {crf} -x265-params qpmin={qpmin}:qpmax={qpmax}::"
         self.assertTrue(
-            run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {output_basename} -muxer mp4 -run"
+            run_command_and_run_ripper_list(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {output_basename} -muxer mp4"
             )
         )
 
@@ -266,8 +277,8 @@ class TestRip(unittest.TestCase):
         output_basename = TestRip.test_media_file_dict[self.test_flac.__name__][0]
 
         self.assertTrue(
-            run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -preset flac -o {output_basename} -run"
+            run_command_and_run_ripper_list(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -preset flac -o {output_basename}"
             )
         )
 
@@ -275,17 +286,28 @@ class TestRip(unittest.TestCase):
         output_basename = TestRip.test_media_file_dict[self.test_c_a_flac.__name__][0]
 
         self.assertTrue(
-            run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a flac -o {output_basename} -run"
+            run_command_and_run_ripper_list(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a flac -o {output_basename}"
             )
         )
 
     def test_soft_sub(self):
         output_basename = TestRip.test_media_file_dict[self.test_soft_sub.__name__][0]
 
+        ass_file_list: list[Path] = [
+            Path(f"{TestRip.TEST_VA_BASENAME}.{infix}.ass")
+            for infix in (
+                "zh-Hans",
+                "zh-Hant",
+            )
+        ]
+
+        for ass in ass_file_list:
+            self.assertTrue(ass.is_file(), f"Can not find ASS file {ass}")
+
         self.assertTrue(
-            run_command(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a libopus -soft-sub auto -o {output_basename} -run"
+            run_command_and_run_ripper_list(
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -p copy -c:a libopus -soft-sub auto -o {output_basename}"
             )
         )
 
@@ -319,41 +341,41 @@ class TestThirdPartyApi(unittest.TestCase):
 
 class TestLanguage(unittest.TestCase):
     def test_str_to_lang_tag(self):
-        self.assertIs(Lang_tag.from_str("").language, Lang_tag_language.Unknown)
-        self.assertIs(Lang_tag.from_str("-").language, Lang_tag_language.Unknown)
-        self.assertIs(Lang_tag.from_str("---").language, Lang_tag_language.Unknown)
-        self.assertIs(Lang_tag.from_str("-2-3-").language, Lang_tag_language.Unknown)
+        self.assertIs(Lang_tag.from_str("").language, Lang_tag.Language.Unknown)
+        self.assertIs(Lang_tag.from_str("-").language, Lang_tag.Language.Unknown)
+        self.assertIs(Lang_tag.from_str("---").language, Lang_tag.Language.Unknown)
+        self.assertIs(Lang_tag.from_str("-2-3-").language, Lang_tag.Language.Unknown)
 
         self.assertEqual(
             Lang_tag.from_str("zh"),
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Unknown,
-                region=Lang_tag_region.Unknown,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Unknown,
+                region=Lang_tag.Region.Unknown,
             ),
         )
         self.assertEqual(
             Lang_tag.from_str("chi"),
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Unknown,
-                region=Lang_tag_region.Unknown,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Unknown,
+                region=Lang_tag.Region.Unknown,
             ),
         )
         self.assertEqual(
             Lang_tag.from_str("zho"),
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Unknown,
-                region=Lang_tag_region.Unknown,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Unknown,
+                region=Lang_tag.Region.Unknown,
             ),
         )
         self.assertEqual(
             Lang_tag.from_str("zh-Hans-CN"),
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Hans,
-                region=Lang_tag_region.CN,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Hans,
+                region=Lang_tag.Region.CN,
             ),
         )
 
@@ -372,6 +394,6 @@ class TestLanguage(unittest.TestCase):
 
     def test_lang_val_to_lang_tag(self):
         self.assertIs(
-            Lang_tag_language.zh,
-            Lang_tag_language(Lang_tag_val(en_name="Chinese")),
+            Lang_tag.Language.zh,
+            Lang_tag.Language(Lang_tag_val(en_name="Chinese")),
         )

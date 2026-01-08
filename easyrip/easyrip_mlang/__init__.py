@@ -1,22 +1,13 @@
 import locale
 
 from . import lang_en, lang_zh_Hans_CN
-from .global_lang_val import (
-    Global_lang_val,
-    Lang_tag,
-    Lang_tag_language,
-    Lang_tag_region,
-    Lang_tag_script,
-    Lang_tag_val,
-)
+from .global_lang_val import Global_lang_val, Lang_tag
+from .lang_tag_val import Lang_tag_val
 from .translator import translate_subtitles
 
 __all__ = [
     "Global_lang_val",
     "Lang_tag",
-    "Lang_tag_language",
-    "Lang_tag_region",
-    "Lang_tag_script",
     "Lang_tag_val",
     "Mlang_exception",
     "get_system_language",

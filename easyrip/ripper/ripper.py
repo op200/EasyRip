@@ -1,6 +1,7 @@
 import os
 import re
 import shutil
+import textwrap
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
@@ -16,11 +17,8 @@ from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
 from ..utils import get_base62_time
 from .media_info import Media_info, Stream_error
 from .param import (
-    DEFAULT_PRESET_PARAMS,
     FONT_SUFFIX_SET,
     SUBTITLE_SUFFIX_SET,
-    X264_PARAMS_NAME,
-    X265_PARAMS_NAME,
 )
 from .sub_and_font import subset
 
@@ -53,13 +51,13 @@ class Ripper:
     @dataclass(slots=True)
     class Option:
         preset_name: "Ripper.Preset_name"
-        encoder_format_str: str
+        encoder_format_str_list: list[str]
         audio_encoder: "Ripper.Audio_codec | None"
         muxer: "Ripper.Muxer | None"
-        muxer_format_str: str
+        muxer_format_str_list: list[str]
 
         def __str__(self) -> str:
-            return f"  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str}"
+            return f"  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str_list}"
 
     input_path_list: list[Path]
     output_prefix_list: list[str]
@@ -134,6 +132,13 @@ class Ripper:
         )
 
     def preset_name_to_option(self, preset_name: Preset_name) -> Option:
+        if os.name == "nt":
+            cmd_head_del = "del /Q"
+            cmd_head_copy = "copy"
+        else:
+            cmd_head_del = "rm /f"
+            cmd_head_copy = "cp"
+
         if (
             force_fps := self.option_map.get("r") or self.option_map.get("fps")
         ) == "auto":
@@ -238,28 +243,26 @@ class Ripper:
             audio_option = ""
 
         # Muxer
+        muxer_format_str_list: list[str]
         if muxer := self.option_map.get("muxer"):
             muxer = Ripper.Muxer(muxer)
 
             match muxer:
                 case Ripper.Muxer.mp4:
-                    muxer_format_str = (
-                        ' && mp4box -add "{output}" -new "{output}" '
+                    muxer_format_str_list = [
+                        'mp4box -add "{output}" -new "{output}" '
                         + (
                             f"-chap {chapters} "
                             if (chapters := self.option_map.get("chapters"))
                             else ""
                         )
-                        + (
-                            ""
-                            if self.preset_name == Ripper.Preset_name.flac
-                            else (
-                                "&& mp4fpsmod "
-                                + (f"-r 0:{force_fps}" if force_fps else "")
-                                + ' -i "{output}"'
-                            )
+                    ]
+                    if self.preset_name != Ripper.Preset_name.flac:
+                        muxer_format_str_list.append(
+                            "mp4fpsmod "
+                            + (f"-r 0:{force_fps}" if force_fps else "")
+                            + ' -i "{output}"'
                         )
-                    )
 
                 case Ripper.Muxer.mkv:
                     if (
@@ -270,46 +273,52 @@ class Ripper:
                             log.error("It is not a dir: {}", only_mux_sub_path)
                             only_mux_sub_path = None
 
-                    muxer_format_str = (
-                        ' && mkvpropedit "{output}" --add-track-statistics-tags && mkvmerge -o "{output}.temp.mkv" "{output}" && mkvmerge -o "{output}" '
-                        + (
-                            f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1 "
-                            if force_fps and only_mux_sub_path is None
-                            else ""
-                        )
-                        + (
-                            f"--chapters {chapters} "
-                            if (chapters := self.option_map.get("chapters"))
-                            else ""
-                        )
-                        + (
-                            " ".join(
-                                (
-                                    ""
-                                    if len(
-                                        affixes := _file.stem.rsplit(".", maxsplit=1)
-                                    )
-                                    == 1
-                                    else "--attach-file "
-                                    if _file.suffix in FONT_SUFFIX_SET
-                                    else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} "
-                                )
-                                + f'"{_file.absolute()}"'
-                                for _file in only_mux_sub_path.iterdir()
-                                if _file.suffix
-                                in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET)
+                    muxer_format_str_list = [
+                        'mkvpropedit "{output}" --add-track-statistics-tags',
+                        'mkvmerge -o "{output}.temp.mkv" "{output}"',
+                        (
+                            'mkvmerge -o "{output}" '
+                            + (
+                                f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1 "
+                                if force_fps and only_mux_sub_path is None
+                                else ""
                             )
-                            if only_mux_sub_path
-                            else ""
-                        )
-                        + ' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv" && del /Q "{output}.temp.mkv"'
-                    )
+                            + (
+                                f"--chapters {chapters} "
+                                if (chapters := self.option_map.get("chapters"))
+                                else ""
+                            )
+                            + (
+                                " ".join(
+                                    (
+                                        ""
+                                        if len(
+                                            affixes := _file.stem.rsplit(
+                                                ".", maxsplit=1
+                                            )
+                                        )
+                                        == 1
+                                        else "--attach-file "
+                                        if _file.suffix in FONT_SUFFIX_SET
+                                        else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} "
+                                    )
+                                    + f'"{_file.absolute()}"'
+                                    for _file in only_mux_sub_path.iterdir()
+                                    if _file.suffix
+                                    in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET)
+                                )
+                                if only_mux_sub_path
+                                else ""
+                            )
+                            + ' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv"'
+                        ),
+                        cmd_head_del + ' "{output}.temp.mkv"',
+                    ]
 
         else:
             muxer = None
-            muxer_format_str = ""
+            muxer_format_str_list = []
 
-        vspipe_input: str = ""
         pipe_gvar_list = [
             s for s in self.option_map.get("pipe:gvar", "").split(":") if s
         ]
@@ -318,15 +327,6 @@ class Ripper:
         )
         if sub_pathname:
             pipe_gvar_dict["subtitle"] = sub_pathname
-
-        if self.input_path_list[0].suffix == ".vpy":
-            vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} "{{input}}" - | '
-        elif vpy_pathname:
-            vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} -a "input={{input}}" "{vpy_pathname}" - | '
-
-        hwaccel = (
-            f"-hwaccel {hwaccel}" if (hwaccel := self.option_map.get("hwaccel")) else ""
-        )
 
         ffparams_ff = self.option_map.get("ff-params:ff") or self.option_map.get(
             "ff-params", ""
@@ -342,10 +342,45 @@ class Ripper:
 
         FFMPEG_HEADER = f"ffmpeg {'-hide_banner ' if self.option_map.get('_sub_ripper_num') else ''}-progress {FF_PROGRESS_LOG_FILE} -report {ffparams_ff} {ffparams_in}"
 
+        def get_vs_ff_cmd(enc_opt: str) -> str:
+            vspipe_input: str = ""
+            if self.input_path_list[0].suffix == ".vpy":
+                vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} "{{input}}" - |'
+            elif vpy_pathname:
+                vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} -a "input={{input}}" "{vpy_pathname}" - |'
+
+            hwaccel = (
+                [f"-hwaccel {hwaccel}"]
+                if (hwaccel := self.option_map.get("hwaccel"))
+                else []
+            )
+
+            return " ".join(
+                (
+                    vspipe_input,
+                    FFMPEG_HEADER,
+                    *hwaccel,
+                    " ".join(f"-i {s}" for s in ff_input_option),
+                    " ".join(f"-map {s}" for s in ff_stream_option),
+                    audio_option,
+                    enc_opt,
+                    ffparams_out,
+                    (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else ""),
+                    '"{output}"',
+                )
+            )
+
+        preset_param_getted = {
+            _param_name: self.option_map.get(_param_name)
+            for _param_name in preset_name.get_param_name_set(set())
+        }
+        preset_param_default_dict = preset_name.get_param_default_dict({})
+
+        encoder_format_str_list: list[str]
         match preset_name:
             case Ripper.Preset_name.custom:
                 if not (
-                    encoder_format_str := self.option_map.get(
+                    _encoder_format_str := self.option_map.get(
                         "custom:format",
                         self.option_map.get(
                             "custom:template", self.option_map.get("custom")
@@ -355,67 +390,67 @@ class Ripper:
                     log.warning(
                         "The preset custom must have custom:format or custom:template"
                     )
-                    encoder_format_str = ""
+                    encoder_format_str_list = []
 
                 else:
-                    if encoder_format_str.startswith("''''"):
-                        encoder_format_str = encoder_format_str[4:]
+                    if _encoder_format_str.startswith("''''"):
+                        _encoder_format_str = _encoder_format_str[4:]
                     else:
-                        encoder_format_str = encoder_format_str.replace("''", '"')
-                    encoder_format_str = (
-                        encoder_format_str.replace("\\34/", '"')
+                        _encoder_format_str = _encoder_format_str.replace("''", '"')
+                    _encoder_format_str = (
+                        _encoder_format_str.replace("\\34/", '"')
                         .replace("\\39/", "'")
                         .format_map(
                             self.option_map | {"input": "{input}", "output": "{output}"}
                         )
                     )
+                    encoder_format_str_list = [_encoder_format_str]
 
             case Ripper.Preset_name.copy:
-                hwaccel = (
-                    f"-hwaccel {hwaccel}"
-                    if (hwaccel := self.option_map.get("hwaccel"))
-                    else ""
-                )
-
-                encoder_format_str = (
-                    f"{FFMPEG_HEADER} {hwaccel} "
+                encoder_format_str_list = [
+                    f"{FFMPEG_HEADER} "
                     '-i "{input}" -c copy '
                     f"{' '.join(f'-map {s}' for s in ff_stream_option)} "
                     + audio_option
                     + ffparams_out
                     + '"{output}"'
-                )
+                ]
 
+                _encoder_format_str: str | None = None
                 match self.option_map.get("c:a"):
                     case None | "flac":
                         if muxer == Ripper.Muxer.mp4:
-                            encoder_format_str = 'mp4box -add "{input}" -new "{output}"'
+                            _encoder_format_str = (
+                                'mp4box -add "{input}" -new "{output}"'
+                            )
                             for _audio_info in self.media_info.audio_info:
-                                encoder_format_str += f" -rem {_audio_info.index + 1}"
+                                _encoder_format_str += f" -rem {_audio_info.index + 1}"
                         else:
-                            encoder_format_str = (
+                            _encoder_format_str = (
                                 'mkvmerge -o "{output}" --no-audio "{input}"'
                             )
                     case "copy":
-                        encoder_format_str = (
+                        _encoder_format_str = (
                             'mp4box -add "{input}" -new "{output}"'
                             if muxer == Ripper.Muxer.mp4
                             else 'mkvmerge -o "{output}" "{input}"'
                         )
+                if _encoder_format_str is not None:
+                    encoder_format_str_list = [_encoder_format_str]
 
             case Ripper.Preset_name.flac:
                 _ff_encode_str: str = ""
-                _flac_encode_str: str = ""
+                _flac_encode_str_list: list[str] = []
                 _mux_flac_input_list: list[str] = []
-                # _mux_flac_map_str: str = ""
-                _del_flac_str: str = ""
+                _del_flac_str_list: list[str] = []
 
                 for _audio_info in self.media_info.audio_info:
                     _encoder: str = (
                         "pcm_s24le"
-                        if (
-                            _audio_info.bits_per_raw_sample == 24
-                            or _audio_info.bits_per_sample == 24
+                        if 24
+                        in (
+                            _audio_info.bits_per_raw_sample,
+                            _audio_info.bits_per_sample,
                         )
                         else {
                             "u8": "pcm_u8",
@@ -433,47 +468,57 @@ class Ripper:
                         }.get(_audio_info.sample_fmt, "pcm_s32le")
                     )
 
-                    _new_output_str: str = f"{{output}}.{_audio_info.index}.temp"
+                    _new_output_str: str = "{output}" + f".{_audio_info.index}.temp"
 
                     _ff_encode_str += (
                         f"-map 0:{_audio_info.index} -c:a {_encoder} {ffparams_out} "
                         f'"{_new_output_str}.wav" '
                     )
-                    _flac_encode_str += (
-                        f"&& flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
-                        f'-o "{_new_output_str}.flac" "{_new_output_str}.wav" && del /Q "{_new_output_str}.wav" '
-                    )
+                    _flac_encode_str_list = [
+                        (
+                            f"flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
+                            f'-o "{_new_output_str}.flac" "{_new_output_str}.wav"'
+                        ),
+                        f'{cmd_head_del} "{_new_output_str}.wav"',
+                    ]
 
                     _mux_flac_input_list.append(f'"{_new_output_str}.flac"')
 
-                    _del_flac_str += f'&& del /Q "{_new_output_str}.flac" '
+                    _del_flac_str_list = [f'{cmd_head_del} "{_new_output_str}.flac" ']
 
                 match len(_mux_flac_input_list):
                     case 0:
                         raise RuntimeError(f'No audio in "{self.input_path_list[0]}"')
 
                     case 1 if muxer is None:
-                        encoder_format_str = (
-                            FFMPEG_HEADER + ' -i "{input}" '
-                            f"{_ff_encode_str} {_flac_encode_str} "
-                            f"&& {'copy' if os.name == 'nt' else 'cp'} {_mux_flac_input_list[0]} "
-                            + '"{output}" '
-                            + _del_flac_str
-                        )
+                        encoder_format_str_list = [
+                            FFMPEG_HEADER + f' -i "{{input}}" {_ff_encode_str}',
+                            *_flac_encode_str_list,
+                            (
+                                f"{cmd_head_copy} {_mux_flac_input_list[0]} "
+                                '"{output}"'  # .
+                            ),
+                            *_del_flac_str_list,
+                        ]
 
                     case _:
                         _mux_str = (
-                            f"mp4box -add {' -add '.join(_mux_flac_input_list)}"
-                            ' -new "{output}" '
+                            (
+                                f"mp4box {' '.join(f'-add {s}' for s in _mux_flac_input_list)} "
+                                '-new "{output}"'
+                            )
                             if muxer == Ripper.Muxer.mp4
-                            else 'mkvmerge -o "{output}" '
-                            + " ".join(_mux_flac_input_list)
+                            else (
+                                'mkvmerge -o "{output}" '
+                                + " ".join(_mux_flac_input_list)
+                            )
                         )
-                        encoder_format_str = (
-                            FFMPEG_HEADER + ' -i "{input}" '
-                            f"{_ff_encode_str} {_flac_encode_str} "
-                            f"&& {_mux_str} " + _del_flac_str
-                        )
+                        encoder_format_str_list = [
+                            FFMPEG_HEADER + f' -i "{{input}}" {_ff_encode_str}',
+                            *_flac_encode_str_list,
+                            f"{_mux_str}",
+                            *_del_flac_str_list,
+                        ]
 
             case (
                 Ripper.Preset_name.x264
@@ -483,10 +528,7 @@ class Ripper:
                 _custom_option_map: dict[str, str] = {
                     k: v
                     for k, v in {
-                        **{
-                            _param_name: self.option_map.get(_param_name)
-                            for _param_name in X264_PARAMS_NAME
-                        },
+                        **preset_param_getted,
                         **dict(
                             s.split("=", maxsplit=1)
                             for s in str(self.option_map.get("x264-params", "")).split(
@@ -498,9 +540,7 @@ class Ripper:
                     if v is not None
                 }
 
-                _option_map = (
-                    DEFAULT_PRESET_PARAMS.get(preset_name, {}) | _custom_option_map
-                )
+                _option_map = preset_param_default_dict | _custom_option_map
 
                 if (
                     (_crf := _option_map.get("crf"))
@@ -512,14 +552,11 @@ class Ripper:
 
                 _param = ":".join(f"{key}={val}" for key, val in _option_map.items())
 
-                encoder_format_str = (
-                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + f"-c:v libx264 {'' if is_pipe_input else '-pix_fmt yuv420p'} -x264-params "
-                    + f'"{_param}" {ffparams_out} '
-                    + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
-                    + '"{output}"'
-                )
+                encoder_format_str_list = [
+                    get_vs_ff_cmd(
+                        f'-c:v libx264 {"" if is_pipe_input else "-pix_fmt yuv420p"} -x264-params "{_param}" '
+                    )
+                ]
 
             case (
                 Ripper.Preset_name.x265
@@ -533,10 +570,7 @@ class Ripper:
                 _custom_option_map: dict[str, str] = {
                     k: v
                     for k, v in {
-                        **{
-                            _param_name: self.option_map.get(_param_name)
-                            for _param_name in X265_PARAMS_NAME
-                        },
+                        **preset_param_getted,
                         **dict(
                             s.split("=", maxsplit=1)
                             for s in str(self.option_map.get("x265-params", "")).split(
@@ -548,9 +582,7 @@ class Ripper:
                     if v is not None
                 }
 
-                _option_map = (
-                    DEFAULT_PRESET_PARAMS.get(preset_name, {}) | _custom_option_map
-                )
+                _option_map = preset_param_default_dict | _custom_option_map
 
                 # HEVC 规范
                 if self.option_map.get(
@@ -593,14 +625,11 @@ class Ripper:
 
                 _param = ":".join(f"{key}={val}" for key, val in _option_map.items())
 
-                encoder_format_str = (
-                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + f"-c:v libx265 {'' if is_pipe_input else '-pix_fmt yuv420p10le'} -x265-params "
-                    + f'"{_param}" {ffparams_out} '
-                    + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
-                    + '"{output}"'
-                )
+                encoder_format_str_list = [
+                    get_vs_ff_cmd(
+                        f'-c:v libx265 {"" if is_pipe_input else "-pix_fmt yuv420p10le"} -x265-params "{_param}"'
+                    )
+                ]
 
             case (
                 Ripper.Preset_name.h264_amf
@@ -630,14 +659,9 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str = (
-                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + f"-c:v {preset_name.value} "
-                    + f"{_param} {ffparams_out} "
-                    + (f' -vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
-                    + ' "{output}"'
-                )
+                encoder_format_str_list = [
+                    get_vs_ff_cmd(f'-c:v {preset_name.value} "{_param}"')
+                ]
 
             case Ripper.Preset_name.svtav1:
                 _option_map = {
@@ -654,14 +678,7 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str = (
-                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + "-c:v libsvtav1 "
-                    + f"{_param} {ffparams_out} "
-                    + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
-                    + ' "{output}"'
-                )
+                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v libsvtav1 "{_param}"')]
 
             case Ripper.Preset_name.vvenc:
                 _option_map = {
@@ -677,20 +694,29 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str = (
-                    f"{vspipe_input} {FFMPEG_HEADER} {hwaccel} {' '.join(f'-i {s}' for s in ff_input_option)} {' '.join(f'-map {s}' for s in ff_stream_option)} "
-                    + audio_option
-                    + "-c:v libvvenc "
-                    + f"{_param} {ffparams_out} "
-                    + (f'-vf "{",".join(ff_vf_option)}" ' if len(ff_vf_option) else "")
-                    + ' "{output}"'
+                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v libvvenc "{_param}"')]
+
+            case Ripper.Preset_name.ffv1:
+                _option_map = {
+                    "pix_fmt": self.option_map.get("pix_fmt"),
+                    **preset_param_getted,
+                }
+
+                _param = " ".join(
+                    (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
+                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v ffv1 "{_param}"')]
+
             case Ripper.Preset_name.subset:
-                encoder_format_str = ""
+                encoder_format_str_list = []
 
         return Ripper.Option(
-            preset_name, encoder_format_str, audio_encoder, muxer, muxer_format_str
+            preset_name,
+            encoder_format_str_list,
+            audio_encoder,
+            muxer,
+            muxer_format_str_list,
         )
 
     def _flush_progress(self, sleep_sec: float) -> None:
@@ -766,6 +792,7 @@ class Ripper:
         suffix: str
 
         # 根据格式判断
+        cmd_list: list[str]
         match self.option.preset_name:
             case Ripper.Preset_name.custom:
                 suffix = (
@@ -774,32 +801,45 @@ class Ripper:
                     else ""
                 )
                 temp_name = temp_name + suffix
-                cmd = self.option.encoder_format_str.format_map(
-                    {
-                        "input": str(self.input_path_list[0]),
-                        "output": os.path.join(self.output_dir, temp_name),
-                    }
-                )
+                cmd_list = [
+                    s.format_map(
+                        {
+                            "input": str(self.input_path_list[0]),
+                            "output": os.path.join(self.output_dir, temp_name),
+                        }
+                    )
+                    for s in self.option.encoder_format_str_list
+                ]
 
             case Ripper.Preset_name.flac:
                 if self.option.muxer is not None or len(self.media_info.audio_info) > 1:
                     suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
-                    cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
-                        {
-                            "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
-                        }
-                    )
+                    cmd_list = [
+                        s.format_map(
+                            {
+                                "input": str(self.input_path_list[0]),
+                                "output": os.path.join(self.output_dir, temp_name),
+                            }
+                        )
+                        for str_list in (
+                            self.option.encoder_format_str_list,
+                            self.option.muxer_format_str_list,
+                        )
+                        for s in str_list
+                    ]
                 else:
                     suffix = ".flac"
                     temp_name = temp_name + suffix
-                    cmd = self.option.encoder_format_str.format_map(
-                        {
-                            "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
-                        }
-                    )
+                    cmd_list = [
+                        s.format_map(
+                            {
+                                "input": str(self.input_path_list[0]),
+                                "output": os.path.join(self.output_dir, temp_name),
+                            }
+                        )
+                        for s in self.option.encoder_format_str_list
+                    ]
 
             case Ripper.Preset_name.subset:
                 # 临时翻译
@@ -913,12 +953,19 @@ class Ripper:
                                 ".va.mp4" if self.option.audio_encoder else ".v.mp4"
                             )
                         temp_name = temp_name + suffix
-                        cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
-                            {
-                                "input": str(self.input_path_list[0]),
-                                "output": os.path.join(self.output_dir, temp_name),
-                            }
-                        )
+                        cmd_list = [
+                            s.format_map(
+                                {
+                                    "input": str(self.input_path_list[0]),
+                                    "output": os.path.join(self.output_dir, temp_name),
+                                }
+                            )
+                            for str_list in (
+                                self.option.encoder_format_str_list,
+                                self.option.muxer_format_str_list,
+                            )
+                            for s in str_list
+                        ]
 
                     case Ripper.Muxer.mkv:
                         if self.option_map.get("auto-infix", "1") == "0":
@@ -928,12 +975,19 @@ class Ripper:
                                 ".va.mkv" if self.option.audio_encoder else ".v.mkv"
                             )
                         temp_name = temp_name + suffix
-                        cmd = f"{self.option.encoder_format_str} {self.option.muxer_format_str}".format_map(
-                            {
-                                "input": str(self.input_path_list[0]),
-                                "output": os.path.join(self.output_dir, temp_name),
-                            }
-                        )
+                        cmd_list = [
+                            s.format_map(
+                                {
+                                    "input": str(self.input_path_list[0]),
+                                    "output": os.path.join(self.output_dir, temp_name),
+                                }
+                            )
+                            for str_list in (
+                                self.option.encoder_format_str_list,
+                                self.option.muxer_format_str_list,
+                            )
+                            for s in str_list
+                        ]
 
                     case _:
                         if self.option_map.get("auto-infix", "1") == "0":
@@ -943,15 +997,18 @@ class Ripper:
                                 ".va.mkv" if self.option.audio_encoder else ".v.mkv"
                             )
                         temp_name = temp_name + suffix
-                        cmd = self.option.encoder_format_str.format_map(
-                            {
-                                "input": str(self.input_path_list[0]),
-                                "output": os.path.join(
-                                    self.output_dir,
-                                    os.path.join(self.output_dir, temp_name),
-                                ),
-                            }
-                        )
+                        cmd_list = [
+                            s.format_map(
+                                {
+                                    "input": str(self.input_path_list[0]),
+                                    "output": os.path.join(
+                                        self.output_dir,
+                                        os.path.join(self.output_dir, temp_name),
+                                    ),
+                                }
+                            )
+                            for s in self.option.encoder_format_str_list
+                        ]
 
         # 执行
         output_filename = basename + suffix
@@ -992,8 +1049,26 @@ class Ripper:
         if self.preset_name is not Ripper.Preset_name.custom:
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
 
-        log.info(cmd)
-        is_cmd_run_failed = os.system(cmd)
+        log.info(
+            "Run the following commands in order:\n{}",
+            textwrap.indent(
+                "\n".join(f"{i}. {s}" for i, s in enumerate(cmd_list, 1)), prefix="  "
+            ),
+        )
+        is_cmd_run_failed: bool = False
+        for i, cmd in enumerate(cmd_list, 1):
+            log.info(
+                "Run the command {}",
+                f"{i}:\n  {cmd}",
+            )
+            if _cmd_res := os.system(cmd) != 0:
+                is_cmd_run_failed = True
+                log.error(
+                    "Command run failed: status code {}\n  Failed command: {}",
+                    _cmd_res,
+                    f"{i}. {cmd}",
+                )
+                break
 
         # 读取编码速度
         speed: str = "N/A"

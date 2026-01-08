@@ -5,12 +5,7 @@ from time import sleep
 from typing import Final
 
 from ..easyrip_web.third_party_api import zhconvert
-from .global_lang_val import (
-    Lang_tag,
-    Lang_tag_language,
-    Lang_tag_region,
-    Lang_tag_script,
-)
+from .global_lang_val import Lang_tag
 
 
 def translate_subtitles(
@@ -64,52 +59,52 @@ def translate_subtitles(
     match Lang_tag.from_str(infix):
         case (
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Hans,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Hans,
                 region=_,
             )
             | Lang_tag(
-                language=Lang_tag_language.zh,
+                language=Lang_tag.Language.zh,
                 script=_,
-                region=Lang_tag_region.CN,
+                region=Lang_tag.Region.CN,
             )
         ):
             # 简体 -> 繁体 or 非 CN 简体 CN 化
             match target_lang_tag:
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
+                    language=Lang_tag.Language.zh,
                     script=_,
-                    region=Lang_tag_region.HK,
+                    region=Lang_tag.Region.HK,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.HK
 
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
+                    language=Lang_tag.Language.zh,
                     script=_,
-                    region=Lang_tag_region.TW,
+                    region=Lang_tag.Region.TW,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.TW
 
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
-                    script=Lang_tag_script.Hant,
+                    language=Lang_tag.Language.zh,
+                    script=Lang_tag.Script.Hant,
                     region=_,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.Hant
 
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
-                    script=Lang_tag_script.Hant,
-                    region=Lang_tag_region.CN,
+                    language=Lang_tag.Language.zh,
+                    script=Lang_tag.Script.Hant,
+                    region=Lang_tag.Region.CN,
                 ):  # 特殊情况
                     raise Exception(
                         gettext("Unsupported language tag: {}", target_lang_tag)
                     )
 
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
+                    language=Lang_tag.Language.zh,
                     script=_,
-                    region=Lang_tag_region.CN,
+                    region=Lang_tag.Region.CN,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.CN
 
@@ -120,28 +115,28 @@ def translate_subtitles(
 
         case (
             Lang_tag(
-                language=Lang_tag_language.zh,
-                script=Lang_tag_script.Hant,
+                language=Lang_tag.Language.zh,
+                script=Lang_tag.Script.Hant,
                 region=_,
             )
             | Lang_tag(
-                language=Lang_tag_language.zh,
+                language=Lang_tag.Language.zh,
                 script=_,
-                region=Lang_tag_region.HK | Lang_tag_region.TW,
+                region=Lang_tag.Region.HK | Lang_tag.Region.TW,
             )
         ):
             # 繁体 -> 简体
             match target_lang_tag:
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
+                    language=Lang_tag.Language.zh,
                     script=_,
-                    region=Lang_tag_region.CN,
+                    region=Lang_tag.Region.CN,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.CN
 
                 case Lang_tag(
-                    language=Lang_tag_language.zh,
-                    script=Lang_tag_script.Hans,
+                    language=Lang_tag.Language.zh,
+                    script=Lang_tag.Script.Hans,
                     region=_,
                 ):
                     zhconvert_target_lang = zhconvert.Target_lang.Hans

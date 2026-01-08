@@ -30,14 +30,12 @@ from .easyrip_log import log
 from .easyrip_mlang import (
     Global_lang_val,
     Lang_tag,
-    Lang_tag_language,
     get_system_language,
     gettext,
     translate_subtitles,
 )
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
-from .ripper.param import DEFAULT_PRESET_PARAMS, PRESET_OPT_NAME
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import load_fonts
 from .utils import change_title, check_ver, read_text
@@ -419,39 +417,40 @@ def run_command(command: Iterable[str] | str) -> bool:
                             log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
                         elif cmd_list[2] in Ripper.Preset_name._value2member_map_:
                             _preset = Ripper.Preset_name(cmd_list[2])
-                            if (
-                                _preset in DEFAULT_PRESET_PARAMS
-                                or _preset in PRESET_OPT_NAME
-                            ):
-                                if _preset in PRESET_OPT_NAME:
-                                    log.send(
-                                        "Params that can be directly used:\n{}",
-                                        textwrap.indent(
-                                            "\n".join(
-                                                f"-{n}"
-                                                for n in PRESET_OPT_NAME[_preset]
-                                            ),
-                                            prefix="  ",
-                                        ),
-                                    )
-                                if _preset in DEFAULT_PRESET_PARAMS:
-                                    _default_params = DEFAULT_PRESET_PARAMS[_preset]
-                                    max_name_len = (
-                                        max(len(str(n)) for n in _default_params) + 1
-                                    )
-                                    log.send(
-                                        "Default val:\n{}",
-                                        textwrap.indent(
-                                            "\n".join(
-                                                f"{f'-{n}':>{max_name_len}}  {v}"
-                                                for n, v in _default_params.items()
-                                            ),
-                                            prefix="  ",
-                                        ),
-                                    )
-                            else:
+                            _param_default_dict = _preset.get_param_default_dict()
+                            _param_name_set = _preset.get_param_name_set()
+                            if not any((_param_default_dict, _param_name_set)):
                                 log.send(
                                     "The preset '{}' has no separate help", cmd_list[2]
+                                )
+                            if _param_name_set:
+                                log.send(
+                                    "Params that can be directly used:\n{}",
+                                    textwrap.indent(
+                                        "\n".join(f"-{n}" for n in _param_name_set),
+                                        prefix="  ",
+                                    ),
+                                )
+                            if _param_default_dict:
+                                max_name_len = (
+                                    max(len(str(n)) for n in _param_default_dict) + 1
+                                )
+                                log.send(
+                                    "Default val:\n{}",
+                                    textwrap.indent(
+                                        "\n".join(
+                                            f"{f'-{n}':>{max_name_len}}  {v}"
+                                            for n, v in _param_default_dict.items()
+                                        ),
+                                        prefix="  ",
+                                    ),
+                                )
+                                log.send(
+                                    "  FFmpeg format:\n    {}",
+                                    ":".join(
+                                        f"{n}={v}"
+                                        for n, v in _param_default_dict.items()
+                                    ),
                                 )
                         else:
                             log.error("'{}' is not a member of preset", cmd_list[2])
@@ -1156,7 +1155,7 @@ def init(is_first_run: bool = False) -> None:
 
         if (
             lang_tag := Lang_tag.from_str(file.stem[5:])
-        ).language is not Lang_tag_language.Unknown:
+        ).language is not Lang_tag.Language.Unknown:
             easyrip_mlang.all_supported_lang_map[lang_tag] = lang_map
 
             log.debug("Loading \"{}\" as '{}' language successfully", file, lang_tag)
