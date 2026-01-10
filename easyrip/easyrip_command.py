@@ -268,12 +268,20 @@ class Cmd_type(enum.Enum):
             "Translate subtitle files\n"
             "e.g. 'translate zh-Hans zh-Hant' will translate all '*.zh-Hans.ass' files into zh-Hant"
         ),
-        childs=(Cmd_type_val(("-overwrite",)),),
     )
     mediainfo = Cmd_type_val(
         ("mediainfo",),
         param="<<path> | 'fd' | 'cfd'>",
         description="Get the media info by the Media_info class",
+        childs=(
+            Cmd_type_val(("fd",)),
+            Cmd_type_val(("cfd",)),
+        ),
+    )
+    assinfo = Cmd_type_val(
+        ("assinfo",),
+        param="<<path> | 'fd' | 'cfd'> [-use-libass-spec <0|1>] [-show-chars-len <0|1>]",
+        description="Get the ass info by the Ass class",
         childs=(
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
@@ -443,7 +451,7 @@ class Opt_type(enum.Enum):
             'e.g. "11\\{22}33" ->\n'
             '  "11\\33"   (VSFilter)\n'
             '  "11{22}33" (libass)\n'
-            "Default: 0"
+            "Default: 1"
         ),
         childs=(Cmd_type_val(("0", "1")),),
     )

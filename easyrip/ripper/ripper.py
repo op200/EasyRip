@@ -901,18 +901,18 @@ class Ripper:
 
                     _font_in_sub = self.option_map.get("subset-font-in-sub", "0") == "1"
                     _use_win_font = (
-                        self.option_map.get("subset-use-win-font", "0") == "1"
+                        self.option_map.get("subset-use-win-font", "0") != "0"
                     )
                     _use_libass_spec = (
-                        self.option_map.get("subset-use-libass-spec", "0") == "1"
+                        self.option_map.get("subset-use-libass-spec", "1") != "0"
                     )
                     _drop_non_render = (
-                        self.option_map.get("subset-drop-non-render", "1") == "1"
+                        self.option_map.get("subset-drop-non-render", "1") != "0"
                     )
                     _drop_unkow_data = (
-                        self.option_map.get("subset-drop-unkow-data", "1") == "1"
+                        self.option_map.get("subset-drop-unkow-data", "1") != "0"
                     )
-                    _strict = self.option_map.get("subset-strict", "0") == "1"
+                    _strict = self.option_map.get("subset-strict", "0") != "0"
 
                     subset_res = subset(
                         _ass_list,
@@ -1057,11 +1057,12 @@ class Ripper:
         )
         is_cmd_run_failed: bool = False
         for i, cmd in enumerate(cmd_list, 1):
-            log.info(
+            log.info("Run the command {}", i)
+            log.debug(
                 "Run the command {}",
                 f"{i}:\n  {cmd}",
             )
-            if _cmd_res := os.system(cmd) != 0:
+            if (_cmd_res := os.system(cmd)) != 0:
                 is_cmd_run_failed = True
                 log.error(
                     "Command run failed: status code {}\n  Failed command: {}",

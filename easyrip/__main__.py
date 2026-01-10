@@ -74,6 +74,7 @@ def run() -> NoReturn:
                                 in {
                                     *Cmd_type.cd.value.names,
                                     *Cmd_type.mediainfo.value.names,
+                                    *Cmd_type.assinfo.value.names,
                                     *Cmd_type.fontinfo.value.names,
                                 }
                                 else ()
@@ -98,6 +99,7 @@ def run() -> NoReturn:
                     *Opt_type._i.value.names,
                     *Opt_type._o_dir.value.names,
                     *Opt_type._o.value.names,
+                    *Opt_type._pipe.value.names,
                     *Opt_type._sub.value.names,
                     *Opt_type._only_mux_sub_path.value.names,
                     *Opt_type._soft_sub.value.names,
@@ -141,7 +143,7 @@ def run() -> NoReturn:
 
         try:
             if not run_command(command):
-                log.warning("Stop run command")
+                log.warning("Command run terminated")
         except KeyboardInterrupt:
             log.warning("Manually stop run command")
 

@@ -174,7 +174,7 @@ LANG_MAP: dict[str, str] = {
         'e.g. "11\\{22}33" ->\n'
         '  "11\\33"   (VSFilter)\n'
         '  "11{22}33" (libass)\n'
-        "默认: 0"
+        "默认: 1"
     ),
     Opt_type._subset_drop_non_render.value.description: (
         "丢弃 ASS 中的注释行、Name、Effect等非渲染内容\n"  # .
@@ -277,7 +277,8 @@ LANG_MAP: dict[str, str] = {
     "Check env...": "检测环境中...",
     # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     "Easy Rip command": "Easy Rip 命令",
-    "Stop run Ripper": "Ripper 执行终止",
+    "Stop run and clear Ripper list": "终止执行并清空 Ripper list",
+    "Manually stop run and clear Ripper list": "手动终止执行并清空 Ripper list",
     "There are {} {} during run": "执行期间有 {} 个 {}",
     "Execute shutdown in {}s": "{}s 后执行关机",
     "{} run completed, shutdown in {}s": "{} 执行完成, {}s 后关机",
@@ -300,10 +301,11 @@ LANG_MAP: dict[str, str] = {
     "There is no audio stream in the video, so '-c:a' cannot be used": "视频中没有音频流，所以无法使用 '-c:a'",
     "Unsupported '{}' param: {}": "'{}' 不支持此参数: {}",
     "Manually force exit": "手动强制退出",
+    "Command run terminated": "命令执行终止",
+    "Manually stop run command": "手动终止执行命令",
     "Suggest running the following command to upgrade using pip: {}": "建议运行以下命令以使用 pip 更新: {}",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误, 改为默认值 60s",
     "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
-    "Stop run command": "命令执行终止",
     # log
     "EasyRip_log.html": "EasyRip日志.html",
     "Start": "开始",

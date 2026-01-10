@@ -37,7 +37,7 @@ from .easyrip_mlang import (
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
-from .ripper.sub_and_font import load_fonts
+from .ripper.sub_and_font import Ass, load_fonts
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -305,6 +305,10 @@ def run_ripper_list(
             except Exception as e:
                 log.error(e, deep=True)
                 log.warning("Stop run Ripper")
+            except KeyboardInterrupt:
+                log.warning("Manually stop run and clear Ripper list")
+                Ripper.ripper_list.clear()
+                raise
 
         with ThreadPoolExecutor() as executor:
             for ripper in Ripper.ripper_list:
@@ -322,6 +326,10 @@ def run_ripper_list(
             except Exception as e:
                 log.error(e, deep=True)
                 log.warning("Stop run Ripper")
+            except KeyboardInterrupt:
+                log.warning("Manually stop run and clear Ripper list")
+                Ripper.ripper_list.clear()
+                raise
             sleep(0.5)
 
     if log.warning_num > warning_num:
@@ -494,8 +502,8 @@ def run_command(command: Iterable[str] | str) -> bool:
         case Cmd_type.exit:
             sys.exit(0)
 
-        case Cmd_type.cd | Cmd_type.mediainfo | Cmd_type.fontinfo:
-            _path_tuple: tuple[str, ...] | None = None
+        case Cmd_type.cd | Cmd_type.mediainfo | Cmd_type.assinfo | Cmd_type.fontinfo:
+            _path_tuple: Iterable[str] | None = None
 
             match cmd_list[1]:
                 case "fd" | "cfd" as fd_param:
@@ -527,6 +535,46 @@ def run_command(command: Iterable[str] | str) -> bool:
                 case Cmd_type.mediainfo:
                     for _path in _path_tuple:
                         log.send(f"{_path}: {Media_info.from_path(_path)}")
+                case Cmd_type.assinfo:
+                    USE_LIBASS_SPEC_OPT_NAME = "-use-libass-spec"
+                    use_libass_spec: bool = True
+                    SHOW_CHARS_LEN_OPT_NAME = "-show-chars-len"
+                    show_chars_len: bool = False
+                    is_use_opt: bool = False
+                    for i, s in tuple(enumerate(cmd_list))[2:]:
+                        if s == USE_LIBASS_SPEC_OPT_NAME:
+                            use_libass_spec = cmd_list[i + 1] != "0"
+                            is_use_opt = True
+                        if s == SHOW_CHARS_LEN_OPT_NAME:
+                            show_chars_len = cmd_list[i + 1] != "0"
+                            is_use_opt = True
+                    if is_use_opt:
+                        _path_tuple = cmd_list[1:2]
+                    log.send(
+                        "  ".join(
+                            (
+                                f"{USE_LIBASS_SPEC_OPT_NAME} {1 if use_libass_spec else 0}",
+                                f"{SHOW_CHARS_LEN_OPT_NAME} {1 if show_chars_len else 0}",
+                            )
+                        )
+                    )
+                    for _path in _path_tuple:
+                        try:
+                            ass = Ass(_path)
+                        except Exception as e:
+                            log.error(e)
+                            return False
+
+                        log.send(_path)
+                        for font_sign, ss in ass.get_font_info(
+                            use_libass_spec=use_libass_spec,
+                        ).items():
+                            show_chars_len_log_str = ""
+                            if show_chars_len:
+                                show_chars_len_log_str = f": {len(ss)}"
+                            log.send(
+                                f"  ( {font_sign[0]} / {font_sign[1].name} ){show_chars_len_log_str}"
+                            )
                 case Cmd_type.fontinfo:
                     for _font in itertools.chain.from_iterable(
                         load_fonts(_path) for _path in _path_tuple

@@ -33,7 +33,7 @@ def subset(
     *,
     font_in_sub: bool = False,
     use_win_font: bool = False,
-    use_libass_spec: bool = False,
+    use_libass_spec: bool = True,
     drop_non_render: bool = True,
     drop_unkow_data: bool = True,
     strict: bool = False,

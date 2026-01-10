@@ -862,3 +862,163 @@ class Ass:
             ),
         )
         return "\n\n".join(filter(bool, generator)) + "\n"
+
+    def get_font_info(
+        self,
+        *,
+        use_libass_spec: bool = True,
+    ):
+        """获取 ASS 中需要的字体，以及对应的字符"""
+        from .font import Font_type
+        from .subset import _bold_italic_to_font_type
+
+        DEFAULT_STYLE_NAME = "Default"
+
+        font_sign__str: dict[tuple[str, Font_type], str] = {}
+
+        # Styles
+        style__font_sign: dict[str, tuple[str, Font_type]] = {}
+        for style in self.styles.data:
+            _is_vertical: bool = style.Fontname[0] == "@"
+            _font_name: str = style.Fontname[1:] if _is_vertical else style.Fontname
+            # 获取
+            style__font_sign[style.Name] = (
+                _font_name,
+                _bold_italic_to_font_type(style.Bold, style.Italic),
+            )
+
+        # Events
+        for event in self.events.data:
+            if event.type != Event_type.Dialogue:
+                continue
+
+            default_font_sign: tuple[str, Font_type]
+
+            # 获取每行的默认字体
+            if event.Style not in style__font_sign:
+                if DEFAULT_STYLE_NAME in style__font_sign:
+                    log.warning(
+                        "The style '{}' not in Styles. Defaulting to the style '{}'",
+                        event.Style,
+                        DEFAULT_STYLE_NAME,
+                    )
+                    default_font_sign = style__font_sign[DEFAULT_STYLE_NAME]
+                else:
+                    log.warning(
+                        "The style '{}' and the style 'Default' not in Styles. Defaulting to no font",
+                        event.Style,
+                    )
+                    default_font_sign = ("", Font_type.Regular)
+            else:
+                default_font_sign = style__font_sign[event.Style]
+
+            # 解析 Text
+            current_font_sign: tuple[str, Font_type] = default_font_sign
+            for is_tag, text in Event_data.parse_text(event.Text, use_libass_spec):
+                if is_tag:
+                    tag_fn: str | None = None
+                    tag_bold: str | None = None
+                    tag_italic: str | None = None
+
+                    for tag, value in re.findall(
+                        r"\\\s*(fn|b(?![a-zA-Z])|i(?![a-zA-Z])|r)([^\\}]*)", text
+                    ):
+                        assert isinstance(tag, str) and isinstance(value, str)
+
+                        proc_value = value.strip()
+                        if proc_value.startswith("("):
+                            proc_value = proc_value[1:]
+                            if (_index := proc_value.find(")")) != -1:
+                                proc_value = proc_value[:_index]
+                            proc_value = proc_value.strip()
+
+                        match tag:
+                            case "fn":
+                                tag_fn = proc_value
+                            case "b":
+                                tag_bold = proc_value
+                            case "i":
+                                tag_italic = proc_value
+                            case "r":
+                                r_value = proc_value if "(" in value else value.rstrip()
+                                if r_value in style__font_sign:
+                                    current_font_sign = style__font_sign[r_value]
+                                else:
+                                    # 空为还原样式, 非样式表内样式名效果同空, 但发出不规范警告
+                                    current_font_sign = default_font_sign
+                                    if r_value != "":
+                                        log.warning(
+                                            "The \\r style '{}' not in Styles", r_value
+                                        )
+
+                    new_fontname: str = current_font_sign[0]
+                    new_bold: bool
+                    new_italic: bool
+                    new_bold, new_italic = current_font_sign[1].value
+
+                    if tag_fn is not None:
+                        match tag_fn:
+                            case "":
+                                new_fontname = default_font_sign[0]
+                            case _:
+                                _is_vertical: bool = tag_fn.startswith("@")
+                                new_fontname = tag_fn[1:] if _is_vertical else tag_fn
+
+                    if tag_bold is not None:
+                        match tag_bold:
+                            case "":
+                                new_bold = default_font_sign[1].value[0]
+                            case "0":
+                                new_bold = False
+                            case "1":
+                                new_bold = True
+                            case _:
+                                log.error(
+                                    "Illegal format: '{}' in line: {}",
+                                    f"\\b{tag_bold}",
+                                    event.Text,
+                                )
+
+                    if tag_italic is not None:
+                        match tag_italic:
+                            case "":
+                                new_italic = default_font_sign[1].value[1]
+                            case "0":
+                                new_italic = False
+                            case "1":
+                                new_italic = True
+                            case _:
+                                log.error(
+                                    "Illegal format: '{}' in line: {}",
+                                    f"\\i{tag_italic}",
+                                    event.Text,
+                                )
+
+                    current_font_sign = (
+                        new_fontname,
+                        Font_type((new_bold, new_italic)),
+                    )
+
+                elif current_font_sign[0]:  # 空字符串为不使用字体
+                    add_text = re.sub(r"\\[nN]", "", text).replace("\\h", "\u00a0")
+
+                    if current_font_sign not in font_sign__str:
+                        font_sign__str[current_font_sign] = ""
+
+                    font_sign__str[current_font_sign] += add_text
+
+        return {font_sign: set(s) for font_sign, s in font_sign__str.items()}
+
+    @classmethod
+    def analysis_font_info(
+        cls,
+        ass: Self | Path | str,
+        /,
+        *,
+        use_libass_spec: bool = True,
+    ):
+        if isinstance(ass, str):
+            ass = Path(ass)
+        if isinstance(ass, Path):
+            ass = cls(ass)
+        return ass.get_font_info(use_libass_spec=use_libass_spec)
