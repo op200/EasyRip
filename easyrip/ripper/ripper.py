@@ -660,7 +660,7 @@ class Ripper:
                 )
 
                 encoder_format_str_list = [
-                    get_vs_ff_cmd(f'-c:v {preset_name.value} "{_param}"')
+                    get_vs_ff_cmd(f"-c:v {preset_name.value} {_param}")
                 ]
 
             case Ripper.Preset_name.svtav1:
@@ -678,7 +678,7 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v libsvtav1 "{_param}"')]
+                encoder_format_str_list = [get_vs_ff_cmd(f"-c:v libsvtav1 {_param}")]
 
             case Ripper.Preset_name.vvenc:
                 _option_map = {
@@ -694,7 +694,7 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v libvvenc "{_param}"')]
+                encoder_format_str_list = [get_vs_ff_cmd(f"-c:v libvvenc {_param}")]
 
             case Ripper.Preset_name.ffv1:
                 _option_map = {
@@ -706,7 +706,7 @@ class Ripper:
                     (f"-{key} {val}" for key, val in _option_map.items() if val)
                 )
 
-                encoder_format_str_list = [get_vs_ff_cmd(f'-c:v ffv1 "{_param}"')]
+                encoder_format_str_list = [get_vs_ff_cmd(f"-c:v ffv1 {_param}")]
 
             case Ripper.Preset_name.subset:
                 encoder_format_str_list = []
