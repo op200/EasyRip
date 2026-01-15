@@ -474,17 +474,21 @@ class Ripper:
                         f"-map 0:{_audio_info.index} -c:a {_encoder} {ffparams_out} "
                         f'"{_new_output_str}.wav" '
                     )
-                    _flac_encode_str_list = [
-                        (
-                            f"flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
-                            f'-o "{_new_output_str}.flac" "{_new_output_str}.wav"'
-                        ),
-                        f'{cmd_head_del} "{_new_output_str}.wav"',
-                    ]
+                    _flac_encode_str_list.extend(
+                        [
+                            (
+                                f"flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
+                                f'-o "{_new_output_str}.flac" "{_new_output_str}.wav"'
+                            ),
+                            f'{cmd_head_del} "{_new_output_str}.wav"',
+                        ]
+                    )
 
                     _mux_flac_input_list.append(f'"{_new_output_str}.flac"')
 
-                    _del_flac_str_list = [f'{cmd_head_del} "{_new_output_str}.flac" ']
+                    _del_flac_str_list.append(
+                        f'{cmd_head_del} "{_new_output_str}.flac" '
+                    )
 
                 match len(_mux_flac_input_list):
                     case 0:
