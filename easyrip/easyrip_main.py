@@ -775,8 +775,27 @@ def run_command(command: Iterable[str] | str) -> bool:
                     ) as f:
                         for line in f.read().splitlines():
                             log.send(line, is_format=False)
+
                 case "clear" | "clean":
-                    easyrip_prompt.clear()
+                    easyrip_prompt.clear_history()
+
+                case "add":
+                    _name = cmd_list[2]
+                    _cmd = (
+                        command.split(maxsplit=3)[-1]
+                        if isinstance(command, str)
+                        else " ".join(cmd_list[3:])
+                    )
+                    if " " in _name:
+                        log.error("The name must not contain spaces")
+                        return False
+                    log.info("Add custom prompt {!r} = {!r}", _name, _cmd)
+                    return easyrip_prompt.add_custom_prompt(_name, _cmd)
+
+                case "del":
+                    _name = cmd_list[2]
+                    log.info("Del custom prompt {!r}", _name)
+                    return easyrip_prompt.del_custom_prompt(_name)
 
         case Cmd_type.translate:
             if not (_infix := cmd_list[1]):

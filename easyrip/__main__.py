@@ -17,6 +17,8 @@ from .easyrip_command import (
     Cmd_type,
     Cmd_type_val,
     CmdCompleter,
+    FuzzyCompleter,
+    NestedCompleter,
     Opt_type,
     OptCompleter,
     nested_dict,
@@ -128,6 +130,14 @@ def run() -> NoReturn:
                     (
                         _ctv_to_nc(cmd_ctv_tuple),
                         OptCompleter(opt_tree=_ctv_to_nd(ct.value for ct in Opt_type)),
+                        FuzzyCompleter(
+                            NestedCompleter(
+                                {
+                                    k: NestedCompleter({v: None})
+                                    for k, v in easyrip_prompt.get_custom_prompt().items()
+                                }
+                            ),
+                        ),
                     )
                 ),
                 history=prompt_history,

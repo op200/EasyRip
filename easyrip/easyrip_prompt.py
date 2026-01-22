@@ -1,5 +1,6 @@
 import os
 import re
+import tomllib
 from collections.abc import Iterable
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
@@ -8,14 +9,72 @@ from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.history import FileHistory
 
 from .global_val import C_Z, get_CONFIG_DIR
+from .utils import type_match
 
 
 class easyrip_prompt:
     PROMPT_HISTORY_FILE = get_CONFIG_DIR() / "prompt_history.txt"
+    PROMPT_CUSTOM_FILE = get_CONFIG_DIR() / "prompt_custom.toml"
+
+    __prompt_custom_data: dict[str, str] | None = None
 
     @classmethod
-    def clear(cls) -> None:
+    def clear_history(cls) -> None:
         cls.PROMPT_HISTORY_FILE.unlink(True)
+
+    @classmethod
+    def get_custom_prompt(cls) -> dict[str, str]:
+        if cls.__prompt_custom_data is not None:
+            return cls.__prompt_custom_data
+
+        cls.PROMPT_CUSTOM_FILE.touch()
+        with cls.PROMPT_CUSTOM_FILE.open("rb") as f:
+            data = tomllib.load(f)
+            assert type_match(data, dict[str, str])
+            cls.__prompt_custom_data = data
+            return data
+
+    @classmethod
+    def update_custom_prompt(cls, data: dict[str, str]) -> bool:
+        cls.PROMPT_CUSTOM_FILE.touch()
+        with cls.PROMPT_CUSTOM_FILE.open("wt", encoding="utf-8", newline="\n") as f:
+            f.writelines(f"{k!r} = {v!r}\n" for k, v in data.items())
+        cls.__prompt_custom_data = None
+        return True
+
+    @classmethod
+    def add_custom_prompt(cls, name: str, cmd: str) -> bool:
+        data: dict[str, str] = cls.get_custom_prompt()
+        assert type_match(data, dict[str, str])
+
+        if name in data:
+            from .easyrip_log import log
+
+            log.error("The name {!r} is already in custom prompt", name)
+            return False
+
+        data[name] = cmd
+
+        cls.update_custom_prompt(data)
+
+        return True
+
+    @classmethod
+    def del_custom_prompt(cls, name: str) -> bool:
+        data: dict[str, str] = cls.get_custom_prompt()
+
+        pop_res: bool
+        if name in data:
+            data.pop(name)
+            pop_res = True
+            cls.update_custom_prompt(data)
+        else:
+            from .easyrip_log import log
+
+            log.warning("The name {!r} not in custom prompt", name)
+            pop_res = False
+
+        return pop_res
 
 
 class ConfigFileHistory(FileHistory):

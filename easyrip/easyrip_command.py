@@ -254,11 +254,18 @@ class Cmd_type(enum.Enum):
             "history\n"  # .
             "  Show prompt history\n"
             "clear | clean\n"
-            "  Delete history file"
+            "  Delete history file\n"
+            "add <name:string> <cmd:string>\n"
+            "  Add a custom prompt\n"
+            "  e.g. prompt add myprompt echo my prompt\n"
+            "del <name:string>\n"
+            "  Delete a custom prompt"
         ),
         childs=(
             Cmd_type_val(("history",)),
             Cmd_type_val(("clear", "clean")),
+            Cmd_type_val(("add",)),
+            Cmd_type_val(("del",)),
         ),
     )
     translate = Cmd_type_val(
