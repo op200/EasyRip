@@ -345,7 +345,7 @@ def run_ripper_list(
         log.info("Execute shutdown in {}s", shutdown_sec)
         if os.name == "nt":
             _cmd = (
-                f'shutdown /s /t {shutdown_sec} /c "{gettext("{} run completed, shutdown in {}s", PROJECT_TITLE, shutdown_sec)}"',
+                f'shutdown /s /t {shutdown_sec} /d p:4:0 /c "{gettext("{} run completed, shutdown in {}s", PROJECT_TITLE, shutdown_sec)}"',
             )
         elif os.name == "posix":
             _cmd = (f"shutdown -h +{shutdown_sec // 60}",)
@@ -776,7 +776,7 @@ def run_command(command: Iterable[str] | str) -> bool:
                         for line in f.read().splitlines():
                             log.send(line, is_format=False)
 
-                case "clear" | "clean":
+                case "history_clear":
                     easyrip_prompt.clear_history()
 
                 case "add":
@@ -796,6 +796,15 @@ def run_command(command: Iterable[str] | str) -> bool:
                     _name = cmd_list[2]
                     log.info("Del custom prompt {!r}", _name)
                     return easyrip_prompt.del_custom_prompt(_name)
+
+                case "show":
+                    if _custom_prompt := easyrip_prompt.get_custom_prompt():
+                        log.send(
+                            "\n".join(
+                                f"{k!r} = {v!r}" for k, v in _custom_prompt.items()
+                            ),
+                            is_format=False,
+                        )
 
         case Cmd_type.translate:
             if not (_infix := cmd_list[1]):

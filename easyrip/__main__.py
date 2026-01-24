@@ -17,15 +17,18 @@ from .easyrip_command import (
     Cmd_type,
     Cmd_type_val,
     CmdCompleter,
-    FuzzyCompleter,
-    NestedCompleter,
     Opt_type,
     OptCompleter,
     nested_dict,
 )
 from .easyrip_config.config import Config_key, config
 from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
-from .easyrip_prompt import ConfigFileHistory, SmartPathCompleter, easyrip_prompt
+from .easyrip_prompt import (
+    ConfigFileHistory,
+    CustomPromptCompleter,
+    SmartPathCompleter,
+    easyrip_prompt,
+)
 from .global_val import C_D, C_Z
 
 
@@ -130,14 +133,7 @@ def run() -> NoReturn:
                     (
                         _ctv_to_nc(cmd_ctv_tuple),
                         OptCompleter(opt_tree=_ctv_to_nd(ct.value for ct in Opt_type)),
-                        FuzzyCompleter(
-                            NestedCompleter(
-                                {
-                                    k: NestedCompleter({v: None})
-                                    for k, v in easyrip_prompt.get_custom_prompt().items()
-                                }
-                            ),
-                        ),
+                        CustomPromptCompleter(),
                     )
                 ),
                 history=prompt_history,
