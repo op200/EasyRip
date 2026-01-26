@@ -35,16 +35,21 @@ log.write_level = log.LogLevel.none
 
 
 def run_command_and_run_ripper_list(cmd: str) -> bool:
-    if not (run_command(cmd)):
-        log.error("Run command failed: {}", cmd)
-        return False
-
-    for ripper in Ripper.ripper_list:
-        if not ripper.run():
-            log.error("Run ripper failed: {}", ripper)
+    def __run(cmd: str) -> bool:
+        if not (run_command(cmd)):
+            log.error("Run command failed: {}", cmd)
             return False
 
-    return True
+        for ripper in Ripper.ripper_list:
+            if not ripper.run():
+                log.error("Run ripper failed: {}", ripper)
+                return False
+
+        return True
+
+    res = __run(cmd)
+    Ripper.ripper_list.clear()
+    return res
 
 
 class TestBasic(unittest.TestCase):

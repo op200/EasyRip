@@ -27,6 +27,7 @@ classifiers = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "pyperclip>=1.11.0",
     "prompt-toolkit>=3.0.52",
     "fonttools>=4.61.1",
     "pycryptodome>=3.23.0",

@@ -120,7 +120,7 @@ class mkvtoolnix:
                     log.debug(
                         "'{}' execution failed: {}",
                         f"{cls.__name__}.{cls.get_latest_release_ver.__name__}",
-                        f"XML parse faild: {xml.etree.ElementTree.tostring(xml_tree)}",
+                        f"XML parse failed: {xml.etree.ElementTree.tostring(xml_tree)}",
                         print_level=log.LogLevel._detail,
                     )
                     return None

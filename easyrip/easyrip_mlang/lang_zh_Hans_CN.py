@@ -328,7 +328,7 @@ LANG_MAP: dict[str, str] = {
     "There have error in running": "执行时出错",
     "{} param illegal": "{} 参数非法",
     'The file "{}" already exists, skip translating it': '文件 "{}" 已存在, 跳过翻译',
-    "Subset faild, cancel mux": "子集化失败, 取消混流",
+    "Subset failed, cancel mux": "子集化失败, 取消混流",
     "FFmpeg report: {}": "FFmpeg 报告: {}",
     "{} not found. Skip it": "没找到 {}。默认跳过",
     "{} not found. Skip it. Perhaps you want the {}": "没找到 {}。默认跳过。或许你想要的是 {}",

@@ -120,7 +120,7 @@ class Media_info:
             sample_fmt = _audio_info_dict.get("sample_fmt")
             if sample_fmt is None:
                 log.debug(
-                    'Faild to get audio info: {}. file "{}" track index {}',
+                    'Failed to get audio info: {}. file "{}" track index {}',
                     "sample_fmt",
                     path,
                     index,
@@ -130,7 +130,7 @@ class Media_info:
             sample_rate = _audio_info_dict.get("sample_rate")
             if sample_rate is None:
                 log.debug(
-                    'Faild to get audio info: {}. file "{}" track index {}',
+                    'Failed to get audio info: {}. file "{}" track index {}',
                     "sample_rate",
                     path,
                     index,
@@ -140,7 +140,7 @@ class Media_info:
             bits_per_sample = _audio_info_dict.get("bits_per_sample")
             if bits_per_sample is None:
                 log.debug(
-                    'Faild to get audio info: {}. file "{}" track index {}',
+                    'Failed to get audio info: {}. file "{}" track index {}',
                     "bits_per_sample",
                     path,
                     index,
@@ -150,7 +150,7 @@ class Media_info:
             bits_per_raw_sample = _audio_info_dict.get("bits_per_raw_sample")
             if bits_per_raw_sample is None:
                 log.debug(
-                    'Faild to get audio info: {}. file "{}" track index {}',
+                    'Failed to get audio info: {}. file "{}" track index {}',
                     "bits_per_raw_sample",
                     path,
                     index,

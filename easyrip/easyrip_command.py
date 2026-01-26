@@ -664,6 +664,15 @@ class Opt_type(enum.Enum):
         ),
         childs=(Cmd_type_val(("0", "1")),),
     )
+    _quality_detection = Cmd_type_val(
+        ("-quality-detection",),
+        param="<algorithm>[:<threshold>]",
+        description=(
+            "Comparison of quality between detection and source after encoding is completed\n"
+            "Algorithm: ssim psnr vmaf"
+        ),
+        childs=(Cmd_type_val(("ssim", "psnr", "vmaf")),),
+    )
 
     @classmethod
     def from_str(cls, s: str) -> Self | None:

@@ -6,6 +6,8 @@ import Crypto
 import fontTools
 import prompt_toolkit
 from prompt_toolkit import ANSI, prompt
+from prompt_toolkit.application import get_app
+from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
 from prompt_toolkit.completion import merge_completers
 from prompt_toolkit.history import InMemoryHistory
 from prompt_toolkit.input.ansi_escape_sequences import ANSI_SEQUENCES
@@ -49,7 +51,21 @@ def run() -> NoReturn:
 
     @key_bindings.add(Keys.ControlC)
     def _(event: KeyPressEvent) -> None:
+        buffer = event.app.current_buffer
+
+        # 检查是否有选中的文本
+        if buffer.selection_state is not None:
+            get_app().clipboard.set_data(buffer.copy_selection())
+            return
+
         event.app.exit(exception=KeyboardInterrupt, style="class:exiting")
+
+    @key_bindings.add(Keys.ControlA)
+    def _(event: KeyPressEvent) -> None:
+        buff = event.app.current_buffer
+        buff.cursor_position = 0
+        buff.start_selection()
+        buff.cursor_position = len(buff.text)
 
     @key_bindings.add(Keys.ControlD)
     def _(event: KeyPressEvent) -> None:
@@ -64,6 +80,7 @@ def run() -> NoReturn:
         return named_commands.get_by_name("unix-word-rubout").handler(event)
 
     path_completer = SmartPathCompleter()
+    clipboard = PyperclipClipboard()
 
     def _ctv_to_nc(ctvs: Iterable[Cmd_type_val]) -> CmdCompleter:
         return CmdCompleter(
@@ -138,6 +155,7 @@ def run() -> NoReturn:
                 ),
                 history=prompt_history,
                 complete_while_typing=True,
+                clipboard=clipboard,
             )
             if command.startswith(C_Z):
                 raise EOFError

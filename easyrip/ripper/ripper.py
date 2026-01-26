@@ -1,3 +1,4 @@
+import csv
 import os
 import re
 import shutil
@@ -14,7 +15,7 @@ from typing import Final, Self, final
 from .. import easyrip_web
 from ..easyrip_log import log
 from ..easyrip_mlang import Global_lang_val, gettext, translate_subtitles
-from ..utils import get_base62_time
+from ..utils import get_base62_time, read_text
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -1088,9 +1089,15 @@ class Ripper:
             f'{gettext("Encoding speed")}: <span style="color:darkcyan;">{speed}</span><br>'
         )
 
+        # 获取 ffmpeg report 中的报错
+        if FF_REPORT_LOG_FILE.is_file():
+            with FF_REPORT_LOG_FILE.open("rt", encoding="utf-8") as file:
+                for line in file.readlines()[2:]:
+                    log.warning("FFmpeg report: {}", line)
+
         if is_cmd_run_failed:
             log.error("There have error in running")
-        else:  # 多文件合成
+        else:  # 多文件合成 or 后处理
             # flac 音频轨合成
             if (
                 self.preset_name != Ripper.Preset_name.flac
@@ -1245,16 +1252,133 @@ class Ripper:
                     ).run() and os.path.exists(new_full_name):
                         os.remove(new_full_name)
                 else:
-                    log.error("Subset faild, cancel mux")
+                    log.error("Subset failed, cancel mux")
 
                 # 清理临时文件
                 shutil.rmtree(subset_folder)
 
-        # 获取 ffmpeg report 中的报错
-        if FF_REPORT_LOG_FILE.is_file():
-            with FF_REPORT_LOG_FILE.open("rt", encoding="utf-8") as file:
-                for line in file.readlines()[2:]:
-                    log.warning("FFmpeg report: {}", line)
+            # 画质检测
+            if quality_detection := self.option_map.get("quality-detection"):
+                quality_detection = quality_detection.split(":")
+                quality_detection_th: float
+                quality_detection_filter: str
+                while True:
+                    match quality_detection[0]:
+                        case "ssim":
+                            quality_detection_th = 0.9
+                            quality_detection_filter = "ssim=f="
+
+                            def quality_detection_cmp(
+                                text: str, threshold: float
+                            ) -> None:
+                                for line in text.splitlines():
+                                    values = tuple(
+                                        s.split(":")[1] for s in line.split()[:-1]
+                                    )
+                                    ssim_all = float(values[-1])
+                                    n = values[0]
+                                    log.debug(
+                                        f"{n}: {ssim_all}",
+                                        is_format=False,
+                                        print_level=log.LogLevel._detail,
+                                    )
+                                    if ssim_all < threshold:
+                                        log.error(
+                                            "SSIM {} < threshold {} in frame {}",
+                                            ssim_all,
+                                            threshold,
+                                            n,
+                                        )
+
+                            break
+                        case "psnr":
+                            quality_detection_th = 30
+                            quality_detection_filter = "psnr=f="
+
+                            def quality_detection_cmp(
+                                text: str, threshold: float
+                            ) -> None:
+                                for line in text.splitlines():
+                                    values = tuple(
+                                        s.split(":")[1] for s in line.split()
+                                    )
+                                    psnr_avg_all = float(values[-4])
+                                    n = values[0]
+                                    log.debug(
+                                        f"{n}: {psnr_avg_all}",
+                                        is_format=False,
+                                        print_level=log.LogLevel._detail,
+                                    )
+                                    if psnr_avg_all < threshold:
+                                        log.error(
+                                            "PSNR {} < threshold {} in frame {}",
+                                            psnr_avg_all,
+                                            threshold,
+                                            n,
+                                        )
+
+                            break
+                        case "vmaf":
+                            quality_detection_th = 80
+                            quality_detection_filter = "libvmaf=log_fmt=csv:log_path="
+
+                            def quality_detection_cmp(
+                                text: str, threshold: float
+                            ) -> None:
+                                for line in tuple(csv.reader(text))[1:]:
+                                    vmaf = float(line[-1])
+                                    n = int(line[0]) + 1
+                                    log.debug(
+                                        f"{n}: {vmaf}",
+                                        is_format=False,
+                                        print_level=log.LogLevel._detail,
+                                    )
+                                    if vmaf < threshold:
+                                        log.error(
+                                            "VMAF {} < threshold {} in frame {}",
+                                            vmaf,
+                                            threshold,
+                                            n,
+                                        )
+
+                            break
+                        case _:
+                            log.error(
+                                "Param error from '{}': {}",
+                                "-quality-detection",
+                                f"{quality_detection[0]} -> ssim",
+                            )
+                            quality_detection[0] = "ssim"
+
+                if len(quality_detection) > 1:
+                    try:
+                        quality_detection_th = float(quality_detection[1])
+                    except ValueError as e:
+                        log.error("Param error from '{}': {}", "-quality-detection", e)
+
+                quality_detection_data_file: Path = Path(
+                    self.output_dir, "quality_detection_data.log"
+                )
+                quality_detection_data_file_filter_str: str = (
+                    str(quality_detection_data_file)
+                    .replace("\\", "/")
+                    .replace(":", "\\\\:")
+                )
+                if os.system(
+                    f'ffmpeg -i "{self.input_path_list[0]}" -i "{os.path.join(self.output_dir, temp_name)}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -'
+                ):
+                    log.error("Run {} failed", "-quality-detection")
+                else:
+                    log.debug(
+                        "'{}' start: {}",
+                        "-quality-detection",
+                        f"{quality_detection[0]}:{quality_detection_th}",
+                    )
+                    quality_detection_cmp(
+                        read_text(quality_detection_data_file), quality_detection_th
+                    )
+                    log.debug("'{}' end", "-quality-detection")
+                quality_detection_data_file.unlink(missing_ok=True)
 
         # 获取体积
         temp_name_full = os.path.join(self.output_dir, temp_name)
