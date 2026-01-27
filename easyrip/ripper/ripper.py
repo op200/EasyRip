@@ -472,7 +472,7 @@ class Ripper:
                             else (
                                 'mkvmerge -o "{output}" '
                                 + mkv_all_need_opt_str
-                                + '--no-audio "{input}"'
+                                + '"{input}"'
                             )
                         )
                 if _encoder_format_str is not None:
