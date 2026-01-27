@@ -28,6 +28,12 @@ class Cmd_type_val:
     _param: str
     _description: str
     childs: tuple["Cmd_type_val", ...]
+    is_no_prompt_child: bool
+    """此项作为父项的子项时，不在自动补全时使用"""
+    is_no_doc_child: bool
+    """此项作为父项的子项时，不在 doc 时使用"""
+    is_all_no_doc_childs: bool
+    """此项的所有子项不在 doc 时使用"""
 
     @property
     def param(self) -> str:
@@ -64,11 +70,17 @@ class Cmd_type_val:
         param: str = "",
         description: str = "",
         childs: tuple["Cmd_type_val", ...] = (),
+        is_no_prompt_child: bool = False,
+        is_no_doc_child: bool = False,
+        is_all_no_doc_childs: bool = False,
     ) -> None:
         self.names = names
         self.param = param
         self.description = description
         self.childs = childs
+        self.is_no_prompt_child = is_no_prompt_child
+        self.is_no_doc_child = is_no_doc_child
+        self.is_all_no_doc_childs = is_all_no_doc_childs
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Cmd_type_val):
@@ -79,7 +91,19 @@ class Cmd_type_val:
         return hash(self.names)
 
     def to_doc(self) -> str:
-        return f"{' / '.join(self.names)} {self.param}\n{textwrap.indent(self.description, ' │ ', lambda _: True)}"
+        description: str = ((f"{self.description}\n") if self.description else "") + (
+            ""
+            if self.is_all_no_doc_childs
+            else "".join(
+                f"\n{child.to_doc()}"
+                for child in self.childs
+                if not child.is_no_doc_child
+            )
+        )
+        return (
+            f"{' / '.join(self.names)} {self.param}\n"
+            f"{textwrap.indent(description, ' │ ', lambda _: True)}"  # 永远返回 True 才能保证空行前也能加字符
+        )
 
 
 class Cmd_type(enum.Enum):
@@ -123,6 +147,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("send",)),
             Cmd_type_val(("debug",)),
         ),
+        is_all_no_doc_childs=True,
     )
     _run_any = Cmd_type_val(
         ("$",),
@@ -146,6 +171,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
         ),
+        is_all_no_doc_childs=True,
     )
     dir = ls = Cmd_type_val(
         ("dir", "ls"),
@@ -163,55 +189,54 @@ class Cmd_type(enum.Enum):
     list = Cmd_type_val(
         ("list",),
         param="<list option>",
-        description=(
-            "Operate Ripper list\n"
-            " \n"
-            "Default:\n"
-            "  Show Ripper list\n"
-            " \n"
-            "clear / clean:\n"
-            "  Clear Ripper list\n"
-            " \n"
-            "del / pop <index>:\n"
-            "  Delete a Ripper from Ripper list\n"
-            " \n"
-            "sort [n][r]:\n"
-            "  Sort list\n"
-            "  'n': Natural Sorting\n"
-            "  'r': Reverse\n"
-            " \n"
-            "<int> <int>:\n"
-            "  Exchange specified index"
-        ),
+        description="Operate Ripper list",
         childs=(
-            Cmd_type_val(("clear", "clean")),
-            Cmd_type_val(("del", "pop")),
-            Cmd_type_val(("sort",), childs=(Cmd_type_val(("n", "r", "nr")),)),
+            Cmd_type_val(
+                ("Default",), description="Show Ripper list", is_no_prompt_child=True
+            ),
+            Cmd_type_val(("clear", "clean"), description="Clear Ripper list"),
+            Cmd_type_val(
+                ("del", "pop"),
+                param="<index>",
+                description="Delete a Ripper from Ripper list",
+            ),
+            Cmd_type_val(
+                ("sort",),
+                param="[n][r]",
+                description=(
+                    "Sort list\n"  # .
+                    "'n': Natural Sorting\n"
+                    "'r': Reverse"
+                ),
+                childs=(Cmd_type_val(("n", "r", "nr")),),
+            ),
+            Cmd_type_val(
+                ("<int> <int>",),
+                description="Exchange specified index",
+                is_no_prompt_child=True,
+            ),
         ),
     )
     run = Cmd_type_val(
         ("run",),
         param="[<run option>] [-multithreading <0 | 1>]",
-        description=(
-            "Run the Ripper in the Ripper list\n"
-            "\n"
-            "Default:\n"
-            "  Only run\n"
-            "\n"
-            "exit:\n"
-            "  Close program when run finished\n"
-            "\n"
-            "shutdown [<sec>]:\n"
-            "  Shutdown when run finished\n"
-            "  Default: 60\n"
-            "\n"
-            "server [<address>]:[<port>]@[<password>]:\n"
-            "  See the corresponding help for details"
-        ),
+        description="Run the Ripper from the Ripper list",
         childs=(
-            Cmd_type_val(("exit",)),
-            Cmd_type_val(("shutdown",)),
-            Cmd_type_val(("server",)),
+            Cmd_type_val(("Default",), description="Only run", is_no_prompt_child=True),
+            Cmd_type_val(("exit",), description="Close program when run finished"),
+            Cmd_type_val(
+                ("shutdown",),
+                param="[<sec>]",
+                description=(
+                    "Shutdown when run finished\n"  # .
+                    "Default: 60"
+                ),
+            ),
+            Cmd_type_val(
+                ("server",),
+                param="[<address>]:[<port>]@[<password>]",
+                description="See the corresponding help for details",
+            ),
         ),
     )
     server = Cmd_type_val(
@@ -226,23 +251,23 @@ class Cmd_type(enum.Enum):
     config = Cmd_type_val(
         ("config",),
         param="<config option>",
-        description=(
-            "regenerate | clear | clean\n"
-            "  Regenerate config file\n"
-            "open\n"
-            "  Open the directory where the config file is located\n"
-            "list\n"
-            "  Show all config adjustable options\n"
-            "set <key> <val>\n"
-            "  Set config\n"
-            "  e.g. config set language zh"
-        ),
         childs=(
-            Cmd_type_val(("regenerate", "clear", "clean")),
-            Cmd_type_val(("open",)),
-            Cmd_type_val(("list",)),
+            Cmd_type_val(
+                ("regenerate", "clear", "clean", "reset"),
+                description="Regenerate config file",
+            ),
+            Cmd_type_val(
+                ("open",),
+                description="Open the directory where the config file is located",
+            ),
+            Cmd_type_val(("list",), description="Show all config adjustable options"),
             Cmd_type_val(
                 ("set",),
+                param="<key> <val>",
+                description=(
+                    "Set config\n"  # .
+                    "e.g. config set language zh"
+                ),
                 childs=tuple(Cmd_type_val((k,)) for k in Config_key._member_map_),
             ),
         ),
@@ -250,25 +275,21 @@ class Cmd_type(enum.Enum):
     prompt = Cmd_type_val(
         ("prompt",),
         param="<prompt option>",
-        description=(
-            "history\n"  # .
-            "  Show prompt history\n"
-            "history_clear\n"
-            "  Delete history file\n"
-            "add <name:string> <cmd:string>\n"
-            "  Add a custom prompt\n"
-            "  e.g. prompt add myprompt echo my prompt\n"
-            "del <name:string>\n"
-            "  Delete a custom prompt"
-            "show\n"
-            "  Show custom prompt"
-        ),
         childs=(
-            Cmd_type_val(("history",)),
-            Cmd_type_val(("history_clear",)),
-            Cmd_type_val(("add",)),
-            Cmd_type_val(("del",)),
-            Cmd_type_val(("show",)),
+            Cmd_type_val(("history",), description="Show prompt history"),
+            Cmd_type_val(("history_clear",), description="Delete history file"),
+            Cmd_type_val(
+                ("add",),
+                param="<name:string> <cmd:string>",
+                description=(
+                    "Add a custom prompt\n"  # .
+                    "e.g. prompt add myprompt echo my prompt"
+                ),
+            ),
+            Cmd_type_val(
+                ("del",), param="<name:string>", description="Delete a custom prompt"
+            ),
+            Cmd_type_val(("show",), description="Show custom prompt"),
         ),
     )
     translate = Cmd_type_val(
@@ -287,6 +308,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
         ),
+        is_all_no_doc_childs=True,
     )
     assinfo = Cmd_type_val(
         ("assinfo",),
@@ -296,6 +318,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
         ),
+        is_all_no_doc_childs=True,
     )
     fontinfo = Cmd_type_val(
         ("fontinfo",),
@@ -305,6 +328,7 @@ class Cmd_type(enum.Enum):
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
         ),
+        is_all_no_doc_childs=True,
     )
     Option = Cmd_type_val(
         ("Option",),
@@ -325,7 +349,7 @@ class Cmd_type(enum.Enum):
 
     @classmethod
     def to_doc(cls) -> str:
-        return "\n\n".join(ct.value.to_doc() for ct in cls)
+        return "\n".join(ct.value.to_doc() for ct in cls)
 
 
 class Opt_type(enum.Enum):
@@ -340,6 +364,7 @@ class Opt_type(enum.Enum):
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
         ),
+        is_all_no_doc_childs=True,
     )
     _o_dir = Cmd_type_val(
         ("-o:dir",),
@@ -361,10 +386,12 @@ class Opt_type(enum.Enum):
         description=(
             "If enable, output file name will add auto infix:\n"
             "  no audio: '.v'\n"
-            "  with audio: '.va'\n"
-            "Default: 1"
+            "  with audio: '.va'"
         ),
-        childs=(Cmd_type_val(("0", "1")),),
+        childs=(
+            Cmd_type_val(("Default:",), param="1", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
+        ),
     )
     _preset = _p = Cmd_type_val(
         ("-p", "-preset"),
@@ -375,7 +402,9 @@ class Opt_type(enum.Enum):
             "Preset name:\n"
             f"{Preset_name.to_help_string('  ')}"
         ),
-        childs=(Cmd_type_val(tuple(Preset_name._value2member_map_)),),
+        childs=(
+            Cmd_type_val(tuple(Preset_name._value2member_map_), is_no_doc_child=True),
+        ),
     )
     _pipe = Cmd_type_val(
         ("-pipe",),
@@ -411,7 +440,7 @@ class Opt_type(enum.Enum):
             "'auto:...' can only select which match infix.\n"
             "  e.g. 'auto:zh-Hans:zh-Hant'"
         ),
-        childs=(Cmd_type_val(("auto",)),),
+        childs=(Cmd_type_val(("auto",), is_no_doc_child=True),),
     )
     _only_mux_sub_path = Cmd_type_val(
         ("-only-mux-sub-path",),
@@ -425,7 +454,7 @@ class Opt_type(enum.Enum):
             "Mux ASS subtitles in MKV with subset\n"  # .
             "The usage of 'auto' is detailed in '-sub'"
         ),
-        childs=(Cmd_type_val(("auto",)),),
+        childs=(Cmd_type_val(("auto",), is_no_doc_child=True),),
     )
     _subset_font_dir = Cmd_type_val(
         ("-subset-font-dir",),
@@ -438,20 +467,20 @@ class Opt_type(enum.Enum):
     _subset_font_in_sub = Cmd_type_val(
         ("-subset-font-in-sub",),
         param="<0 | 1>",
-        description=(
-            "Encode fonts into ASS file instead of standalone files\n"  # .
-            "Default: 0"
+        description="Encode fonts into ASS file instead of standalone files",
+        childs=(
+            Cmd_type_val(("Default:",), param="0", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
         ),
-        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_use_win_font = Cmd_type_val(
         ("-subset-use-win-font",),
         param="<0 | 1>",
-        description=(
-            "Use Windows fonts when can not find font in subset-font-dir\n"  # .
-            "Default: 0"
+        description="Use Windows fonts when can not find font in subset-font-dir",
+        childs=(
+            Cmd_type_val(("Default:",), param="0", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
         ),
-        childs=(Cmd_type_val(("0", "1")),),
     )
     _subset_use_libass_spec = Cmd_type_val(
         ("-subset-use-libass-spec",),
@@ -459,38 +488,44 @@ class Opt_type(enum.Enum):
         description=(
             "Use libass specification when subset\n"
             'e.g. "11\\{22}33" ->\n'
-            '  "11\\33"   (VSFilter)\n'
-            '  "11{22}33" (libass)\n'
-            "Default: 1"
+            '       "11\\33"    (VSFilter)\n'
+            '       "11{22}33" (libass)'
         ),
-        childs=(Cmd_type_val(("0", "1")),),
+        childs=(
+            Cmd_type_val(("Default:",), param="1", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
+        ),
     )
     _subset_drop_non_render = Cmd_type_val(
         ("-subset-drop-non-render",),
         param="<0 | 1>",
         description=(
-            "Drop non rendered content such as Comment lines, Name, Effect, etc. in ASS\n"
-            "Default: 1"
+            "Drop non rendered content such as Comment lines, Name, Effect, etc. in ASS"
         ),
-        childs=(Cmd_type_val(("0", "1")),),
+        childs=(
+            Cmd_type_val(("Default:",), param="1", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
+        ),
     )
     _subset_drop_unkow_data = Cmd_type_val(
         ("-subset-drop-unkow-data",),
         param="<0 | 1>",
         description=(
-            "Drop lines that are not in {[Script Info], [V4+ Styles], [Events]} in ASS\n"
-            "Default: 1"
+            "Drop lines that are not in {[Script Info], [V4+ Styles], [Events]} in ASS"
         ),
-        childs=(Cmd_type_val(("0", "1")),),
+        childs=(
+            Cmd_type_val(("Default:",), param="1", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
+        ),
     )
     _subset_strict = Cmd_type_val(
         ("-subset-strict",),
         param="<0 | 1>",
-        description=(
-            "Some error will interrupt subset\n"  # .
-            "Default: 0"
+        description="Some error will interrupt subset",
+        childs=(
+            Cmd_type_val(("Default:",), param="0", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
         ),
-        childs=(Cmd_type_val(("0", "1")),),
     )
     _translate_sub = Cmd_type_val(
         ("-translate-sub",),
@@ -509,12 +544,15 @@ class Opt_type(enum.Enum):
             "Audio encoder:\n"
             f"{Audio_codec.to_help_string('  ')}"
         ),
-        childs=(Cmd_type_val(tuple(Audio_codec._value2member_map_)),),
+        childs=(
+            Cmd_type_val(tuple(Audio_codec._value2member_map_), is_no_doc_child=True),
+        ),
     )
     _b_a = Cmd_type_val(
         ("-b:a",),
         param="<string>",
-        description="Setting audio bitrate. Default '160k'",
+        description="Setting audio bitrate",
+        childs=(Cmd_type_val(("Default:",), param="160k", is_no_prompt_child=True),),
     )
     _muxer = Cmd_type_val(
         ("-muxer",),
@@ -523,9 +561,17 @@ class Opt_type(enum.Enum):
             "Setting muxer\n"
             "\n"  # .
             "Muxer:\n"
-            f"{Audio_codec.to_help_string('  ')}"
+            f"{Muxer.to_help_string('  ')}"
         ),
-        childs=(Cmd_type_val(tuple(Muxer._value2member_map_)),),
+        childs=(Cmd_type_val(tuple(Muxer._value2member_map_), is_no_doc_child=True),),
+    )
+    _track_name = Cmd_type_val(
+        ("-track-name",),
+        param="<string>",
+        description=(
+            "Python list[str] format\n"  # .
+            "e.g. \"['0:name1', '1:name2']\""
+        ),
     )
     _r = _fps = Cmd_type_val(
         ("-r", "-fps"),
@@ -534,7 +580,7 @@ class Opt_type(enum.Enum):
             "Setting FPS when muxing\n"
             "When using auto, the frame rate is automatically obtained from the input video and adsorbed to the nearest preset point"
         ),
-        childs=(Cmd_type_val(("auto",)),),
+        childs=(Cmd_type_val(("auto",), is_no_doc_child=True),),
     )
     _chapters = Cmd_type_val(
         ("-chapters",),
@@ -564,26 +610,23 @@ class Opt_type(enum.Enum):
     _run = Cmd_type_val(
         ("-run",),
         param="[<string>]",
-        description=(
-            "Run the Ripper from the Ripper list\n"
-            "\n"
-            "Default:\n"
-            "  Only run\n"
-            "\n"
-            "exit:\n"
-            "  Close program when run finished\n"
-            "\n"
-            "shutdown [<sec>]:\n"
-            "  Shutdown when run finished\n"
-            "  Default: 60\n"
-            "\n"
-            "server [<address>]:[<port>]@[<password>]:\n"
-            "  See the corresponding help for details"
-        ),
+        description=("Run the Ripper from the Ripper list"),
         childs=(
-            Cmd_type_val(("exit",)),
-            Cmd_type_val(("shutdown",)),
-            Cmd_type_val(("server",)),
+            Cmd_type_val(("Default",), description="Only run", is_no_prompt_child=True),
+            Cmd_type_val(("exit",), description="Close program when run finished"),
+            Cmd_type_val(
+                ("shutdown",),
+                param="[<sec>]",
+                description=(
+                    "Shutdown when run finished\n"  # .
+                    "Default: 60"
+                ),
+            ),
+            Cmd_type_val(
+                ("server",),
+                param="[<address>]:[<port>]@[<password>]",
+                description="See the corresponding help for details",
+            ),
         ),
     )
     _ff_params_ff = _ff_params = Cmd_type_val(
@@ -615,19 +658,15 @@ class Opt_type(enum.Enum):
         param="<string>",
         description="Use FFmpeg hwaccel (See 'ffmpeg -hwaccels' for details)",
         childs=(
-            Cmd_type_val(
-                names=(
-                    "cuda",
-                    "vaapi",
-                    "dxva2",
-                    "qsv",
-                    "d3d11va",
-                    "opencl",
-                    "vulkan",
-                    "d3d12va",
-                    "amf",
-                )
-            ),
+            Cmd_type_val(("cuda",)),
+            Cmd_type_val(("vaapi",)),
+            Cmd_type_val(("dxva2",)),
+            Cmd_type_val(("qsv",)),
+            Cmd_type_val(("d3d11va",)),
+            Cmd_type_val(("opencl",)),
+            Cmd_type_val(("vulkan",)),
+            Cmd_type_val(("d3d12va",)),
+            Cmd_type_val(("amf",)),
         ),
     )
     _ss = Cmd_type_val(
@@ -649,11 +688,11 @@ class Opt_type(enum.Enum):
     _hevc_strict = Cmd_type_val(
         ("-hevc-strict",),
         param="<0 | 1>",
-        description=(
-            "When the resolution >= 4K, close HME, and auto reduce the -ref\n"  # .
-            "Default: 1"
+        description="When the resolution >= 4K, close HME, and auto reduce the -ref",
+        childs=(
+            Cmd_type_val(("Default:",), param="1", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
         ),
-        childs=(Cmd_type_val(("0", "1")),),
     )
     _multithreading = Cmd_type_val(
         ("-multithreading",),
@@ -662,16 +701,24 @@ class Opt_type(enum.Enum):
             "Use multi-threading to run Ripper list, suitable for situations with low performance occupancy\n"
             "e.g. -p subset or -p copy"
         ),
-        childs=(Cmd_type_val(("0", "1")),),
+        childs=(
+            Cmd_type_val(("Default:",), param="0", is_no_prompt_child=True),
+            Cmd_type_val(("0", "1"), is_no_doc_child=True),
+        ),
     )
     _quality_detection = Cmd_type_val(
         ("-quality-detection",),
         param="<algorithm>[:<threshold>]",
         description=(
             "Comparison of quality between detection and source after encoding is completed\n"
-            "Algorithm: ssim psnr vmaf"
+            "\n"
+            "Algorithm:"
         ),
-        childs=(Cmd_type_val(("ssim", "psnr", "vmaf")),),
+        childs=(
+            Cmd_type_val(("ssim",), description="Default threshold: 0.9"),
+            Cmd_type_val(("psnr",), description="Default threshold: 30"),
+            Cmd_type_val(("vmaf",), description="Default threshold: 80"),
+        ),
     )
 
     @classmethod
@@ -683,12 +730,13 @@ class Opt_type(enum.Enum):
 
     @classmethod
     def to_doc(cls) -> str:
-        return "\n\n".join(ct.value.to_doc() for ct in cls)
+        return "\n".join(ct.value.to_doc() for ct in cls)
 
 
 Cmd_type.help.value.childs = tuple(
     ct.value for ct in itertools.chain(Cmd_type, Opt_type) if ct is not Cmd_type.help
 )
+Cmd_type.help.value.is_all_no_doc_childs = True
 
 
 def get_help_doc() -> str:

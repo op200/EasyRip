@@ -107,6 +107,7 @@ def run() -> NoReturn:
                 )
                 for ctv in ctvs
                 for name in ctv.names
+                if not ctv.is_no_prompt_child
             }
         )
 
@@ -132,6 +133,7 @@ def run() -> NoReturn:
             )
             for ctv in ctvs
             for name in ctv.names
+            if not ctv.is_no_prompt_child
         }
 
     cmd_ctv_tuple = tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)

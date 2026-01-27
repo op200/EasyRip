@@ -467,7 +467,17 @@ def run_command(command: Iterable[str] | str) -> bool:
                         log.error("'{}' does not exist", cmd_list[1])
 
                     case _:
-                        log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
+                        _child = _want_doc_cmd_type.value
+                        for s in cmd_list[2:-1]:
+                            for ch in _child.childs:
+                                if s in ch.names:
+                                    _child = ch
+                                    break
+                            else:
+                                log.error("'{}' does not exist", s)
+                                break
+                        else:
+                            log.send(_child.to_doc(), is_format=False)
             else:
                 log.send(get_help_doc(), is_format=False)
 

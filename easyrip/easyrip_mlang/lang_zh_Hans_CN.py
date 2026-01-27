@@ -1,4 +1,4 @@
-from ..easyrip_command import Audio_codec, Cmd_type, Opt_type, Preset_name
+from ..easyrip_command import Audio_codec, Cmd_type, Muxer, Opt_type, Preset_name
 from .global_lang_val import Lang_tag
 
 LANG_TAG = Lang_tag(
@@ -46,43 +46,27 @@ LANG_MAP: dict[str, str] = {
     Cmd_type.mkdir.value.description: "新建文件目录",
     Cmd_type.cls.value.description: "清屏",
     Cmd_type.list.value.param: "<list 选项>",
-    Cmd_type.list.value.description: (
-        "操作 Ripper list\n"
-        " \n"
-        "默认:\n"
-        "  打印 Ripper list\n"
-        " \n"
-        "clear / clean:\n"
-        "  清空 Ripper list\n"
-        " \n"
-        "del / pop <index>:\n"
-        "  删除 Ripper list 中指定的一个 Ripper\n"
-        " \n"
-        "sort [n][r]:\n"
-        "  排序 list\n"
-        "  'n': 自然排序\n"
-        "  'r': 倒序\n"
-        " \n"
-        "<int> <int>:\n"
-        "  交换指定索引"
+    Cmd_type.list.value.description: "操作 Ripper list",
+    Cmd_type.list.value.childs[0].description: "打印 Ripper list",
+    Cmd_type.list.value.childs[1].description: "清空 Ripper list",
+    Cmd_type.list.value.childs[2].description: "删除 Ripper list 中指定的一个 Ripper",
+    Cmd_type.list.value.childs[3].description: (
+        "排序 list\n"  # .
+        "'n': 自然排序\n"
+        "'r': 倒序"
     ),
+    Cmd_type.list.value.childs[4].description: "交换指定索引",
     Cmd_type.run.value.param: "[<run 选项>] [-multithreading <0 | 1>]",
-    Cmd_type.run.value.description: (
-        "执行 Ripper list 中的 Ripper\n"
-        "\n"
-        "默认:\n"
-        "  仅执行\n"
-        "\n"
-        "exit:\n"
-        "  执行后退出程序\n"
-        "\n"
-        "shutdown [<秒数>]:\n"
-        "  执行后关机\n"
-        "  默认: 60\n"
-        "\n"
-        "server [<地址>]:[<端口>]@[<密码>]:\n"
-        "  详见对应的 help"
+    Cmd_type.run.value.description: "执行 Ripper list 中的 Ripper",
+    Cmd_type.run.value.childs[0].description: "仅执行",
+    Cmd_type.run.value.childs[1].description: "执行后退出程序",
+    Cmd_type.run.value.childs[2].param: "[<秒数>]",
+    Cmd_type.run.value.childs[2].description: (
+        "执行后关机\n"  # .
+        "默认: 60"
     ),
+    Cmd_type.run.value.childs[3].param: "[<地址>]:[<端口>]@[<密码>]",
+    Cmd_type.run.value.childs[3].description: "详见对应的 help",
     Cmd_type.server.value.param: "[<地址>]:[<端口>]@[<密码>]",
     Cmd_type.server.value.description: (
         "启动 web 服务\n"
@@ -90,18 +74,22 @@ LANG_MAP: dict[str, str] = {
         "客户端发送命令 'kill' 可以退出 Ripper 的运行, 注意, FFmpeg需要接受多次^C信号才能强制终止, 单次^C会等待文件输出完才会终止"
     ),
     Cmd_type.config.value.param: "<config 选项>",
-    Cmd_type.config.value.description: (
-        "regenerate | clear | clean | reset\n"
-        "  重新生成 config 文件\n"
-        "open\n"
-        "  打开 config 文件所在目录\n"
-        "list\n"
-        "  展示所有 config 可调选项\n"
-        "set <key> <val>\n"
-        "  设置 config\n"
-        "  例如 config set language en"
+    Cmd_type.config.value.childs[0].description: "重新生成 config 文件",
+    Cmd_type.config.value.childs[1].description: "打开 config 文件所在目录",
+    Cmd_type.config.value.childs[2].description: "展示所有 config 可调选项",
+    Cmd_type.config.value.childs[3].description: (
+        "设置 config\n"  # .
+        "例如 config set language en"
     ),
     Cmd_type.prompt.value.param: "<prompt 选项>",
+    Cmd_type.prompt.value.childs[0].description: "打印 prompt 历史",
+    Cmd_type.prompt.value.childs[1].description: "删除 prompt 历史文件",
+    Cmd_type.prompt.value.childs[2].description: (
+        "增加一个自定义 prompt\n"  # .
+        "e.g. prompt add myprompt echo my prompt"
+    ),
+    Cmd_type.prompt.value.childs[3].description: "删除一个自定义 prompt",
+    Cmd_type.prompt.value.childs[4].description: "打印自定义 prompt",
     Cmd_type.translate.value.param: "<中缀> <目标语言标签> [-overwrite]",
     Cmd_type.translate.value.description: (
         "翻译字幕文件\n"
@@ -125,8 +113,7 @@ LANG_MAP: dict[str, str] = {
     Opt_type._auto_infix.value.description: (
         "如果启用, 输出的文件将添加自动中缀:\n"  # .
         "  无音轨: '.v'\n"
-        "  有音轨: '.va'\n"
-        "默认: 1"
+        "  有音轨: '.va'"
     ),
     Opt_type._preset.value.description: (
         "设置预设\n"
@@ -162,32 +149,24 @@ LANG_MAP: dict[str, str] = {
         '默认: 优先当前目录, 其次当前目录下含有 "font" 的文件夹 (不分大小写)'
     ),
     Opt_type._subset_font_in_sub.value.description: (
-        "将字体编码到 ASS 文件中, 而不是单独的字体文件\n"  # .
-        "默认: 0"
+        "将字体编码到 ASS 文件中, 而不是单独的字体文件"
     ),
     Opt_type._subset_use_win_font.value.description: (
-        "无法从 subset-font-dir 找到字体时使用 Windows 字体\n"  # .
-        "默认: 0"
+        "无法从 subset-font-dir 找到字体时使用 Windows 字体"
     ),
     Opt_type._subset_use_libass_spec.value.description: (
         "子集化时使用 libass 规范\n"
         'e.g. "11\\{22}33" ->\n'
-        '  "11\\33"   (VSFilter)\n'
-        '  "11{22}33" (libass)\n'
-        "默认: 1"
+        '       "11\\33"    (VSFilter)\n'
+        '       "11{22}33" (libass)'
     ),
     Opt_type._subset_drop_non_render.value.description: (
-        "丢弃 ASS 中的注释行、Name、Effect等非渲染内容\n"  # .
-        "默认: 1"
+        "丢弃 ASS 中的注释行、Name、Effect等非渲染内容"
     ),
     Opt_type._subset_drop_unkow_data.value.description: (
-        "丢弃 ASS 中的非 {[Script Info], [V4+ Styles], [Events]} 行\n"  # .
-        "默认: 1"
+        "丢弃 ASS 中的非 {[Script Info], [V4+ Styles], [Events]} 行"
     ),
-    Opt_type._subset_strict.value.description: (
-        "子集化时报错则中断\n"  # .
-        "默认: 0"
-    ),
+    Opt_type._subset_strict.value.description: "子集化时报错则中断",
     Opt_type._translate_sub.value.param: "<中缀>:<语言标签>",
     Opt_type._translate_sub.value.description: (
         "临时生成字幕的翻译文件\n"  # .
@@ -199,13 +178,12 @@ LANG_MAP: dict[str, str] = {
         "音频编码器:\n"
         f"{Audio_codec.to_help_string('  ')}"
     ),
-    Opt_type._b_a.value.description: "设置音频码率。默认值 '160k'",
+    Opt_type._b_a.value.description: "设置音频码率",
     Opt_type._muxer.value.description: (
         "设置复用器\n"
         "\n"  # .
         "可用的复用器:\n"
-        "  mp4\n"
-        "  mkv"
+        f"{Muxer.to_help_string('  ')}"
     ),
     Opt_type._r.value.description: (
         "设置封装的帧率\n"  # .
@@ -223,22 +201,6 @@ LANG_MAP: dict[str, str] = {
     Opt_type._custom_suffix.value.description: (
         "当 -preset custom 时, 这个选项将作为输出文件的后缀\n"  # .
         '默认: ""'
-    ),
-    Opt_type._run.value.description: (
-        "执行 Ripper list 中的 Ripper\n"
-        "\n"
-        "默认:\n"
-        "  仅执行\n"
-        "\n"
-        "exit:\n"
-        "  执行后退出程序\n"
-        "\n"
-        "shutdown [<秒数>]:\n"
-        "  执行后关机\n"
-        "  默认: 60\n"
-        "\n"
-        "server [<地址>]:[<端口>]@[<密码>]:\n"
-        "  详见对应的 help"
     ),
     Opt_type._ff_params_ff.value.description: (
         "设置 FFmpeg 的全局选项\n"  # .
@@ -262,8 +224,7 @@ LANG_MAP: dict[str, str] = {
         "等同于 ffmpeg -i ... -t <time> ..."
     ),
     Opt_type._hevc_strict.value.description: (
-        "当分辨率 >= 4K 时, 关闭 HME, 并自动降低 -ref\n"  # .
-        "默认: 1"
+        "当分辨率 >= 4K 时, 关闭 HME, 并自动降低 -ref"
     ),
     Opt_type._multithreading.value.description: (
         "使用多线程执行 Ripper list, 适合性能占用低的情况\n"  # .
@@ -327,6 +288,7 @@ LANG_MAP: dict[str, str] = {
     "Command run failed: status code {}\n  Failed command: {}": "命令执行失败: 状态码 {}\n  失败的命令: {}",
     "There have error in running": "执行时出错",
     "{} param illegal": "{} 参数非法",
+    "{} param illegal: {}": "{} 参数非法: {}",
     'The file "{}" already exists, skip translating it': '文件 "{}" 已存在, 跳过翻译',
     "Subset failed, cancel mux": "子集化失败, 取消混流",
     "FFmpeg report: {}": "FFmpeg 报告: {}",
