@@ -52,6 +52,12 @@ PROJECT_URL = global_val.PROJECT_URL
 def log_new_ver(
     new_ver: str | None, old_ver: str, program_name: str, dl_url: str
 ) -> None:
+    log.debug(
+        "{}({})",
+        log_new_ver.__name__,
+        ", ".join(f"{k}={v!r}" for k, v in locals().copy().items()),
+        print_level=log.LogLevel._detail,
+    )
     if new_ver is None:
         return
     try:
