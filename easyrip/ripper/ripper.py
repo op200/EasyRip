@@ -251,28 +251,29 @@ class Ripper:
 
         # Muxer
         muxer_format_str_list: list[str]
-        _track_name_org_str = self.option_map.get("track-name", "[]")
-        try:
-            track_name_list = ast.literal_eval(_track_name_org_str)
-        except Exception as e:
-            raise Mlang_exception("{} param illegal", "-track-name") from e
-        if not type_match(track_name_list, list[str]):
-            raise Mlang_exception("{} param illegal", "-track-name")
-        for i in range(len(track_name_list)):
-            track_name = track_name_list[i]
-            if '"' in track_name:
-                if "'" in track_name:
-                    raise Mlang_exception(
-                        "{} param illegal: {}",
-                        "-track-name",
-                        "The '\"' and \"'\" can not exist simultaneously",
-                    )
-                track_name = f"'{track_name}'"
-            else:
-                track_name = f'"{track_name}"'
-            track_name_list[i] = track_name
-        log.debug(f"-track-name <- {_track_name_org_str!r}", is_format=False)
-        log.debug(f"-track-name -> {track_name_list!r}", is_format=False)
+        track_name_list: list[str] = []
+        if (_track_name_org_str := self.option_map.get("track-name")) is not None:
+            try:
+                track_name_list = ast.literal_eval(_track_name_org_str)
+            except Exception as e:
+                raise Mlang_exception("{} param illegal", "-track-name") from e
+            if not type_match(track_name_list, list[str]):
+                raise Mlang_exception("{} param illegal", "-track-name")
+            for i in range(len(track_name_list)):
+                track_name = track_name_list[i]
+                if '"' in track_name:
+                    if "'" in track_name:
+                        raise Mlang_exception(
+                            "{} param illegal: {}",
+                            "-track-name",
+                            "The '\"' and \"'\" can not exist simultaneously",
+                        )
+                    track_name = f"'{track_name}'"
+                else:
+                    track_name = f'"{track_name}"'
+                track_name_list[i] = track_name
+            log.debug(f"-track-name <- {_track_name_org_str!r}", is_format=False)
+            log.debug(f"-track-name -> {track_name_list!r}", is_format=False)
 
         mkv_all_need_opt_str: str = (
             "".join(f"--track-name {track_name} " for track_name in track_name_list)

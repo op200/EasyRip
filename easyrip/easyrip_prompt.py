@@ -83,7 +83,7 @@ class ConfigFileHistory(FileHistory):
             super().store_string(string)
 
 
-def _highlight_fuzzy_match(
+def highlight_fuzzy_match(
     suggestion: str,
     user_input: str,
     style_config: dict | None = None,
@@ -146,7 +146,9 @@ def _highlight_fuzzy_match(
     return result
 
 
-def _fuzzy_filter_and_sort(names: list[str], match_str: str) -> list[str]:
+def fuzzy_filter_and_sort(
+    names: list[str] | tuple[str, ...], match_str: str
+) -> list[str]:
     """模糊过滤和排序"""
     if not match_str:
         return sorted(names)
@@ -188,7 +190,7 @@ class SmartPathCompleter(Completer):
                 os.listdir(directory) if os.path.isdir(directory) else []
             )
 
-            for filename in _fuzzy_filter_and_sort(filenames, basename):
+            for filename in fuzzy_filter_and_sort(filenames, basename):
                 full_name = (
                     filename if directory == "." else os.path.join(directory, filename)
                 )
@@ -204,7 +206,7 @@ class SmartPathCompleter(Completer):
                 yield Completion(
                     text=completion,
                     start_position=-len(text),
-                    display=_highlight_fuzzy_match(filename, basename),
+                    display=highlight_fuzzy_match(filename, basename),
                 )
 
         except OSError:
@@ -222,11 +224,11 @@ class CustomPromptCompleter(Completer):
 
         custom_prompt = easyrip_prompt.get_custom_prompt()
         for word in words[-1:]:
-            for name in _fuzzy_filter_and_sort(list(custom_prompt), word):
+            for name in fuzzy_filter_and_sort(tuple(custom_prompt), word):
                 target_cmd = custom_prompt[name]
                 yield Completion(
                     text=target_cmd,
                     start_position=-len(word),
-                    display=_highlight_fuzzy_match(name, word),
+                    display=highlight_fuzzy_match(name, word),
                     display_meta=target_cmd,
                 )

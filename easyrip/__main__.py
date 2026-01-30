@@ -17,19 +17,18 @@ from prompt_toolkit.key_binding.bindings import named_commands
 from prompt_toolkit.keys import Keys
 
 from .easyrip_command import (
-    Cmd_type,
     Cmd_type_val,
     CmdCompleter,
     Opt_type,
     OptCompleter,
     nested_dict,
+    path_completer,
 )
 from .easyrip_config.config import Config_key, config
 from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
 from .easyrip_prompt import (
     ConfigFileHistory,
     CustomPromptCompleter,
-    SmartPathCompleter,
     easyrip_prompt,
 )
 from .global_val import C_D, C_Z
@@ -81,37 +80,7 @@ def run() -> NoReturn:
     ) -> object | Coroutine[Any, Any, object]:
         return named_commands.get_by_name("unix-word-rubout").handler(event)
 
-    path_completer = SmartPathCompleter()
     clipboard = PyperclipClipboard()
-
-    def _ctv_to_nc(ctvs: Iterable[Cmd_type_val]) -> CmdCompleter:
-        return CmdCompleter(
-            {
-                name: (
-                    merge_completers(completer_tuple)
-                    if (
-                        completer_tuple := (
-                            *((_ctv_to_nc(ctv.childs),) if ctv.childs else ()),
-                            *(
-                                (path_completer,)
-                                if name
-                                in {
-                                    *Cmd_type.cd.value.names,
-                                    *Cmd_type.mediainfo.value.names,
-                                    *Cmd_type.assinfo.value.names,
-                                    *Cmd_type.fontinfo.value.names,
-                                }
-                                else ()
-                            ),
-                        )
-                    )
-                    else None
-                )
-                for ctv in ctvs
-                for name in ctv.names
-                if not ctv.is_no_prompt_child
-            }
-        )
 
     def _ctv_to_nd(ctvs: Iterable[Cmd_type_val]) -> nested_dict:
         return {
@@ -138,7 +107,6 @@ def run() -> NoReturn:
             if not ctv.is_no_prompt_child
         }
 
-    cmd_ctv_tuple = tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
     prompt_history = (
         ConfigFileHistory(easyrip_prompt.PROMPT_HISTORY_FILE)
         if config.get_user_profile(Config_key.save_prompt_history)
@@ -152,7 +120,7 @@ def run() -> NoReturn:
                 key_bindings=key_bindings,
                 completer=merge_completers(
                     (
-                        _ctv_to_nc(cmd_ctv_tuple),
+                        CmdCompleter(),
                         OptCompleter(opt_tree=_ctv_to_nd(ct.value for ct in Opt_type)),
                         CustomPromptCompleter(),
                     )

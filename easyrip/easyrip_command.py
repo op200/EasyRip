@@ -8,7 +8,6 @@ from typing import Final, Self, final
 from prompt_toolkit.completion import (
     Completer,
     FuzzyCompleter,
-    FuzzyWordCompleter,
     NestedCompleter,
     WordCompleter,
     merge_completers,
@@ -18,6 +17,11 @@ from prompt_toolkit.document import Document
 
 from . import global_val
 from .easyrip_config.config_key import Config_key
+from .easyrip_prompt import (
+    SmartPathCompleter,
+    fuzzy_filter_and_sort,
+    highlight_fuzzy_match,
+)
 from .ripper.param import Audio_codec, Muxer, Preset_name
 
 
@@ -768,11 +772,6 @@ META_DICT_OPT_TYPE = {
     for opt in Opt_type
     for name in opt.value.names
 }
-META_DICT_CMD_TYPE = {
-    name: lambda opt=opt: opt.value.param
-    for opt in Cmd_type
-    for name in opt.value.names
-}
 
 
 def _nested_dict_to_nc(n_dict: nested_dict) -> NestedCompleter:
@@ -784,60 +783,74 @@ def _nested_dict_to_nc(n_dict: nested_dict) -> NestedCompleter:
     )
 
 
-class CmdCompleter(NestedCompleter):
+path_completer = SmartPathCompleter()
+
+
+class CmdCompleter(Completer):
+    def __init__(self) -> None:
+        self.root: Final[Cmd_type_val] = Cmd_type_val(
+            (), childs=tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
+        )
+
     def get_completions(
         self, document: Document, complete_event: CompleteEvent
     ) -> Iterable[Completion]:
-        # Split document.
-        text = document.text_before_cursor.lstrip()
-        words = text.split()
-        stripped_len = len(document.text_before_cursor) - len(text)
+        if (text := document.text_before_cursor.lstrip()).startswith("-"):
+            return
+        words: Final[list[str]] = text.split()
 
-        # If there is a space, check for the first term, and use a
-        # subcompleter.
-        if " " in text:
-            first_term = text.split()[0]
-            completer = self.options.get(first_term)
+        node: Cmd_type_val = self.root
 
-            # If we have a sub completer, use this for the completions.
-            if completer is not None:
-                remaining_text = text[len(first_term) :].lstrip()
-                move_cursor = len(text) - len(remaining_text) + stripped_len
+        def _refresh_node(word: str) -> bool:
+            nonlocal node
+            for ctv in node.childs:
+                for name in ctv.names:
+                    if name == word:
+                        node = ctv
+                        return True
+            return False
 
-                new_document = Document(
-                    remaining_text,
-                    cursor_position=document.cursor_position - move_cursor,
+        for word in words if text.endswith(" ") else words[:-1]:
+            if not _refresh_node(word):
+                return
+
+        match_word = "" if text.endswith(" ") else words[-1]
+        ctv_tuple: Final[tuple[Cmd_type_val, ...]] = tuple(itertools.chain(node.childs))
+        name__ctv: Final[dict[str, Cmd_type_val]] = {
+            name: ctv for ctv in ctv_tuple for name in ctv.names
+        }
+        names: Final[tuple[str, ...]] = tuple(name__ctv)
+        if match_word in names:
+            ctv = name__ctv[match_word]
+            yield Completion(
+                text=match_word,
+                start_position=-len(match_word),
+                display_meta=ctv.param,
+            )
+            for i, desc in enumerate(ctv.description.split("\n")):
+                yield Completion(
+                    text="",
+                    display="" if i else "✔",
+                    display_meta=desc,
+                )
+        else:
+            for name in fuzzy_filter_and_sort(names, match_word):
+                yield Completion(
+                    text=name,
+                    start_position=0 if text.endswith(" ") else -len(words[-1]),
+                    display=highlight_fuzzy_match(name, match_word),
+                    display_meta=name__ctv[name].param,
                 )
 
-                yield from completer.get_completions(new_document, complete_event)
-
-        elif words and (_cmd := Cmd_type.from_str(words[-1])) is not None:
-            yield from (
-                Completion(
-                    text=words[-1],
-                    start_position=-len(words[-1]),
-                    display_meta=META_DICT_CMD_TYPE.get(words[-1], ""),
-                ),
-                Completion(
-                    text="",
-                    display="✔",
-                    display_meta=(
-                        f"{_desc_list[0]}..."
-                        if len(_desc_list := _cmd.value.description.split("\n")) > 1
-                        else _desc_list[0]
-                    ),
-                ),
+        if 1 <= len(words) <= 2 and words[0] in {
+            *Cmd_type.cd.value.names,
+            *Cmd_type.mediainfo.value.names,
+            *Cmd_type.assinfo.value.names,
+            *Cmd_type.fontinfo.value.names,
+        }:
+            yield from path_completer.get_completions(
+                Document(words[1] if len(words) > 1 else ""), complete_event
             )
-
-        # No space in the input: behave exactly like `WordCompleter`.
-        else:
-            # custom
-            completer = FuzzyWordCompleter(
-                tuple(self.options),
-                meta_dict=META_DICT_CMD_TYPE,  # pyright: ignore[reportArgumentType]
-                WORD=True,
-            )
-            yield from completer.get_completions(document, complete_event)
 
 
 class OptCompleter(Completer):
