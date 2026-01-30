@@ -6,6 +6,14 @@ Self-use codec tool
 **[Easy Rip Web Panel  
 Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 
+<a href="https://www.star-history.com/#op200/EasyRip&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&legend=top-left" />
+ </picture>
+</a>
+
 ## Start
 
 1. Install [Python](https://www.python.org/)  
