@@ -719,7 +719,7 @@ class Opt_type(enum.Enum):
             "Algorithm:"
         ),
         childs=(
-            Cmd_type_val(("ssim",), description="Default threshold: 0.9"),
+            Cmd_type_val(("ssim",), description="Default threshold: 0.85"),
             Cmd_type_val(("psnr",), description="Default threshold: 30"),
             Cmd_type_val(("vmaf",), description="Default threshold: 80"),
         ),

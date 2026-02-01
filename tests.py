@@ -196,13 +196,13 @@ class TestRip(unittest.TestCase):
         """测试 hme 关闭，以及其他标准传参"""
         output_basename = TestRip.test_media_file_dict[self.test_x265.__name__][0]
 
-        crf = "33.3"
-        qpmin = "2"
-        qpmax = "44"
+        crf = "22.2"
+        qpmin = "3"
+        qpmax = "33"
         params: str = f"-hme 0 -crf {crf} -x265-params qpmin={qpmin}:qpmax={qpmax}::"
         self.assertTrue(
             run_command_and_run_ripper_list(
-                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {output_basename} -muxer mp4"
+                f"-i {TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX} -t 0.1 -preset x265slow {params} -r auto -o {output_basename} -muxer mp4 -quality-detection ssim"
             )
         )
 

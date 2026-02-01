@@ -8,6 +8,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import zip_longest
+from operator import itemgetter
 from pathlib import Path
 from threading import Thread
 from time import sleep
@@ -21,7 +22,7 @@ from ..easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from ..utils import get_base62_time, read_text, type_match
+from ..utils import get_base62_time, type_match
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -1305,30 +1306,23 @@ class Ripper:
                 while True:
                     match quality_detection[0]:
                         case "ssim":
-                            quality_detection_th = 0.9
+                            quality_detection_th = 0.85
                             quality_detection_filter = "ssim=f="
 
                             def quality_detection_cmp(
-                                text: str, threshold: float
-                            ) -> None:
-                                for line in text.splitlines():
-                                    values = tuple(
-                                        s.split(":")[1] for s in line.split()[:-1]
+                                text: str,
+                            ) -> list[tuple[str | int, float]]:
+                                return [
+                                    (n, q)
+                                    for line in text.splitlines()
+                                    if (
+                                        v := [
+                                            s.split(":")[1] for s in line.split()[:-1]
+                                        ]
                                     )
-                                    ssim_all = float(values[-1])
-                                    n = values[0]
-                                    log.debug(
-                                        f"{n}: {ssim_all}",
-                                        is_format=False,
-                                        print_level=log.LogLevel._detail,
-                                    )
-                                    if ssim_all < threshold:
-                                        log.error(
-                                            "SSIM {} < threshold {} in frame {}",
-                                            ssim_all,
-                                            threshold,
-                                            n,
-                                        )
+                                    and (q := float(v[-1]))
+                                    and (n := int(v[0]) - 1)
+                                ]
 
                             break
                         case "psnr":
@@ -1336,26 +1330,15 @@ class Ripper:
                             quality_detection_filter = "psnr=f="
 
                             def quality_detection_cmp(
-                                text: str, threshold: float
-                            ) -> None:
-                                for line in text.splitlines():
-                                    values = tuple(
-                                        s.split(":")[1] for s in line.split()
-                                    )
-                                    psnr_avg_all = float(values[-4])
-                                    n = values[0]
-                                    log.debug(
-                                        f"{n}: {psnr_avg_all}",
-                                        is_format=False,
-                                        print_level=log.LogLevel._detail,
-                                    )
-                                    if psnr_avg_all < threshold:
-                                        log.error(
-                                            "PSNR {} < threshold {} in frame {}",
-                                            psnr_avg_all,
-                                            threshold,
-                                            n,
-                                        )
+                                text: str,
+                            ) -> list[tuple[str | int, float]]:
+                                return [
+                                    (n, q)
+                                    for line in text.splitlines()
+                                    if (v := [s.split(":")[1] for s in line.split()])
+                                    and (q := float(v[-4]))
+                                    and (n := int(v[0]) - 1)
+                                ]
 
                             break
                         case "vmaf":
@@ -1363,23 +1346,13 @@ class Ripper:
                             quality_detection_filter = "libvmaf=log_fmt=csv:log_path="
 
                             def quality_detection_cmp(
-                                text: str, threshold: float
-                            ) -> None:
-                                for line in tuple(csv.reader(text))[1:]:
-                                    vmaf = float(line[-1])
-                                    n = int(line[0]) + 1
-                                    log.debug(
-                                        f"{n}: {vmaf}",
-                                        is_format=False,
-                                        print_level=log.LogLevel._detail,
-                                    )
-                                    if vmaf < threshold:
-                                        log.error(
-                                            "VMAF {} < threshold {} in frame {}",
-                                            vmaf,
-                                            threshold,
-                                            n,
-                                        )
+                                text: str,
+                            ) -> list[tuple[str | int, float]]:
+                                return [
+                                    (n, q)
+                                    for v in tuple(csv.reader(text.splitlines()[1:]))
+                                    if (q := float(v[-2])) and (n := v[0])
+                                ]
 
                             break
                         case _:
@@ -1404,6 +1377,7 @@ class Ripper:
                     .replace("\\", "/")
                     .replace(":", "\\\\:")
                 )
+
                 if os.system(
                     f'ffmpeg -i "{self.input_path_list[0]}" -i "{os.path.join(self.output_dir, temp_name)}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -'
                 ):
@@ -1414,9 +1388,22 @@ class Ripper:
                         "-quality-detection",
                         f"{quality_detection[0]}:{quality_detection_th}",
                     )
-                    quality_detection_cmp(
-                        read_text(quality_detection_data_file), quality_detection_th
-                    )
+                    with quality_detection_data_file.open("rt", encoding="utf-8") as f:
+                        _res = quality_detection_cmp(f.read())
+                        for n, q in _res:
+                            if q < quality_detection_th:
+                                log.error(
+                                    "{} {} < threshold {} in frame {}",
+                                    quality_detection[0].upper(),
+                                    q,
+                                    quality_detection_th,
+                                    n,
+                                )
+                        log.info(
+                            "{} min = {}",
+                            quality_detection[0].upper(),
+                            min(map(itemgetter(1), _res)),
+                        )
                     log.debug("'{}' end", "-quality-detection")
                 quality_detection_data_file.unlink(missing_ok=True)
 
