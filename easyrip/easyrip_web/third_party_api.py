@@ -6,6 +6,20 @@ import urllib.request
 import xml.etree.ElementTree
 from time import sleep
 
+REQ_HEADER = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
+}
+
+
+def open_req(req: urllib.request.Request):
+    from ..easyrip_log import log
+
+    proxies = urllib.request.getproxies()
+    log.debug("Proxies: {}", proxies, print_level=log.LogLevel._detail)
+    opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
+
+    return opener.open(req)
+
 
 class zhconvert:
     """繁化姬 API"""
@@ -42,11 +56,12 @@ class zhconvert:
             data=urllib.parse.urlencode(
                 {"text": org_text, "converter": target_lang.value}
             ).encode("utf-8"),
+            headers=REQ_HEADER,
         )
 
         for retry_num in range(5):
             try:
-                with urllib.request.urlopen(req) as response:
+                with open_req(req) as response:
                     for _ in range(5):  # 尝试重连
                         if response.getcode() != 200:
                             log.debug("response.getcode() != 200")
@@ -62,11 +77,11 @@ class zhconvert:
                         return text
 
                     raise Exception(f"HTTP error: {response.getcode()}")
-            except urllib.error.HTTPError:
+            except urllib.error.HTTPError as e:
                 sleep(0.5)
                 if retry_num == 4:
                     raise
-                log.debug("Attempt to reconnect")
+                log.debug("Attempt to reconnect: {}", e)
                 continue
 
         raise Exception
@@ -78,10 +93,13 @@ class github:
         """失败返回 None"""
         from ..easyrip_log import log
 
-        req = urllib.request.Request(release_api_url)
+        req = urllib.request.Request(
+            url=release_api_url,
+            headers=REQ_HEADER,
+        )
 
         try:
-            with urllib.request.urlopen(req) as response:
+            with open_req(req) as response:
                 data: dict = json.loads(response.read().decode("utf-8"))
                 ver = data.get("tag_name")
                 if ver is None:
@@ -111,10 +129,13 @@ class mkvtoolnix:
 
         from ..easyrip_log import log
 
-        req = urllib.request.Request("https://mkvtoolnix.download/latest-release.xml")
+        req = urllib.request.Request(
+            url="https://mkvtoolnix.download/latest-release.xml",
+            headers=REQ_HEADER,
+        )
 
         try:
-            with urllib.request.urlopen(req) as response:
+            with open_req(req) as response:
                 xml_tree = xml.etree.ElementTree.XML(response.read().decode("utf-8"))
                 if (ver := xml_tree.find("latest-source/version")) is None:
                     log.debug(
