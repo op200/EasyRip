@@ -44,9 +44,10 @@ Run `easyrip`, input `help` to get help doc
   如果你想开发，需要安装依赖，如果你只是想使用，不需要手动安装依赖。
 
   ```pwsh
-  pip install -U prompt-toolkit fonttools pycryptodome
+  pip install -U pyperclip prompt-toolkit fonttools pycryptodome
   ```
 
+  * [pyperclip](https://pypi.org/project/pyperclip/)
   * [prompt-toolkit](https://pypi.org/project/prompt-toolkit/)
   * [fonttools](https://pypi.org/project/fonttools/)
   * [pycryptodome](https://pypi.org/project/pycryptodome/)
