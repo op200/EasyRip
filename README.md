@@ -17,11 +17,11 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 ## Start
 
 1. Install [Python](https://www.python.org/)  
-  安装 [Python](https://www.python.org/)
+   安装 [Python](https://www.python.org/)
 2. Install Easy Rip using pip: `pip install -U easyrip`  
-  使用 pip 安装 Easy Rip: `pip install -U easyrip`
-3. The you can use Easy Rip directly, run the command `easyrip`  
-  然后你就可以直接 Easy Rip 了，运行命令 `easyrip`
+   使用 pip 安装 Easy Rip: `pip install -U easyrip`
+3. Then you can use Easy Rip directly, run the command `easyrip`  
+   然后你就可以直接使用 Easy Rip 了，运行命令 `easyrip`
 
 * (If you have special requirements and want to use a separate file, you can download it from [Github Actions](https://github.com/op200/EasyRip/actions))  
   (如果你有特殊需求，想使用独立文件，可以在 [Github Actions](https://github.com/op200/EasyRip/actions) 中下载)
@@ -70,4 +70,4 @@ Run `easyrip`, input `help` to get help doc
 
 If you want to add or modify translation, edit the `easyrip/easyrip_mlang`
 
-Or add translate file, see [Wiki](https://github.com/op200/EasyRip/wiki/Language-file) for details
+Or add translation file, see [Wiki](https://github.com/op200/EasyRip/wiki/Language-file) for details
