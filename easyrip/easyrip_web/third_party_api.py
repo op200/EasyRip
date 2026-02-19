@@ -51,17 +51,17 @@ class zhconvert:
             api_name=cls.__name__,
         )
 
-        req = urllib.request.Request(
-            url="https://api.zhconvert.org/convert",
-            data=urllib.parse.urlencode(
-                {"text": org_text, "converter": target_lang.value}
-            ).encode("utf-8"),
-            headers=REQ_HEADER,
-        )
-
         for retry_num in range(5):
             try:
-                with open_req(req) as response:
+                with open_req(
+                    urllib.request.Request(
+                        url="https://api.zhconvert.org/convert",
+                        data=urllib.parse.urlencode(
+                            {"text": org_text, "converter": target_lang.value}
+                        ).encode("utf-8"),
+                        headers=REQ_HEADER,
+                    )
+                ) as response:
                     for _ in range(5):  # 尝试重连
                         if response.getcode() != 200:
                             log.debug("response.getcode() != 200")
@@ -93,13 +93,13 @@ class github:
         """失败返回 None"""
         from ..easyrip_log import log
 
-        req = urllib.request.Request(
-            url=release_api_url,
-            headers=REQ_HEADER,
-        )
-
         try:
-            with open_req(req) as response:
+            with open_req(
+                urllib.request.Request(
+                    url=release_api_url,
+                    headers=REQ_HEADER,
+                )
+            ) as response:
                 data: dict = json.loads(response.read().decode("utf-8"))
                 ver = data.get("tag_name")
                 if ver is None:
@@ -129,13 +129,13 @@ class mkvtoolnix:
 
         from ..easyrip_log import log
 
-        req = urllib.request.Request(
-            url="https://mkvtoolnix.download/latest-release.xml",
-            headers=REQ_HEADER,
-        )
-
         try:
-            with open_req(req) as response:
+            with open_req(
+                urllib.request.Request(
+                    url="https://mkvtoolnix.download/latest-release.xml",
+                    headers=REQ_HEADER,
+                )
+            ) as response:
                 xml_tree = xml.etree.ElementTree.XML(response.read().decode("utf-8"))
                 if (ver := xml_tree.find("latest-source/version")) is None:
                     log.debug(

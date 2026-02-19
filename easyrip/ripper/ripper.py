@@ -4,7 +4,7 @@ import os
 import re
 import shutil
 import textwrap
-from collections.abc import Callable, Iterable
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import zip_longest
@@ -305,13 +305,23 @@ class Ripper:
                         )
 
                 case Ripper.Muxer.mkv:
+                    only_mux_sub_file_list: Sequence[Path] | None = None
                     if (
                         only_mux_sub_path := self.option_map.get("only-mux-sub-path")
                     ) is not None:
                         only_mux_sub_path = Path(only_mux_sub_path)
-                        if not only_mux_sub_path.is_dir():
-                            log.error("It is not a dir: {}", only_mux_sub_path)
-                            only_mux_sub_path = None
+                        if only_mux_sub_path.is_file():
+                            only_mux_sub_file_list = (only_mux_sub_path,)
+                        elif only_mux_sub_path.is_dir():
+                            only_mux_sub_file_list = tuple(
+                                _file
+                                for _file in only_mux_sub_path.iterdir()
+                                if _file.suffix
+                                in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET)
+                            )
+                        else:
+                            log.error('It is not a path: "{}"', only_mux_sub_path)
+                    del only_mux_sub_path
 
                     muxer_format_str_list = [
                         'mkvpropedit "{output}" --add-track-statistics-tags',
@@ -320,7 +330,7 @@ class Ripper:
                             'mkvmerge -o "{output}" '
                             + (
                                 f"--default-duration 0:{force_fps}fps --fix-bitstream-timing-information 0:1 "
-                                if force_fps and only_mux_sub_path is None
+                                if force_fps and only_mux_sub_file_list is None
                                 else ""
                             )
                             + mkv_all_need_opt_str
@@ -336,14 +346,14 @@ class Ripper:
                                         == 1
                                         else "--attach-file "
                                         if _file.suffix in FONT_SUFFIX_SET
-                                        else f"--language 0:{affixes[1]} --track-name 0:{Global_lang_val.language_tag_to_local_str(affixes[1])} "
+                                        else f'--language "0:{affixes[-1]}" --track-name "0:{Global_lang_val.language_tag_to_local_str(affixes[-1])}" '
+                                        if len(affixes) >= 2
+                                        else ""
                                     )
-                                    + f'"{_file.absolute()}"'
-                                    for _file in only_mux_sub_path.iterdir()
-                                    if _file.suffix
-                                    in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET)
+                                    + f'"{_file.resolve()}"'
+                                    for _file in only_mux_sub_file_list
                                 )
-                                if only_mux_sub_path
+                                if only_mux_sub_file_list is not None
                                 else ""
                             )
                             + ' --no-global-tags --no-track-tags --default-track-flag 0 "{output}.temp.mkv"'
@@ -441,6 +451,15 @@ class Ripper:
                         )
                     )
                     encoder_format_str_list = [_encoder_format_str]
+
+            case Ripper.Preset_name.subset:
+                if muxer is not None and muxer != Ripper.Muxer.mkv:
+                    raise Mlang_exception(
+                        "When the preset is {}, the muxer must be {}",
+                        "subset",
+                        "mkv",
+                    )
+                encoder_format_str_list = []
 
             case Ripper.Preset_name.copy:
                 encoder_format_str_list = [
@@ -754,9 +773,6 @@ class Ripper:
 
                 encoder_format_str_list = [get_vs_ff_cmd(f"-c:v ffv1 {_param}")]
 
-            case Ripper.Preset_name.subset:
-                encoder_format_str_list = []
-
         return Ripper.Option(
             preset_name,
             encoder_format_str_list,
@@ -987,7 +1003,47 @@ class Ripper:
 
                 if subset_res is False:
                     log.error("Run {} failed", "subset")
-                return subset_res
+
+                if self.option.muxer is None:
+                    return subset_res
+
+                suffix = ".mks"
+                only_mux_sub_file_list = []
+                for _path in Path(
+                    self.output_dir, self.output_prefix_list[0]
+                ).iterdir():
+                    if _path.suffix in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET):
+                        only_mux_sub_file_list.append(_path)
+                cmd_list = [
+                    (
+                        'mkvmerge -o "{output}" '
+                        + (
+                            " ".join(
+                                (
+                                    ""
+                                    if len(
+                                        affixes := _file.stem.rsplit(".", maxsplit=1)
+                                    )
+                                    == 1
+                                    else "--attach-file "
+                                    if _file.suffix in FONT_SUFFIX_SET
+                                    else f'--language "0:{affixes[-1]}" --track-name "0:{Global_lang_val.language_tag_to_local_str(affixes[-1])}" '
+                                    if len(affixes) >= 2
+                                    else ""
+                                )
+                                + f'"{_file.resolve()}"'
+                                for _file in only_mux_sub_file_list
+                            )
+                            if only_mux_sub_file_list is not None
+                            else ""
+                        )
+                    ).format_map(
+                        {
+                            "input": str(self.input_path_list[0]),
+                            "output": os.path.join(self.output_dir, temp_name),
+                        }
+                    )
+                ]
 
             case _:
                 match self.option.muxer:
@@ -1257,7 +1313,11 @@ class Ripper:
                     (subset_folder.name,),
                     self.output_dir,
                     Ripper.Preset_name.subset,
-                    self.option_map,
+                    {
+                        k: v
+                        for k, v in self.option_map.items()
+                        if k not in {"muxer", "soft-sub"}
+                    },
                 ).run():
                     # 合成 MKV
                     org_full_name: str = os.path.join(self.output_dir, temp_name)

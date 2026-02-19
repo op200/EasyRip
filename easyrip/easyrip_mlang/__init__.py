@@ -67,4 +67,4 @@ class Mlang_exception(Exception):
             new_msg: str = gettext(msg, *args[1:], is_format=True, **kwargs)
             super().__init__(new_msg)
         else:
-            super().__init__(msg, *args[1:])
+            super().__init__(*args)
