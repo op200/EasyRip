@@ -1,22 +1,18 @@
 [build-system]
 requires = [
-    "setuptools>=80",
-    #
+    "setuptools>=82",
 ]
 
 [project]
-name = "easyrip"
-dynamic = ["version"]
-readme = "README.md"
-license = "AGPL-3.0-or-later"
+authors = [{ name = "op200" }]
 classifiers = [
-    "Topic :: Multimedia",
     "Development Status :: 5 - Production/Stable",
+    "Operating System :: Microsoft :: Windows :: Windows 10",
+    "Operating System :: Microsoft :: Windows :: Windows 11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "Operating System :: Microsoft :: Windows :: Windows 10",
-    "Operating System :: Microsoft :: Windows :: Windows 11",
+    "Topic :: Multimedia",
     # "Operating System :: MacOS",
     # "Operating System :: POSIX :: Linux",
     "Environment :: Console",
@@ -25,18 +21,21 @@ classifiers = [
     "Intended Audience :: Information Technology",
     "Typing :: Typed",
 ]
-requires-python = ">=3.12"
 dependencies = [
-    "pyperclip>=1.11.0",
-    "prompt-toolkit>=3.0.52",
     "fonttools>=4.61.1",
+    "prompt-toolkit>=3.0.52",
     "pycryptodome>=3.23.0",
+    "pyperclip>=1.11.0",
 ]
-authors = [{ name = "op200" }]
+dynamic = ["version"]
+license = "AGPL-3.0-or-later"
+name = "easyrip"
+readme = "README.md"
+requires-python = ">=3.12"
 
 [project.urls]
 Homepage = "https://github.com/op200/EasyRip"
-Source = "https://github.com/op200/EasyRip"
+Source   = "https://github.com/op200/EasyRip"
 
 [project.scripts]
 easyrip = "easyrip.__main__:run"

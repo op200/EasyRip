@@ -1,3 +1,4 @@
+import itertools
 import locale
 
 from . import lang_en, lang_zh_Hans_CN
@@ -45,13 +46,26 @@ def gettext(
 
     new_text = str(org_text) if new_text is None else str(new_text)
 
+    need_join: bool = True
     if is_format and (fmt_args or fmt_kwargs):
         from ..easyrip_log import log
 
         try:
             new_text = new_text.format(*fmt_args, **fmt_kwargs)
-        except Exception as e:
-            log.debug(f"{e!r} in gettext when str.format", deep=True, is_format=False)
+        except IndexError as e:
+            log.debug(
+                f"{e!r} in {gettext.__name__} when str.format",
+                deep=True,
+                is_format=False,
+                print_level=log.LogLevel._detail,
+            )
+        else:
+            need_join = False
+
+    if need_join:
+        new_text = " ".join(
+            map(str, itertools.chain([new_text], fmt_args, fmt_kwargs.values()))
+        )
 
     return new_text
 
