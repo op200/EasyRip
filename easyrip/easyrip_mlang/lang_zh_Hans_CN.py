@@ -297,7 +297,7 @@ LANG_MAP: dict[str, str] = {
     'The font "{}" does not contain these characters: {}': '字体 "{}" 不包含字符: {}',
     "The style '{}' not in Styles. Defaulting to the style '{}'": "样式 '{}' 不在 Styles 中。默认使用样式 '{}'",
     "The style '{}' and the style 'Default' not in Styles. Defaulting to no font": "样式 '{}' 和样式 'Default' 都不在 Styles 中。默认不使用字体",
-    "The \\r style '{}' not in Styles": "\\r 样式 '{}' 不在 Styles 中",
+    "The \\r style {!r} not in Styles": "\\r 样式 {!r} 不在 Styles 中",
     "Illegal format: '{}' in file \"{}\" in line: {}": "非法格式: '{}' 在文件 \"{}\" 的此行: {}",
     # web
     "Starting {protocol} service on port {port}...": "在端口 {port} 启动 {protocol} 服务...",

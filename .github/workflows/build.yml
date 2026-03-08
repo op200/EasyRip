@@ -23,6 +23,7 @@ permissions:
 
 jobs:
   build:
+    name: Build - Windows
     runs-on: windows-latest
 
     steps:
@@ -55,7 +56,7 @@ jobs:
           7z a -t7z -m0=LZMA2 -mx=9 easyrip.7z ./easyrip_nuitka_output/*.exe
 
       - name: Upload exe.7z
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: easyrip.exe
           path: ./easyrip.7z

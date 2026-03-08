@@ -930,7 +930,12 @@ class Ass:
                             proc_value = proc_value[1:]
                             if (_index := proc_value.find(")")) != -1:
                                 proc_value = proc_value[:_index]
-                            proc_value = proc_value.strip()
+                            proc_value = (
+                                list(
+                                    filter(bool, map(str.strip, proc_value.split(",")))
+                                )
+                                or [""]
+                            )[0].strip()
 
                         match tag:
                             case "fn":
@@ -948,7 +953,7 @@ class Ass:
                                     current_font_sign = default_font_sign
                                     if r_value != "":
                                         log.warning(
-                                            "The \\r style '{}' not in Styles", r_value
+                                            "The \\r style {!r} not in Styles", r_value
                                         )
 
                     new_fontname: str = current_font_sign[0]

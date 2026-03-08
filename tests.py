@@ -86,6 +86,7 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(log.html_filename, gettext(html_log_file))
 
         # the *val format
+        log.info("version: {}", easyrip.__version__)
         log.send("msg")
         log.send("{}, {}", 1, 2)
         log.info("info")
@@ -95,7 +96,7 @@ class TestBasic(unittest.TestCase):
 
         # the **kw format
         log.send("{a} - {b} - {a}", a=111, b=222)
-        log.send("{a} - {b} - {c}", a=1, b=2)
+        log.send("{a} - {b} - {c}", a=1, b='"asd123')
 
         # auto close format
         log.debug("{}")

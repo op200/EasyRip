@@ -23,8 +23,8 @@ Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 3. Then you can use Easy Rip directly, run the command `easyrip`  
    然后你就可以直接使用 Easy Rip 了，运行命令 `easyrip`
 
-* (If you have special requirements and want to use a separate file, you can download it from [Github Actions](https://github.com/op200/EasyRip/actions))  
-  (如果你有特殊需求，想使用独立文件，可以在 [Github Actions](https://github.com/op200/EasyRip/actions) 中下载)
+* (If you have special requirements and want to use a separate file, you can download it from [Github Actions](https://github.com/op200/EasyRip/actions) or [Releases](https://github.com/op200/EasyRip/releases))  
+  (如果你有特殊需求，想使用独立文件，可以在 [Github Actions](https://github.com/op200/EasyRip/actions) 或 [Releases](https://github.com/op200/EasyRip/releases) 中下载)
 * (The file `BatchScriptPackage` in [Releases](https://github.com/op200/EasyRip/releases) is a bat script collection. It is used to facilitate ordinary users, it only has Chinese.)  
   ([Releases](https://github.com/op200/EasyRip/releases) 中每隔一段时间发布一次名为 `BatchScriptPackage` 的 bat 脚本包，用于方便一般用户，其内只有中文。)
 

@@ -52,7 +52,7 @@ def gettext(
 
         try:
             new_text = new_text.format(*fmt_args, **fmt_kwargs)
-        except IndexError as e:
+        except (IndexError, KeyError) as e:
             log.debug(
                 f"{e!r} in {gettext.__name__} when str.format",
                 deep=True,
@@ -64,7 +64,14 @@ def gettext(
 
     if need_join:
         new_text = " ".join(
-            map(str, itertools.chain([new_text], fmt_args, fmt_kwargs.values()))
+            map(
+                str,
+                itertools.chain(
+                    [new_text],
+                    fmt_args,
+                    (f"{k}={v!r}" for k, v in fmt_kwargs.items()),
+                ),
+            )
         )
 
     return new_text

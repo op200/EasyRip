@@ -1,0 +1,73 @@
+name: Release
+
+on:
+  release:
+    types: [published] # 创建 Release 时触发
+
+permissions:
+  id-token: write # 启用 OIDC
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
+    steps:
+      # retrieve your distributions here
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Install build dependencies
+        run: python -m pip install -U build
+
+      - name: Build distributions
+        run: python -m build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  build-and-upload:
+    name: Build and Upload to Release - Windows
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+          cache: "pip"
+      - run: pip install -U . && pip install -U nuitka
+
+      - name: Build - zipapp
+        run: |
+          python -m compileall -f easyrip
+          python -m zipapp easyrip --output easyrip.pyz --compress
+
+      - name: Upload pyz
+        uses: actions/upload-artifact@v5
+        with:
+          name: easyrip.pyz
+          path: ./easyrip.pyz
+
+      - name: Build - nuitka
+        run: |
+          python -m nuitka --standalone --onefile --assume-yes-for-downloads --plugin-enable=tk-inter --windows-icon-from-ico=resources/ER.ico -o easyrip --output-dir=./easyrip_nuitka_output --python-flag=-m easyrip
+
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./easyrip.pyz
+            ./easyrip_nuitka_output/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
