@@ -215,6 +215,16 @@ class Ripper:
             else:
                 ff_stream_option.append("0:a")
 
+            audio_codec_param_getted = {
+                _param_name: val
+                for _param_name in audio_encoder.get_param_name_set(set())
+                if (val := self.option_map.get(_param_name)) is not None
+            }
+            audio_codec_param_default_dict = audio_encoder.get_param_default_dict({})
+            audio_codec_option_map = (
+                audio_codec_param_default_dict | audio_codec_param_getted
+            )
+
             match audio_encoder:
                 case Ripper.Audio_codec.copy:
                     _encoder_str = (
@@ -225,18 +235,9 @@ class Ripper:
                 case Ripper.Audio_codec.flac:
                     _encoder_str = "-an "
                 case Ripper.Audio_codec.libopus:
-                    _encoder_str = "-c:a libopus "
-                    for opt in (
-                        "application",
-                        "frame_duration",
-                        "packet_loss",
-                        "fec",
-                        "vbr",
-                        "mapping_family",
-                        "apply_phase_inv",
-                    ):
-                        if (val := self.option_map.get(opt)) is not None:
-                            _encoder_str += f"-{opt} {val} "
+                    _encoder_str = "-c:a libopus " + "".join(
+                        f"-{opt} {val} " for opt, val in audio_codec_option_map.items()
+                    )
 
             _bitrate_str = (
                 ""

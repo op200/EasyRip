@@ -93,8 +93,13 @@ LANG_MAP: dict[str, str] = {
     Cmd_type.translate.value.param: "<中缀> <目标语言标签> [-overwrite]",
     Cmd_type.translate.value.description: (
         "翻译字幕文件\n"
+        "  -overwrite  覆写已经存在的文件\n"
+        "  -strict     不跳过覆写所有已经存在的文件并在有已存在文件时退出\n"
         "例如 'translate zh-Hans zh-Hant' 将翻译所有 '*.zh-Hans.ass' 文件为 zh-Hant"
     ),
+    Cmd_type.mediainfo.value.description: "使用 Media_info 类获取媒体信息",
+    Cmd_type.assinfo.value.description: "使用 Ass 类获取 ASS 信息",
+    Cmd_type.fontinfo.value.description: "使用 Font 类获取字体信息",
     Cmd_type.Option.value.description: (
         "-i <输入> -p <预设名> [-o <输出>] [-o:dir <目录>] [-pipe <vpy 路径名> -crf <值> -psy-rd <值> ...] [-sub <字幕文件路径名>] [-c:a <音频编码器> -b:a <音频码率>] [-muxer <复用器> [-r <帧率>]] [-run [<run 选项>]] [...]\n"
         " \n"

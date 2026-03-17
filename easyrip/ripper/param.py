@@ -112,6 +112,16 @@ class Audio_codec(enum.Enum):
             prefix=prefix,
         )
 
+    def get_param_name_set[T: set[LiteralString] | None](
+        self, default: T = None, /
+    ) -> set[LiteralString] | T:
+        return _AUDIO_CODEC__PARAM_NAME_SET.get(self, default)
+
+    def get_param_default_dict[T: dict[LiteralString, LiteralString] | None](
+        self, default: T = None, /
+    ) -> dict[LiteralString, LiteralString] | T:
+        return _AUDIO_CODEC__DEFAULT_PARAMS.get(self, default)
+
 
 class Muxer(enum.Enum):
     mp4 = "mp4"
@@ -141,6 +151,26 @@ class Muxer(enum.Enum):
             ),
             prefix=prefix,
         )
+
+
+_AUDIO_CODEC__PARAM_NAME_SET: Final[dict[Audio_codec, set[LiteralString]]] = {
+    Audio_codec.libopus: {
+        "application",
+        "frame_duration",
+        "packet_loss",
+        "fec",
+        "vbr",
+        "mapping_family",
+        "apply_phase_inv",
+    }
+}
+_AUDIO_CODEC__DEFAULT_PARAMS: Final[
+    dict[Audio_codec, dict[LiteralString, LiteralString]]
+] = {
+    Audio_codec.libopus: {
+        "frame_duration": "120",
+    }
+}
 
 
 _X265_PARAM_NAME_SET: Final[set[LiteralString]] = {
@@ -200,6 +230,7 @@ _X264_PARAM_NAME_SET: Final[set[LiteralString]] = {
     "qpmin",
     "qpmax",
     "bframes",
+    "b-adapt",
     "ref",
     "subme",
     "me",
@@ -211,14 +242,6 @@ _X264_PARAM_NAME_SET: Final[set[LiteralString]] = {
     "fast-pskip",
     "partitions",
     "direct",
-}
-_FFV1_PARAM_NAME_SET: Final[set[LiteralString]] = {
-    "slicecrc",
-    "coder",
-    "context",
-    "qtable",
-    "remap_mode",
-    "remap_optimizer",
 }
 
 _PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
@@ -232,7 +255,14 @@ _PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
     Preset_name.x265fast: _X265_PARAM_NAME_SET,
     Preset_name.x265slow: _X265_PARAM_NAME_SET,
     Preset_name.x265full: _X265_PARAM_NAME_SET,
-    Preset_name.ffv1: _FFV1_PARAM_NAME_SET,
+    Preset_name.ffv1: {
+        "slicecrc",
+        "coder",
+        "context",
+        "qtable",
+        "remap_mode",
+        "remap_optimizer",
+    },
 }
 
 _DEFAULT_X265_PARAMS: Final[dict[LiteralString, LiteralString]] = {
@@ -299,6 +329,7 @@ _PRESET__DEFAULT_PARAMS: Final[
         "qpmin": "8",
         "qpmax": "32",
         "bframes": "8",
+        "b-adapt": "1",
         "ref": "4",
         "subme": "5",
         "me": "hex",
@@ -322,6 +353,7 @@ _PRESET__DEFAULT_PARAMS: Final[
         "qpmin": "8",
         "qpmax": "32",
         "bframes": "16",
+        "b-adapt": "2",
         "ref": "8",
         "subme": "7",
         "me": "umh",

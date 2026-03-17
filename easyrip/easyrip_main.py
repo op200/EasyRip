@@ -38,6 +38,7 @@ from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
+from .ripper.sub_and_font.font import Font_type
 from .utils import change_title, check_ver, read_text
 
 __all__ = ["init", "run_command"]
@@ -574,6 +575,18 @@ def run_command(command: Iterable[str] | str) -> bool:
                             )
                         )
                     )
+
+                    def _send_assinfo(
+                        font_sign: tuple[str, Font_type], ss_len: int, /
+                    ) -> None:
+                        show_chars_len_log_str = ""
+                        if show_chars_len:
+                            show_chars_len_log_str = f": {ss_len}"
+                        log.send(
+                            f"  ( {font_sign[0]} / {font_sign[1].name} ){show_chars_len_log_str}"
+                        )
+
+                    font_sign__ss: dict[tuple[str, Font_type], set[str]] = {}
                     for _path in _path_tuple:
                         try:
                             ass = Ass(_path)
@@ -585,12 +598,14 @@ def run_command(command: Iterable[str] | str) -> bool:
                         for font_sign, ss in ass.get_font_info(
                             use_libass_spec=use_libass_spec,
                         ).items():
-                            show_chars_len_log_str = ""
-                            if show_chars_len:
-                                show_chars_len_log_str = f": {len(ss)}"
-                            log.send(
-                                f"  ( {font_sign[0]} / {font_sign[1].name} ){show_chars_len_log_str}"
-                            )
+                            _send_assinfo(font_sign, len(ss))
+                            if font_sign in font_sign__ss:
+                                font_sign__ss[font_sign] |= ss
+                            else:
+                                font_sign__ss[font_sign] = ss
+                    log.send("Total:")
+                    for font_sign, ss in font_sign__ss.items():
+                        _send_assinfo(font_sign, len(ss))
                 case Cmd_type.fontinfo:
                     for _font in itertools.chain.from_iterable(
                         load_fonts(_path) for _path in _path_tuple
@@ -832,9 +847,13 @@ def run_command(command: Iterable[str] | str) -> bool:
                 return False
 
             translate_overwrite: bool = False
+            translate_strict: bool = False
             for s in cmd_list[3:]:
-                if s == "-overwrite":
-                    translate_overwrite = True
+                match s:
+                    case "-overwrite":
+                        translate_overwrite = True
+                    case "-strict":
+                        translate_strict = True
 
             try:
                 _file_list = translate_subtitles(
@@ -847,11 +866,19 @@ def run_command(command: Iterable[str] | str) -> bool:
                 return False
 
             for f_and_s in _file_list:
-                if translate_overwrite is False and f_and_s[0].is_file():
+                if not f_and_s[0].is_file():
+                    continue
+                if translate_overwrite is False and translate_strict:
                     log.error("There is a file with the same name, cancel file writing")
                     return False
 
             for f_and_s in _file_list:
+                if f_and_s[0].is_file():
+                    if translate_overwrite:
+                        log.info("Overwrite file: {}", f_and_s[0])
+                    else:
+                        log.info("Skip overwriting file: {}", f_and_s[0])
+                        continue
                 with f_and_s[0].open("wt", encoding="utf-8-sig", newline="\n") as f:
                     f.write(f_and_s[1])
 

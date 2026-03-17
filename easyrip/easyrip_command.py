@@ -298,9 +298,11 @@ class Cmd_type(enum.Enum):
     )
     translate = Cmd_type_val(
         ("translate",),
-        param="<files' infix> <target lang tag> [-overwrite]",
+        param="<files' infix> <target lang tag> [-overwrite] [-strict]",
         description=(
             "Translate subtitle files\n"
+            "  -overwrite  Overwrite existing files\n"
+            "  -strict     Do not skip overwriting existing files and exit if any existing files are found\n"
             "e.g. 'translate zh-Hans zh-Hant' will translate all '*.zh-Hans.ass' files into zh-Hant"
         ),
     )
@@ -317,7 +319,7 @@ class Cmd_type(enum.Enum):
     assinfo = Cmd_type_val(
         ("assinfo",),
         param="<<path> | 'fd' | 'cfd'> [-use-libass-spec <0|1>] [-show-chars-len <0|1>]",
-        description="Get the ass info by the Ass class",
+        description="Get the ASS info by the Ass class",
         childs=(
             Cmd_type_val(("fd",)),
             Cmd_type_val(("cfd",)),
