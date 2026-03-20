@@ -122,6 +122,8 @@ class TestBasic(unittest.TestCase):
 
         run = run_command
 
+        run("cls")
+
         run("log cmd log info")
         run("log err cmd log error")
 

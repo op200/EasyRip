@@ -626,7 +626,9 @@ def run_command(command: Iterable[str] | str) -> bool:
                 log.warning(e)
 
         case Cmd_type.cls:
-            subprocess.call("cls") if os.name == "nt" else subprocess.call("clear")
+            subprocess.call("cls", shell=True) if os.name == "nt" else subprocess.call(
+                "clear", shell=True
+            )
             easyrip_web.http_server.Event.log_queue.clear()
 
         case Cmd_type.list:
