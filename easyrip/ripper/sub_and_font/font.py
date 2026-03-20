@@ -25,6 +25,11 @@ class Font_type(enum.Enum):
     Italic = (False, True)
     Bold_Italic = (True, True)
 
+    def __lt__(self, other) -> bool:
+        if not isinstance(other, Font_type):
+            return NotImplemented
+        return self.value < other.value  # pyright: ignore[reportOperatorIssue]
+
 
 @dataclass(slots=True)
 class Font:

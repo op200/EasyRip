@@ -587,24 +587,22 @@ def run_command(command: Iterable[str] | str) -> bool:
                         )
 
                     font_sign__ss: dict[tuple[str, Font_type], set[str]] = {}
-                    for _path in _path_tuple:
-                        try:
-                            ass = Ass(_path)
-                        except Exception as e:
-                            log.error(e)
-                            return False
-
-                        log.send(_path)
-                        for font_sign, ss in ass.get_font_info(
-                            use_libass_spec=use_libass_spec,
-                        ).items():
-                            _send_assinfo(font_sign, len(ss))
-                            if font_sign in font_sign__ss:
-                                font_sign__ss[font_sign] |= ss
-                            else:
-                                font_sign__ss[font_sign] = ss
+                    try:
+                        for _path in _path_tuple:
+                            log.send(_path)
+                            for font_sign, ss in Ass.analysis_font_info(
+                                _path, use_libass_spec=use_libass_spec
+                            ).items():
+                                _send_assinfo(font_sign, len(ss))
+                                if font_sign in font_sign__ss:
+                                    font_sign__ss[font_sign] |= ss
+                                else:
+                                    font_sign__ss[font_sign] = ss
+                    except Exception as e:
+                        log.error(e)
+                        return False
                     log.send("Total:")
-                    for font_sign, ss in font_sign__ss.items():
+                    for font_sign, ss in sorted(font_sign__ss.items()):
                         _send_assinfo(font_sign, len(ss))
                 case Cmd_type.fontinfo:
                     for _font in itertools.chain.from_iterable(

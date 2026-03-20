@@ -1012,7 +1012,7 @@ class Ass:
 
                     font_sign__str[current_font_sign] += add_text
 
-        return {font_sign: set(s) for font_sign, s in font_sign__str.items()}
+        return {font_sign: set(s) for font_sign, s in sorted(font_sign__str.items())}
 
     @classmethod
     def analysis_font_info(

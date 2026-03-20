@@ -241,6 +241,7 @@ LANG_MAP: dict[str, str] = {
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
     # main
     "Check env...": "检测环境中...",
+    "Total:": "总计:",
     # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     "Easy Rip command": "Easy Rip 命令",
     "Stop run and clear Ripper list": "终止执行并清空 Ripper list",
