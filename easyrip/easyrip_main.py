@@ -107,7 +107,7 @@ def check_env() -> None:
                         log_new_ver("8.1", _new_ver.split("-")[0], _name, _url)
                     else:
                         log_new_ver(
-                            "2025.11.20", ".".join(_new_ver.split("-")[:3]), _name, _url
+                            "2026.03.16", ".".join(_new_ver.split("-")[:3]), _name, _url
                         )
 
             _name, _url = "flac", "https://github.com/xiph/flac/releases"

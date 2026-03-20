@@ -33,7 +33,6 @@ class AES:
 
 def change_title(title: str) -> None:
     if os.name == "nt":
-        # subprocess.call(f"title {title}", shell=True)
         ctypes.windll.kernel32.SetConsoleTitleW(title)
     elif os.name == "posix":
         sys.stdout.write(f"\x1b]2;{title}\x07")

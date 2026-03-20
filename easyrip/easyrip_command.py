@@ -550,9 +550,7 @@ class Opt_type(enum.Enum):
             "Audio encoder:\n"
             f"{Audio_codec.to_help_string('  ')}"
         ),
-        childs=(
-            Cmd_type_val(tuple(Audio_codec._value2member_map_), is_no_doc_child=True),
-        ),
+        childs=(Cmd_type_val(tuple(Audio_codec._member_map_), is_no_doc_child=True),),
     )
     _b_a = Cmd_type_val(
         ("-b:a",),
@@ -816,7 +814,7 @@ class CmdCompleter(Completer):
             if not _refresh_node(word):
                 return
 
-        match_word = "" if text.endswith(" ") else words[-1]
+        match_word = "" if not text or text.endswith(" ") else words[-1]
         ctv_tuple: Final[tuple[Cmd_type_val, ...]] = tuple(itertools.chain(node.childs))
         name__ctv: Final[dict[str, Cmd_type_val]] = {
             name: ctv for ctv in ctv_tuple for name in ctv.names
@@ -839,7 +837,9 @@ class CmdCompleter(Completer):
             for name in fuzzy_filter_and_sort(names, match_word):
                 yield Completion(
                     text=name,
-                    start_position=0 if text.endswith(" ") else -len(words[-1]),
+                    start_position=(
+                        0 if not text or text.endswith(" ") else -len(words[-1])
+                    ),
                     display=highlight_fuzzy_match(name, match_word),
                     display_meta=name__ctv[name].param,
                 )
@@ -871,22 +871,31 @@ class OptCompleter(Completer):
 
         add_comp_words: set[str] = set()
         add_comp_meta_dict: dict[str, str] = {}
-        if _preset := tuple(
-            words[i + 1]
-            for i, word in enumerate(words[:-1])
-            for opt_p_name in Opt_type._preset.value.names
-            if word == opt_p_name
+        # preset 和 c:a 选项提示
+        for _opt, _preset_class in (
+            (Opt_type._preset, Preset_name),
+            (Opt_type._c_a, Audio_codec),
         ):
-            _preset = _preset[-1]
-            _preset_name = None
-            if _preset in Preset_name._member_map_:
-                _preset_name = Preset_name[_preset]
-            if _preset_name is not None:
-                add_set: set[str] = {
-                    f"-{n}" for n in _preset_name.get_param_name_set(set())
-                }
-                add_comp_words |= add_set
-                add_comp_meta_dict |= dict.fromkeys(add_set, f"{_preset} param")
+            if _preset := tuple(
+                words[i + 1]
+                for i, word in enumerate(words[:-1])
+                for opt_p_name in _opt.value.names
+                if word == opt_p_name
+            ):
+                _preset = _preset[-1]
+                _preset_name = (
+                    _preset_class[_preset]
+                    if _preset in _preset_class._member_map_
+                    else None
+                )
+                if _preset_name is not None:
+                    add_set: set[str] = {
+                        f"-{n}" for n in _preset_name.get_param_name_set(set())
+                    }
+                    add_comp_words |= add_set
+                    add_comp_meta_dict |= dict.fromkeys(
+                        add_set, f"{_preset_name.value} param"
+                    )
 
         opt_tree_pos_list: list[nested_dict | Completer] = [self.opt_tree]
         for word in words:
@@ -978,13 +987,13 @@ class OptCompleter(Completer):
             yield from FuzzyCompleter(
                 WordCompleter(
                     words=tuple(
-                        set(opt_tree_pos_list[-1])
+                        opt_tree_pos_list[-1].keys()
                         | (
                             set()
                             if text.endswith(" ")
                             or len(words) <= 1
                             or isinstance(opt_tree_pos_list[-2], Completer)
-                            else set(opt_tree_pos_list[-2])
+                            else opt_tree_pos_list[-2].keys()
                         )
                         | add_comp_words
                     ),
