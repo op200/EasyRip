@@ -3,6 +3,7 @@ import csv
 import os
 import re
 import shutil
+import subprocess
 import textwrap
 from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
@@ -1165,7 +1166,7 @@ class Ripper:
                 "Run the command {}",
                 f"{i}:\n  {cmd}",
             )
-            if (_cmd_res := os.system(cmd)) != 0:
+            if (_cmd_res := subprocess.call(cmd, shell=True)) != 0:
                 is_cmd_run_failed = True
                 log.error(
                     "Command run failed: status code {}\n  Failed command: {}",
@@ -1235,7 +1236,7 @@ class Ripper:
                 _mux_cmd = f'mkvmerge -o "{_mux_temp_name}" --no-audio "{temp_name}" --no-video "{_flac_fullname}"'
 
                 log.info(_mux_cmd)
-                if os.system(_mux_cmd):
+                if subprocess.call(_mux_cmd, shell=True):
                     log.error("There have error in running")
                 else:
                     os.remove(temp_name)
@@ -1439,8 +1440,9 @@ class Ripper:
                     .replace(":", "\\\\:")
                 )
 
-                if os.system(
-                    f'ffmpeg -i "{self.input_path_list[0]}" -i "{os.path.join(self.output_dir, temp_name)}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -'
+                if subprocess.call(
+                    f'ffmpeg -i "{self.input_path_list[0]}" -i "{os.path.join(self.output_dir, temp_name)}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -',
+                    shell=True,
                 ):
                     log.error("Run {} failed", "-quality-detection")
                 else:

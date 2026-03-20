@@ -104,7 +104,7 @@ def check_env() -> None:
                     )
 
                     if "." in _new_ver:
-                        log_new_ver("8.0.1", _new_ver.split("-")[0], _name, _url)
+                        log_new_ver("8.1", _new_ver.split("-")[0], _name, _url)
                     else:
                         log_new_ver(
                             "2025.11.20", ".".join(_new_ver.split("-")[:3]), _name, _url
@@ -357,7 +357,7 @@ def run_ripper_list(
         elif os.name == "posix":
             _cmd = (f"shutdown -h +{shutdown_sec // 60}",)
         # 防 Windows Defender
-        os.system(_cmd[0])
+        subprocess.call(_cmd[0], shell=True)
 
     if is_exit_when_run_finished:
         sys.exit(0)
@@ -626,7 +626,7 @@ def run_command(command: Iterable[str] | str) -> bool:
                 log.warning(e)
 
         case Cmd_type.cls:
-            os.system("cls") if os.name == "nt" else os.system("clear")
+            subprocess.call("cls") if os.name == "nt" else subprocess.call("clear")
             easyrip_web.http_server.Event.log_queue.clear()
 
         case Cmd_type.list:
@@ -898,7 +898,10 @@ def run_command(command: Iterable[str] | str) -> bool:
                     log.error("Disable the use of '{}' on the web", cmd_list[0])
                     return False
 
-                os.system(command if isinstance(command, str) else " ".join(command))
+                subprocess.call(
+                    command if isinstance(command, str) else " ".join(command),
+                    shell=True,
+                )
                 return True
 
             input_pathname_org_list: list[str] = []
