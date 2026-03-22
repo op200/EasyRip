@@ -2,6 +2,7 @@ import os
 import re
 import tomllib
 from collections.abc import Iterable
+from pathlib import Path
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.document import Document
@@ -183,19 +184,22 @@ class SmartPathCompleter(Completer):
         input_path = text.strip("\"'")
 
         try:
-            directory = os.path.dirname(input_path) or "."
-            basename = os.path.basename(input_path)
+            # 不要使用 pathlib 解析，解析逻辑不一致
+            directory = os.path.dirname(input_path) or "."  # noqa: PTH120
+            basename = os.path.basename(input_path)  # noqa: PTH119
 
             filenames: list[str] = (
-                os.listdir(directory) if os.path.isdir(directory) else []
+                [p.name for p in Path(directory).iterdir()]
+                if Path(directory).is_dir()
+                else []
             )
 
             for filename in fuzzy_filter_and_sort(filenames, basename):
                 full_name = (
-                    filename if directory == "." else os.path.join(directory, filename)
+                    filename if directory == "." else str(Path(directory, filename))
                 )
 
-                if os.path.isdir(full_name):
+                if Path(full_name).is_dir():
                     filename += "/"
 
                 completion = full_name

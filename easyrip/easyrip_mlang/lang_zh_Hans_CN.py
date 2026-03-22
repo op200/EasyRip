@@ -194,7 +194,7 @@ LANG_MAP: dict[str, str] = {
         "设置封装的帧率\n"  # .
         "使用 auto 时, 自动从输入的视频获取帧率, 并吸附到最近的预设点位"
     ),
-    Opt_type._r.value.description: (
+    Opt_type._chapters.value.description: (
         "指定添加的章节文件\n"  # .
         "支持与 '-o' 相同的迭代语法"
     ),

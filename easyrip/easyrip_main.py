@@ -22,6 +22,8 @@ from time import sleep
 from tkinter import filedialog
 from typing import Final, Literal
 
+from prompt_toolkit.history import _StrOrBytesPath
+
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
 from .easyrip_config.config import Config_key, config
@@ -223,13 +225,13 @@ def get_input_prompt(is_color: bool = False) -> str:
         cmd_prompt = (
             f"\033[{log.send_color}m{cmd_prompt}\033[{log.default_foreground_color}m"
         )
-    return f"{os.path.realpath(os.getcwd())}> {cmd_prompt}"
+    return f"{Path.cwd().resolve()}> {cmd_prompt}"
 
 
 def file_dialog(
     *,
     is_askdir: bool = False,
-    initialdir=None,
+    initialdir: _StrOrBytesPath | None = None,
 ) -> tuple[str, ...]:
     tkRoot = tk.Tk()
 
@@ -257,7 +259,7 @@ def run_ripper_list(
             log.warning("Wrong sec in -shutdown, change to default 60s")
             shutdown_sec = 60
 
-    _name = ("EasyRip:dir:" + os.path.realpath(os.getcwd())).encode().hex()
+    _name = ("EasyRip:dir:" + str(Path.cwd().resolve())).encode().hex()
     _size = 16384
     try:
         path_lock_shm = shared_memory.SharedMemory(
@@ -531,7 +533,7 @@ def run_command(command: Iterable[str] | str) -> bool:
                         return False
                     _path_tuple = file_dialog(
                         is_askdir=cmd_type is Cmd_type.cd,
-                        initialdir=os.getcwd() if fd_param == "cfd" else None,
+                        initialdir=Path.cwd() if fd_param == "cfd" else None,
                     )
                 case _:
                     if isinstance(command, str):
@@ -615,13 +617,13 @@ def run_command(command: Iterable[str] | str) -> bool:
                         )
 
         case Cmd_type.dir:
-            files = os.listdir(os.getcwd())
-            log.print("\n".join(files))
+            files = [p.name for p in Path.cwd().iterdir()]
+            log.print("\n".join(files), end="\n")
             log.send(" | ".join(files))
 
         case Cmd_type.mkdir:
             try:
-                os.makedirs(cmd_list[1])
+                Path(cmd_list[1]).mkdir(parents=True)
             except Exception as e:
                 log.warning(e)
 
@@ -859,7 +861,7 @@ def run_command(command: Iterable[str] | str) -> bool:
 
             try:
                 _file_list = translate_subtitles(
-                    directory=Path(os.getcwd()),
+                    directory=Path.cwd(),
                     infix=_infix,
                     target_lang=_target_tag_str,
                 )
@@ -908,7 +910,7 @@ def run_command(command: Iterable[str] | str) -> bool:
 
             input_pathname_org_list: list[str] = []
             output_basename: str | None = None
-            output_dir: str | None = None
+            output_dir: Path | None = None
             preset_name: str | Ripper.Preset_name | None = None
             option_map: dict[str, str] = {}
             is_run: bool = False
@@ -936,7 +938,7 @@ def run_command(command: Iterable[str] | str) -> bool:
                                     return False
                                 input_pathname_org_list += file_dialog(
                                     initialdir=(
-                                        os.getcwd() if fd_param == "cfd" else None
+                                        Path.cwd() if fd_param == "cfd" else None
                                     )
                                 )
                             case _:
@@ -958,10 +960,10 @@ def run_command(command: Iterable[str] | str) -> bool:
                             return False
 
                     case "-o:dir":
-                        output_dir = cmd_list[i + 1]
-                        if not os.path.isdir(output_dir):
+                        output_dir = Path(cmd_list[i + 1])
+                        if not output_dir.is_dir():
                             try:
-                                os.makedirs(output_dir)
+                                output_dir.mkdir(parents=True)
                                 log.info(
                                     'The directory "{}" did not exist and was created',
                                     output_dir,
@@ -1090,14 +1092,14 @@ def run_command(command: Iterable[str] | str) -> bool:
                         log.error("Unsupported param: {}", e)
                         return False
 
-                    input_pathname_list: list[str] = input_pathname.split("?")
-                    for path in input_pathname_list:
-                        if not os.path.exists(path):
+                    input_path_list: list[Path] = list(
+                        map(Path, input_pathname.split("?"))
+                    )
+                    for path in input_path_list:
+                        if not path.exists():
                             log.warning('The file "{}" does not exist', path)
 
-                    _input_basename = os.path.splitext(
-                        os.path.basename(input_pathname_list[0])
-                    )
+                    _input_basename = Path(input_path_list[0].name)
 
                     if sub_map := option_map.get("sub"):
                         sub_list: list[str]
@@ -1106,25 +1108,21 @@ def run_command(command: Iterable[str] | str) -> bool:
                         if sub_map_list[0] == "auto":
                             sub_list = []
 
-                            while _input_basename[1] != "":
-                                _input_basename = os.path.splitext(_input_basename[0])
-                            _input_prefix: str = _input_basename[0]
+                            while _input_basename.suffix != "":
+                                _input_basename = Path(_input_basename.stem)
+                            _input_prefix: str = _input_basename.stem
 
-                            _dir = output_dir or os.path.realpath(os.getcwd())
-                            for _file_basename in os.listdir(_dir):
-                                _file_basename_list = os.path.splitext(_file_basename)
+                            for _path in (output_dir or Path.cwd().resolve()).iterdir():
                                 if (
-                                    _file_basename_list[1] == ".ass"
-                                    and _file_basename_list[0].startswith(_input_prefix)
+                                    _path.suffix == ".ass"
+                                    and _path.stem.startswith(_input_prefix)
                                     and (
                                         len(sub_map_list) == 1
-                                        or os.path.splitext(_file_basename_list[0])[
-                                            1
-                                        ].lstrip(".")
+                                        or Path(_path.stem).suffix.lstrip(".")
                                         in sub_map_list[1:]
                                     )
                                 ):
-                                    sub_list.append(os.path.join(_dir, _file_basename))
+                                    sub_list.append(str(_path))
 
                         else:
                             sub_list = [s.strip() for s in sub_map.split("::")]
@@ -1134,17 +1132,15 @@ def run_command(command: Iterable[str] | str) -> bool:
                             for sub_path in sub_list:
                                 new_option_map["sub"] = sub_path
 
-                                _output_base_suffix_name = os.path.splitext(
-                                    os.path.splitext(os.path.basename(sub_path))[0]
-                                )
+                                _output_base_suffix_name = Path(Path(sub_path).stem)
                                 _output_base_suffix_name = (
-                                    _output_base_suffix_name[1]
-                                    or _output_base_suffix_name[0]
+                                    _output_base_suffix_name.suffix
+                                    or _output_base_suffix_name.stem
                                 )
                                 Ripper.add_ripper(
-                                    input_pathname_list,
+                                    input_path_list,
                                     [
-                                        f"{new_output_basename or _input_basename[0]}{_output_base_suffix_name}"
+                                        f"{new_output_basename or _input_basename.stem}{_output_base_suffix_name}"
                                     ],
                                     output_dir,
                                     preset_name,
@@ -1154,14 +1150,14 @@ def run_command(command: Iterable[str] | str) -> bool:
                         elif sub_list_len == 0:
                             log.warning(
                                 "No subtitle file exist as -sub auto when -i {} -o:dir {}",
-                                input_pathname_list,
-                                output_dir or os.path.realpath(os.getcwd()),
+                                input_path_list,
+                                output_dir or Path.cwd().resolve(),
                             )
 
                         else:
                             new_option_map["sub"] = sub_list[0]
                             Ripper.add_ripper(
-                                input_pathname_list,
+                                input_path_list,
                                 [new_output_basename],
                                 output_dir,
                                 preset_name,
@@ -1170,7 +1166,7 @@ def run_command(command: Iterable[str] | str) -> bool:
 
                     else:
                         Ripper.add_ripper(
-                            input_pathname_list,
+                            input_path_list,
                             [new_output_basename],
                             output_dir,
                             preset_name,
@@ -1210,10 +1206,10 @@ def init(is_first_run: bool = False) -> None:
 
     if is_first_run:
         # 当前路径添加到环境变量
-        new_path = os.path.realpath(os.getcwd())
-        if os.pathsep in (
-            current_path := os.environ.get("PATH", "")
-        ) and new_path not in current_path.split(os.pathsep):
+        new_path = Path.cwd().resolve()
+        if os.pathsep in (current_path := os.environ.get("PATH", "")) and (
+            str(new_path) not in current_path.split(os.pathsep)
+        ):
             updated_path = f"{new_path}{os.pathsep}{current_path}"
             os.environ["PATH"] = updated_path
 
@@ -1227,9 +1223,9 @@ def init(is_first_run: bool = False) -> None:
         Global_lang_val.gettext_target_lang = Lang_tag.from_str(str(_lang_config))
 
     # 设置日志文件路径名
-    log.html_filename = gettext(log.html_filename)
-    if _path := str(config.get_user_profile(Config_key.force_log_file_path) or ""):
-        log.html_filename = os.path.join(_path, log.html_filename)
+    log.html_file = Path(gettext(str(log.html_file)))
+    if _path := Path(config.get_user_profile(Config_key.force_log_file_path) or ""):
+        log.html_file = _path / log.html_file
 
     # 设置日志级别
     try:
@@ -1266,7 +1262,7 @@ def init(is_first_run: bool = False) -> None:
     # 扫描额外的翻译文件
     for file in (
         f
-        for f in itertools.chain(Path(".").iterdir(), config._config_dir.iterdir())
+        for f in itertools.chain(Path().iterdir(), config._config_dir.iterdir())
         if f.stem.startswith("lang_")
     ):
         match file.suffix:

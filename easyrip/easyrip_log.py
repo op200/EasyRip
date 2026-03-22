@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 from ctypes import wintypes
+from pathlib import Path
 from typing import TextIO
 
 from prompt_toolkit import ANSI, print_formatted_text
@@ -89,7 +90,7 @@ class log:
                 cls.send_color = 95
 
         # 写入 </div>
-        if os.path.isfile(cls.html_filename) and os.path.getsize(cls.html_filename):
+        if cls.html_file.is_file() and cls.html_file.stat().st_size:
             cls.write_html_log("</div></div></div>")
 
     class LogLevel(enum.Enum):
@@ -106,7 +107,7 @@ class log:
         only_print = enum.auto()
         only_write = enum.auto()
 
-    html_filename: str = "EasyRip_log.html"  # 在调用前覆写
+    html_file: Path = Path("EasyRip_log.html")  # 在调用前覆写
     print_level: LogLevel = LogLevel.send
     write_level: LogLevel = LogLevel.send
 
@@ -462,7 +463,7 @@ class log:
         message: str,
     ) -> None:
         try:
-            with open(cls.html_filename, "at", encoding="utf-8") as f:
+            with cls.html_file.open("at", encoding="utf-8") as f:
                 f.write(message)
         except Exception as e:
             _level = cls.write_level

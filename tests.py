@@ -1,7 +1,6 @@
 import io
 import itertools
 import json
-import os
 import re
 import shutil
 import subprocess
@@ -81,9 +80,9 @@ class TestBasic(unittest.TestCase):
         self.assertEqual(gettext(""), "")
         self.assertEqual(gettext("{}"), "{}")
 
-        html_log_file = log.html_filename
+        html_log_file = str(log.html_file)
         easyrip.init(True)
-        self.assertEqual(log.html_filename, gettext(html_log_file))
+        self.assertEqual(str(log.html_file), gettext(html_log_file))
 
         # the *val format
         log.info("version: {}", easyrip.__version__)
@@ -179,7 +178,7 @@ class TestRip(unittest.TestCase):
 
     def setUp(self):
         self.assertTrue(
-            os.path.exists(f"{TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX}")
+            Path(f"{TestRip.TEST_VA_BASENAME}.{TestRip.TEST_VA_SUFFIX}").exists()
         )
 
         for tool in (

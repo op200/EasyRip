@@ -47,7 +47,7 @@ class Ripper:
         cls: type["Ripper"],
         input_path: Iterable[str | Path],
         output_prefix: Iterable[str | None],
-        output_dir: str | None,
+        output_dir: str | Path | None,
         option: "Option | Preset_name",
         option_map: dict[str, str],
     ):
@@ -73,7 +73,7 @@ class Ripper:
 
     input_path_list: list[Path]
     output_prefix_list: list[str]
-    output_dir: str
+    output_dir: Path
     option: Option
     option_map: dict[str, str]
 
@@ -99,7 +99,7 @@ class Ripper:
         self,
         input_path: Iterable[str | Path],
         output_prefix: Iterable[str | None],
-        output_dir: str | None,
+        output_dir: str | Path | None,
         option: Option | Preset_name,
         option_map: dict[str, str],
     ) -> None:
@@ -112,7 +112,7 @@ class Ripper:
             for path in zip_longest(output_prefix, self.input_path_list, fillvalue=None)
         ]
 
-        self.output_dir = output_dir or os.path.realpath(os.getcwd())
+        self.output_dir: Path = Path(output_dir or Path.cwd().resolve())
 
         self.option_map = option_map.copy()
 
@@ -172,7 +172,7 @@ class Ripper:
         # Path
         vpy_pathname = self.option_map.get("pipe")
 
-        if vpy_pathname and not os.path.exists(vpy_pathname):
+        if vpy_pathname and not Path(vpy_pathname).exists():
             log.error('The file "{}" does not exist', vpy_pathname)
 
         is_pipe_input = bool(self.input_path_list[0].suffix == ".vpy" or vpy_pathname)
@@ -882,7 +882,7 @@ class Ripper:
                     s.format_map(
                         {
                             "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
+                            "output": str(self.output_dir / temp_name),
                         }
                     )
                     for s in self.option.encoder_format_str_list
@@ -896,7 +896,7 @@ class Ripper:
                         s.format_map(
                             {
                                 "input": str(self.input_path_list[0]),
-                                "output": os.path.join(self.output_dir, temp_name),
+                                "output": str(self.output_dir / temp_name),
                             }
                         )
                         for str_list in (
@@ -912,7 +912,7 @@ class Ripper:
                         s.format_map(
                             {
                                 "input": str(self.input_path_list[0]),
-                                "output": os.path.join(self.output_dir, temp_name),
+                                "output": str(self.output_dir / temp_name),
                             }
                         )
                         for s in self.option.encoder_format_str_list
@@ -928,7 +928,7 @@ class Ripper:
                     else:
                         try:
                             _file_list = translate_subtitles(
-                                Path(self.output_dir),
+                                self.output_dir,
                                 _tr[0],
                                 _tr[1],
                                 file_intersection_selector=self.input_path_list,
@@ -950,7 +950,7 @@ class Ripper:
                                     f.write(f_and_s[1])
                                     add_tr_file_list.append(f_and_s[0])
 
-                _output_dir = Path(self.output_dir) / basename
+                _output_dir = self.output_dir / basename
                 _output_dir.mkdir(parents=True, exist_ok=True)
 
                 _ass_list: Final[list[Path]] = add_tr_file_list.copy()
@@ -1024,9 +1024,7 @@ class Ripper:
 
                 suffix = ".mks"
                 only_mux_sub_file_list = []
-                for _path in Path(
-                    self.output_dir, self.output_prefix_list[0]
-                ).iterdir():
+                for _path in (self.output_dir / self.output_prefix_list[0]).iterdir():
                     if _path.suffix in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET):
                         only_mux_sub_file_list.append(_path)
                 cmd_list = [
@@ -1055,7 +1053,7 @@ class Ripper:
                     ).format_map(
                         {
                             "input": str(self.input_path_list[0]),
-                            "output": os.path.join(self.output_dir, temp_name),
+                            "output": str(self.output_dir / temp_name),
                         }
                     )
                 ]
@@ -1074,7 +1072,7 @@ class Ripper:
                             s.format_map(
                                 {
                                     "input": str(self.input_path_list[0]),
-                                    "output": os.path.join(self.output_dir, temp_name),
+                                    "output": str(self.output_dir / temp_name),
                                 }
                             )
                             for str_list in (
@@ -1096,7 +1094,7 @@ class Ripper:
                             s.format_map(
                                 {
                                     "input": str(self.input_path_list[0]),
-                                    "output": os.path.join(self.output_dir, temp_name),
+                                    "output": str(self.output_dir / temp_name),
                                 }
                             )
                             for str_list in (
@@ -1118,10 +1116,7 @@ class Ripper:
                             s.format_map(
                                 {
                                     "input": str(self.input_path_list[0]),
-                                    "output": os.path.join(
-                                        self.output_dir,
-                                        os.path.join(self.output_dir, temp_name),
-                                    ),
+                                    "output": str(self.output_dir / temp_name),
                                 }
                             )
                             for s in self.option.encoder_format_str_list
@@ -1226,7 +1221,7 @@ class Ripper:
                 and self.option.audio_encoder == Ripper.Audio_codec.flac
             ):
                 _flac_basename = f"flac_temp_{get_base62_time()}"
-                _flac_fullname = _flac_basename + ".flac.mkv"
+                _flac_fullname = Path(_flac_basename + ".flac.mkv")
                 _flac_ripper = Ripper(
                     [self.input_path_list[0]],
                     [_flac_basename],
@@ -1249,12 +1244,12 @@ class Ripper:
                 )
                 _flac_ripper.run()
 
-                _mux_temp_name: str
+                _mux_temp_name: Path
                 _mux_cmd: str
                 _mux_muxer: str = (
                     "mp4" if self.option.muxer == Ripper.Muxer.mp4 else "mkv"
                 )
-                _mux_temp_name = f"{temp_name}_{get_base62_time()}.{_mux_muxer}"
+                _mux_temp_name = Path(f"{temp_name}_{get_base62_time()}.{_mux_muxer}")
 
                 _mux_cmd = f'mkvmerge -o "{_mux_temp_name}" --no-audio "{temp_name}" --no-video "{_flac_fullname}"'
 
@@ -1262,7 +1257,7 @@ class Ripper:
                 if subprocess.call(_mux_cmd, shell=True):
                     log.error("There have error in running")
                 else:
-                    os.remove(temp_name)
+                    Path(temp_name).unlink()
                     mux_ripper = Ripper(
                         (_mux_temp_name,),
                         (Path(temp_name).stem,),
@@ -1288,10 +1283,10 @@ class Ripper:
                         },
                     )
                     mux_ripper.run()
-                os.remove(_mux_temp_name)
+                (_mux_temp_name.unlink())
 
-                if os.path.exists(_flac_fullname):
-                    os.remove(_flac_fullname)
+                if _flac_fullname.exists():
+                    _flac_fullname.unlink()
 
             # 内封字幕合成
             if soft_sub := self.option_map.get("soft-sub"):
@@ -1302,32 +1297,24 @@ class Ripper:
                 if soft_sub_map_list[0] == "auto":
                     soft_sub_list = []
 
-                    _input_basename = os.path.splitext(
-                        os.path.basename(self.input_path_list[0])
-                    )
-                    while _input_basename[1] != "":
-                        _input_basename = os.path.splitext(_input_basename[0])
-                    _input_prefix: str = _input_basename[0]
+                    _input_prefix: str = self.input_path_list[0].name.split(".")[0]
 
-                    for _file_basename in os.listdir(self.output_dir):
-                        _file_basename_list = os.path.splitext(_file_basename)
+                    for _path in self.output_dir.iterdir():
                         if (
-                            _file_basename_list[1] in SUBTITLE_SUFFIX_SET
-                            and _file_basename_list[0].startswith(_input_prefix)
+                            _path.suffix in SUBTITLE_SUFFIX_SET
+                            and _path.stem.startswith(_input_prefix)
                             and (
                                 len(soft_sub_map_list) == 1
-                                or os.path.splitext(_file_basename_list[0])[1].lstrip(
-                                    "."
-                                )
+                                or Path(_path.stem).suffix.lstrip(".")
                                 in soft_sub_map_list[1:]
                             )
                         ):
-                            soft_sub_list.append(Path(self.output_dir) / _file_basename)
+                            soft_sub_list.append(_path)
 
                 else:
                     soft_sub_list = [Path(s) for s in soft_sub.split("?")]
 
-                subset_folder = Path(self.output_dir) / f"subset_temp_{temp_name}"
+                subset_folder = self.output_dir / f"subset_temp_{temp_name}"
                 if not soft_sub_list:
                     log.warning("-soft-sub is empty")
                 log.info("-soft-sub list = {}", soft_sub_list)
@@ -1345,15 +1332,13 @@ class Ripper:
                     },
                 ).run():
                     # 合成 MKV
-                    org_full_name: str = os.path.join(self.output_dir, temp_name)
-                    new_full_name: str = os.path.join(
-                        self.output_dir, f"wait_subset_{temp_name}"
-                    )
-                    os.rename(org_full_name, new_full_name)
+                    org_full_name: Path = self.output_dir / temp_name
+                    new_full_name: Path = self.output_dir / f"wait_subset_{temp_name}"
+                    org_full_name.rename(new_full_name)
 
                     if Ripper(
                         [new_full_name],
-                        [os.path.splitext(org_full_name)[0]],
+                        [org_full_name.stem],
                         self.output_dir,
                         Ripper.Preset_name.copy,
                         {
@@ -1375,8 +1360,8 @@ class Ripper:
                             ).items()
                             if v
                         },
-                    ).run() and os.path.exists(new_full_name):
-                        os.remove(new_full_name)
+                    ).run() and (new_full_name.exists()):
+                        new_full_name.unlink()
                 else:
                     log.error("Subset failed, cancel mux")
 
@@ -1454,8 +1439,8 @@ class Ripper:
                     except ValueError as e:
                         log.error("Param error from '{}': {}", "-quality-detection", e)
 
-                quality_detection_data_file: Path = Path(
-                    self.output_dir, "quality_detection_data.log"
+                quality_detection_data_file: Path = (
+                    self.output_dir / "quality_detection_data.log"
                 )
                 quality_detection_data_file_filter_str: str = (
                     str(quality_detection_data_file)
@@ -1464,7 +1449,7 @@ class Ripper:
                 )
 
                 if subprocess.call(
-                    f'ffmpeg -i "{self.input_path_list[0]}" -i "{os.path.join(self.output_dir, temp_name)}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -',
+                    f'ffmpeg -i "{self.input_path_list[0]}" -i "{self.output_dir / temp_name}" -lavfi "{quality_detection_filter}{quality_detection_data_file_filter_str}" -f null -',
                     shell=True,
                 ):
                     log.error("Run {} failed", "-quality-detection")
@@ -1494,12 +1479,12 @@ class Ripper:
                 quality_detection_data_file.unlink(missing_ok=True)
 
         # 获取体积
-        temp_name_full = os.path.join(self.output_dir, temp_name)
-        file_size = round(os.path.getsize(temp_name_full) / (1024 * 1024), 2)  # MiB .2f
+        temp_name_full = self.output_dir / temp_name
+        file_size = round(temp_name_full.stat().st_size / (1024 * 1024), 2)  # MiB .2f
 
         # 将临时名重命名
         try:
-            os.rename(temp_name_full, os.path.join(self.output_dir, output_filename))
+            temp_name_full.rename(self.output_dir / output_filename)
         except FileExistsError as e:
             log.error(e)
         except Exception as e:

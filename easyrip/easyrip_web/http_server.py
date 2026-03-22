@@ -6,6 +6,7 @@ import signal
 from collections import deque
 from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 from threading import Thread
 from time import sleep
 
@@ -130,7 +131,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 log.send(
                     _cmd,
                     is_server=True,
-                    http_send_header=f"{os.path.realpath(os.getcwd())}>",
+                    http_send_header=f"{Path.cwd().resolve()}>",
                 )
 
                 status_code = 200
@@ -191,7 +192,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
                 {
                     "token": MainHTTPRequestHandler.token,
                     "cwd": MainHTTPRequestHandler.str_to_aes(
-                        json.dumps(os.path.realpath(os.getcwd()))
+                        json.dumps(str(Path.cwd().resolve()))
                     ),
                     "log_queue": MainHTTPRequestHandler.str_to_aes(
                         json.dumps(list(Event.log_queue))
