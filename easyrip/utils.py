@@ -1,5 +1,6 @@
 import codecs
 import ctypes
+import enum
 import os
 import re
 import string
@@ -29,6 +30,43 @@ class AES:
         return unpad(
             cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
         )  # 解密并去除填充
+
+
+class terminal_progress:
+    ESC = "\x1b"
+
+    class State(enum.Enum):
+        clear = 0
+        normal = 1
+        error = 2
+        indeterminate = 3
+        warning = 4
+
+    @classmethod
+    def update(cls, state: State, persent: int = 0, /):
+        """:param persent: [0, 100]"""
+        sys.stdout.write(f"{cls.ESC}]9;4;{state.value};{persent}{cls.ESC}\\")
+        sys.stdout.flush()
+
+    @classmethod
+    def clear(cls):
+        cls.update(cls.State.clear)
+
+    @classmethod
+    def indeterminate(cls):
+        cls.update(cls.State.indeterminate)
+
+    @classmethod
+    def set(cls, persent: int, /):
+        cls.update(cls.State.normal, persent)
+
+    @classmethod
+    def error(cls, persent: int = 0, /):
+        cls.update(cls.State.error, persent)
+
+    @classmethod
+    def warning(cls, persent: int = 0, /):
+        cls.update(cls.State.warning, persent)
 
 
 def change_title(title: str) -> None:

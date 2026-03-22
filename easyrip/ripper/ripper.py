@@ -15,6 +15,9 @@ from threading import Thread
 from time import sleep
 from typing import Final, Self, final
 
+from easyrip.easyrip_config.config import CONFIG_DEFAULT_DICT, config
+from easyrip.easyrip_config.config_key import Config_key
+
 from .. import easyrip_web
 from ..easyrip_log import log
 from ..easyrip_mlang import (
@@ -23,7 +26,7 @@ from ..easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from ..utils import get_base62_time, type_match
+from ..utils import get_base62_time, terminal_progress, type_match
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -783,12 +786,9 @@ class Ripper:
             muxer_format_str_list,
         )
 
-    def _flush_progress(self, sleep_sec: float) -> None:
+    def _refresh_progress(self, sleep_sec: float) -> None:
         while True:
             sleep(sleep_sec)
-
-            if easyrip_web.http_server.Event.is_run_command is False:
-                break
 
             try:
                 with FF_PROGRESS_LOG_FILE.open("rt", encoding="utf-8") as file:
@@ -826,14 +826,25 @@ class Ripper:
                 )
                 self._progress["speed"] = float(speed) if speed != "N/A" else 0
 
-                easyrip_web.http_server.Event.progress.append(self._progress)
-                easyrip_web.http_server.Event.progress.popleft()
+                if easyrip_web.http_server.Event.is_run_command:
+                    easyrip_web.http_server.Event.progress.append(self._progress)
+                    easyrip_web.http_server.Event.progress.popleft()
+
+                if self._progress["frame"] != -1:
+                    terminal_progress.set(
+                        round(100 * self._progress["frame"] / self.media_info.nb_frames)
+                    )
+                elif self._progress["out_time_us"]:
+                    terminal_progress.set(
+                        round(
+                            self._progress["out_time_us"]
+                            / self.media_info.duration
+                            / 10_000
+                        )
+                    )
 
                 if p != "continue":
                     break
-
-            else:
-                continue
 
         easyrip_web.http_server.Event.progress.append({})
         easyrip_web.http_server.Event.progress.popleft()
@@ -842,6 +853,8 @@ class Ripper:
         self,
         prep_func: Callable[[Self], None] = lambda _: None,
     ) -> bool:
+        terminal_progress.indeterminate()
+
         if not self.input_path_list[0].exists():
             log.error('The file "{}" does not exist', self.input_path_list[0])
             return False
@@ -1148,7 +1161,16 @@ class Ripper:
             self._progress["frame_count"] = self.media_info.nb_frames
             self._progress["duration"] = self.media_info.duration
 
-        Thread(target=self._flush_progress, args=(1,), daemon=True).start()
+        Thread(
+            target=self._refresh_progress,
+            args=(
+                config.get_user_profile(
+                    Config_key.refresh_progress_sec,
+                    CONFIG_DEFAULT_DICT[Config_key.refresh_progress_sec],
+                ),
+            ),
+            daemon=True,
+        ).start()
 
         if self.preset_name is not Ripper.Preset_name.custom:
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
@@ -1173,6 +1195,7 @@ class Ripper:
                     _cmd_res,
                     f"{i}. {cmd}",
                 )
+                terminal_progress.error()
                 break
 
         # 读取编码速度
@@ -1498,5 +1521,7 @@ class Ripper:
 
         # 删除临时环境变量
         os.environ.pop("FFREPORT", None)
+
+        terminal_progress.clear()
 
         return True

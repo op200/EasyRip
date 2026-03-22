@@ -39,7 +39,7 @@ from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
 from .ripper.sub_and_font.font import Font_type
-from .utils import change_title, check_ver, read_text
+from .utils import change_title, check_ver, read_text, terminal_progress
 
 __all__ = ["init", "run_command"]
 
@@ -312,9 +312,11 @@ def run_ripper_list(
             except Exception as e:
                 log.error(e, deep=True)
                 log.warning("Stop run Ripper")
+                terminal_progress.error()
             except KeyboardInterrupt:
                 log.warning("Manually stop run and clear Ripper list")
                 Ripper.ripper_list.clear()
+                terminal_progress.warning()
                 raise
 
         with ThreadPoolExecutor() as executor:

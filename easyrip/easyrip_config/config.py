@@ -1,7 +1,7 @@
 import json
 import os
 from pathlib import Path
-from typing import Literal, get_origin, overload
+from typing import Any, Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
@@ -9,7 +9,7 @@ from ..global_val import get_CONFIG_DIR
 from ..utils import type_match
 from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key
 
-CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str]] = {
+CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str] | int] = {
     Config_key.language: "auto",
     Config_key.check_update: True,
     Config_key.check_dependent: True,
@@ -19,6 +19,7 @@ CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str]] = {
     Config_key.log_print_level: log.LogLevel.send.name,
     Config_key.log_write_level: log.LogLevel.send.name,
     Config_key.save_prompt_history: True,
+    Config_key.refresh_progress_sec: 3,
 }
 
 assert all(k in CONFIG_DEFAULT_DICT for k in Config_key), [
@@ -39,7 +40,7 @@ class config:
         if not cls._config_file.is_file():
             cls._config_dir.mkdir(exist_ok=True)
             with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
-                config_default_dict: dict[str, str | bool | list[str]] = {
+                config_default_dict: dict[str, str | bool | list[str] | int] = {
                     k.name: v for k, v in CONFIG_DEFAULT_DICT.items()
                 }
                 json.dump(
@@ -143,7 +144,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile(
+    def get_user_profile[T: Any | None](
         cls,
         config_key: Literal[
             Config_key.language,
@@ -152,54 +153,76 @@ class config:
             Config_key.log_print_level,
             Config_key.log_write_level,
         ],
-    ) -> str | None: ...
+        default: T = None,
+        /,
+    ) -> str | T: ...
 
     @overload
     @classmethod
-    def get_user_profile(
+    def get_user_profile[T: Any | None](
         cls,
         config_key: Literal[
             Config_key.check_update,
             Config_key.check_dependent,
             Config_key.save_prompt_history,
         ],
-    ) -> bool | None: ...
+        default: T = None,
+        /,
+    ) -> bool | T: ...
 
     @overload
     @classmethod
-    def get_user_profile(
+    def get_user_profile[T: Any | None](
         cls,
         config_key: Literal[Config_key.startup_dir_blacklist],
-    ) -> list[str] | None: ...
+        default: T = None,
+        /,
+    ) -> list[str] | T: ...
 
     @overload
     @classmethod
-    def get_user_profile(
+    def get_user_profile[T: Any | None](
+        cls,
+        config_key: Literal[Config_key.refresh_progress_sec],
+        default: T = None,
+        /,
+    ) -> int | T: ...
+
+    @overload
+    @classmethod
+    def get_user_profile[T: Any | None](
         cls,
         config_key: str,
-    ) -> str | bool | list[str] | None: ...
+        default: T = None,
+        /,
+    ) -> str | bool | list[str] | int | T: ...
 
     @classmethod
-    def get_user_profile(
+    def get_user_profile[T: Any | None](
         cls,
         config_key: Config_key | str,
-    ) -> str | bool | list[str] | None:
+        default: T = None,
+        /,
+    ) -> str | bool | list[str] | int | T:
         key = config_key.name if isinstance(config_key, Config_key) else config_key
 
         if key not in Config_key._member_map_:
             log.error("The key '{}' is not a config", key)
-            return None
+            return default
 
         if cls._config is None:
             cls._read_config()
         if cls._config is None:
-            return None
+            return default
+
         if not isinstance(cls._config["user_profile"], dict):
             log.error("User profile is not a valid dictionary")
-            return None
+            return default
+
         if key not in cls._config["user_profile"]:
             log.error("Key '{}' is not found in user profile", key)
-            return None
+            return default
+
         return cls._config["user_profile"][key]
 
     @classmethod
@@ -263,6 +286,10 @@ class config:
                 Config_key.save_prompt_history.name: gettext(
                     "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.save_prompt_history],
+                ),
+                Config_key.refresh_progress_sec.name: gettext(
+                    "Refresh progress interval. Default: {}",
+                    CONFIG_DEFAULT_DICT[Config_key.refresh_progress_sec],
                 ),
             }
             | (cls._config or {})

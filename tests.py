@@ -210,7 +210,7 @@ class TestRip(unittest.TestCase):
         )
 
         _info: dict = json.loads(
-            subprocess.Popen(
+            subprocess.check_output(
                 [
                     "ffprobe",
                     "-v",
@@ -223,10 +223,9 @@ class TestRip(unittest.TestCase):
                     "json",
                     f"{output_basename}.v.mp4",
                 ],
-                stdout=subprocess.PIPE,
                 text=True,
                 encoding="utf-8",
-            ).communicate()[0]
+            )
         )
         _info_list: list = _info.get("streams", [])
 
