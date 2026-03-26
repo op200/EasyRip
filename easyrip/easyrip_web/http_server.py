@@ -4,13 +4,18 @@ import os
 import secrets
 import signal
 from collections import deque
-from collections.abc import Callable
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 from threading import Thread
 from time import sleep
+from typing import TYPE_CHECKING
 
 from ..utils import AES
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
+    from ..ripper.ripper import Ripper
 
 __all__ = ["run_server"]
 
@@ -21,7 +26,7 @@ class Event:
     is_run_command: bool = False
     """用于防止 server 二次运行，以及告知客户端运行状态"""
 
-    progress: deque[dict[str, int | float]] = deque([{}])
+    progress: deque[Ripper._Progress] = deque([{}])
 
     @classmethod
     def post_run_event(cls, cmd: str) -> None:

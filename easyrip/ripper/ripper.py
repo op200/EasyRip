@@ -5,7 +5,6 @@ import re
 import shutil
 import subprocess
 import textwrap
-from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from itertools import zip_longest
@@ -13,7 +12,7 @@ from operator import itemgetter
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Final, Self, final
+from typing import TYPE_CHECKING, Final, Self, TypedDict, final
 
 from easyrip.easyrip_config.config import CONFIG_DEFAULT_DICT, config
 from easyrip.easyrip_config.config_key import Config_key
@@ -33,6 +32,9 @@ from .param import (
     SUBTITLE_SUFFIX_SET,
 )
 from .sub_and_font import subset
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable, Sequence
 
 FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
@@ -81,19 +83,23 @@ class Ripper:
 
     media_info: Media_info
 
-    _progress: dict[str, int | float]
-    """
-    server 模式的进度条数据
+    class _Progress(TypedDict, total=False):
+        frame_count: int
+        """总帧数"""
+        frame: int
+        """已输出帧数"""
+        fps: float
+        """当前输出帧率"""
 
-    .frame_count : int 总帧数
-    .frame : int 已输出帧数
-    .fps : float 当前输出帧率
+        duration: float
+        """视频总时长 s"""
+        out_time_us: int
+        """已输出时长 us"""
 
-    .duration : float 视频总时长 s
-    .out_time_us : int 已输出时长 us
+        speed: float
+        """当前输出速率 倍"""
 
-    .speed : float 当前输出速率 倍
-    """
+    _progress: _Progress
 
     def __init__(
         self,
@@ -132,7 +138,7 @@ class Ripper:
             self.preset_name = Ripper.Preset_name.custom
             self.option = option
 
-        self._progress: dict[str, int | float] = {}
+        self._progress: Ripper._Progress = {}
 
     def __str__(self) -> str:
         return (
@@ -830,17 +836,24 @@ class Ripper:
                     easyrip_web.http_server.Event.progress.append(self._progress)
                     easyrip_web.http_server.Event.progress.popleft()
 
-                if self._progress["frame"] != -1:
+                if self.media_info.nb_frames and self._progress["frame"] != -1:
                     terminal_progress.set(
                         round(100 * self._progress["frame"] / self.media_info.nb_frames)
                     )
-                elif self._progress["out_time_us"]:
+                elif self.media_info.duration > 0 and self._progress["out_time_us"]:
                     terminal_progress.set(
                         round(
                             self._progress["out_time_us"]
                             / self.media_info.duration
                             / 10_000
                         )
+                    )
+                else:
+                    log.debug(
+                        "Can not get progress: {} {}",
+                        self.media_info,
+                        self._progress,
+                        print_level=log.LogLevel._detail,
                     )
 
                 if p != "continue":

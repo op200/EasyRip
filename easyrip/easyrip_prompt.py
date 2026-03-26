@@ -1,16 +1,20 @@
 import os
 import re
 import tomllib
-from collections.abc import Iterable
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
-from prompt_toolkit.document import Document
-from prompt_toolkit.formatted_text import StyleAndTextTuples
 from prompt_toolkit.history import FileHistory
 
 from .global_val import C_Z, get_CONFIG_DIR
 from .utils import type_match
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+
+    from prompt_toolkit.document import Document
+    from prompt_toolkit.formatted_text import StyleAndTextTuples
 
 
 class easyrip_prompt:

@@ -1,13 +1,15 @@
 import json
 import os
-from pathlib import Path
-from typing import Any, Literal, get_origin, overload
+from typing import TYPE_CHECKING, Any, Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
 from ..global_val import get_CONFIG_DIR
 from ..utils import type_match
 from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str] | int] = {
     Config_key.language: "auto",

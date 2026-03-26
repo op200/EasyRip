@@ -1,6 +1,5 @@
 import sys
-from collections.abc import Coroutine, Iterable
-from typing import Any, NoReturn
+from typing import TYPE_CHECKING, Any, NoReturn
 
 import Crypto
 import fontTools
@@ -32,6 +31,9 @@ from .easyrip_prompt import (
     easyrip_prompt,
 )
 from .global_val import C_D, C_Z
+
+if TYPE_CHECKING:
+    from collections.abc import Coroutine, Iterable
 
 
 def run() -> NoReturn:

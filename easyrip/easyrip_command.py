@@ -1,9 +1,8 @@
 import enum
 import itertools
 import textwrap
-from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Final, Self, final
+from typing import TYPE_CHECKING, Final, Self, final
 
 from prompt_toolkit.completion import (
     Completer,
@@ -23,6 +22,9 @@ from .easyrip_prompt import (
     highlight_fuzzy_match,
 )
 from .ripper.param import Audio_codec, Muxer, Preset_name
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 @final
@@ -987,15 +989,19 @@ class OptCompleter(Completer):
             yield from FuzzyCompleter(
                 WordCompleter(
                     words=tuple(
-                        opt_tree_pos_list[-1].keys()
-                        | (
-                            set()
-                            if text.endswith(" ")
-                            or len(words) <= 1
-                            or isinstance(opt_tree_pos_list[-2], Completer)
-                            else opt_tree_pos_list[-2].keys()
+                        dict.fromkeys(
+                            itertools.chain(
+                                opt_tree_pos_list[-1].keys(),
+                                (
+                                    ()
+                                    if text.endswith(" ")
+                                    or len(words) <= 1
+                                    or isinstance(opt_tree_pos_list[-2], Completer)
+                                    else opt_tree_pos_list[-2].keys()
+                                ),
+                                add_comp_words,
+                            )
                         )
-                        | add_comp_words
                     ),
                     meta_dict=META_DICT_OPT_TYPE | add_comp_meta_dict,
                     WORD=True,  # 匹配标点

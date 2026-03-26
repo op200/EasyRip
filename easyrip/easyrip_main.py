@@ -12,7 +12,6 @@ import textwrap
 import threading
 import tkinter as tk
 import tomllib
-from collections.abc import Callable, Iterable
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from multiprocessing import shared_memory
@@ -20,9 +19,7 @@ from pathlib import Path
 from threading import Thread
 from time import sleep
 from tkinter import filedialog
-from typing import Final, Literal
-
-from prompt_toolkit.history import _StrOrBytesPath
+from typing import TYPE_CHECKING, Final, Literal
 
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
@@ -40,8 +37,14 @@ from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
-from .ripper.sub_and_font.font import Font_type
 from .utils import change_title, check_ver, read_text, terminal_progress
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
+
+    from prompt_toolkit.history import _StrOrBytesPath
+
+    from .ripper.sub_and_font.font import Font_type
 
 __all__ = ["init", "run_command"]
 
@@ -337,9 +340,11 @@ def run_ripper_list(
             except Exception as e:
                 log.error(e, deep=True)
                 log.warning("Stop run Ripper")
+                terminal_progress.error()
             except KeyboardInterrupt:
                 log.warning("Manually stop run and clear Ripper list")
                 Ripper.ripper_list.clear()
+                terminal_progress.warning()
                 raise
             sleep(0.5)
 
@@ -347,8 +352,10 @@ def run_ripper_list(
         log.warning(
             "There are {} {} during run", log.warning_num - warning_num, "warning"
         )
+        terminal_progress.warning()
     if log.error_num > error_num:
         log.error("There are {} {} during run", log.error_num - error_num, "error")
+        terminal_progress.error()
     Ripper.ripper_list.clear()
     path_lock_shm.close()
 

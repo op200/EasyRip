@@ -7,11 +7,13 @@ import string
 import sys
 import time
 from itertools import zip_longest
-from pathlib import Path
-from typing import Any, Final, TypeGuard, get_args, get_origin
+from typing import TYPE_CHECKING, Any, Final, TypeGuard, get_args, get_origin
 
 from Crypto.Cipher import AES as CryptoAES
 from Crypto.Util.Padding import pad, unpad
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 BASE62 = string.digits + string.ascii_letters
 

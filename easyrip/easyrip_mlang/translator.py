@@ -1,11 +1,13 @@
-from collections.abc import Iterable
-from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 from ..easyrip_web.third_party_api import zhconvert
 from .global_lang_val import Lang_tag
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
+    from pathlib import Path
 
 
 def translate_subtitles(

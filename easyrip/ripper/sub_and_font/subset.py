@@ -1,8 +1,7 @@
 import re
-from collections.abc import Iterable
 from io import BytesIO
 from pathlib import Path
-from typing import Final
+from typing import TYPE_CHECKING, Final
 
 import fontTools
 
@@ -18,6 +17,9 @@ from .ass import (
     Script_info_data,
 )
 from .font import Font, Font_type, load_fonts, load_windows_fonts, subset_font
+
+if TYPE_CHECKING:
+    from collections.abc import Iterable
 
 
 def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type:
