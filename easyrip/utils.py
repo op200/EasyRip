@@ -60,7 +60,7 @@ class terminal_progress:
 
     @classmethod
     def set(cls, persent: int, /):
-        cls.update(cls.State.normal, persent)
+        cls.update(cls.State.normal, max(1, persent))
 
     @classmethod
     def error(cls, persent: int = 0, /):

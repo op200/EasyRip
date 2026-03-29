@@ -792,76 +792,6 @@ class Ripper:
             muxer_format_str_list,
         )
 
-    def _refresh_progress(self, sleep_sec: float) -> None:
-        while True:
-            sleep(sleep_sec)
-
-            try:
-                with FF_PROGRESS_LOG_FILE.open("rt", encoding="utf-8") as file:
-                    file.seek(0, 2)  # 将文件指针移动到文件末尾
-                    total_size = file.tell()  # 获取文件的总大小
-                    buffer = []
-                    while len(buffer) < 12:
-                        # 每次向前移动400字节
-                        step = min(400, total_size)
-                        total_size -= step
-                        file.seek(total_size)
-                        # 读取当前块的内容
-                        lines = file.readlines()
-                        # 将读取到的行添加到缓冲区
-                        buffer = lines + buffer
-                        # 如果已经到达文件开头，退出循环
-                        if total_size == 0:
-                            break
-            except FileNotFoundError:
-                continue
-            except Exception as e:
-                log.error(e)
-                continue
-
-            res = dict(line.strip().split("=", maxsplit=1) for line in buffer[-12:])
-
-            if p := res.get("progress"):
-                out_time_us = res.get("out_time_us", -1)
-                speed = res.get("speed", "-1").rstrip("x")
-
-                self._progress["frame"] = int(res.get("frame", -1))
-                self._progress["fps"] = float(res.get("fps", -1))
-                self._progress["out_time_us"] = (
-                    int(out_time_us) if out_time_us != "N/A" else 0
-                )
-                self._progress["speed"] = float(speed) if speed != "N/A" else 0
-
-                if easyrip_web.http_server.Event.is_run_command:
-                    easyrip_web.http_server.Event.progress.append(self._progress)
-                    easyrip_web.http_server.Event.progress.popleft()
-
-                if self.media_info.nb_frames and self._progress["frame"] != -1:
-                    terminal_progress.set(
-                        round(100 * self._progress["frame"] / self.media_info.nb_frames)
-                    )
-                elif self.media_info.duration > 0 and self._progress["out_time_us"]:
-                    terminal_progress.set(
-                        round(
-                            self._progress["out_time_us"]
-                            / self.media_info.duration
-                            / 10_000
-                        )
-                    )
-                else:
-                    log.debug(
-                        "Can not get progress: {} {}",
-                        self.media_info,
-                        self._progress,
-                        print_level=log.LogLevel._detail,
-                    )
-
-                if p != "continue":
-                    break
-
-        easyrip_web.http_server.Event.progress.append({})
-        easyrip_web.http_server.Event.progress.popleft()
-
     def run(
         self,
         prep_func: Callable[[Self], None] = lambda _: None,
@@ -1169,8 +1099,84 @@ class Ripper:
             self._progress["frame_count"] = self.media_info.nb_frames
             self._progress["duration"] = self.media_info.duration
 
-        Thread(
-            target=self._refresh_progress,
+        refresh_progress_continue: bool = True
+
+        def refresh_progress(sleep_sec: float) -> None:
+            while refresh_progress_continue:
+                sleep(sleep_sec)
+
+                try:
+                    with FF_PROGRESS_LOG_FILE.open("rt", encoding="utf-8") as file:
+                        file.seek(0, 2)  # 将文件指针移动到文件末尾
+                        total_size = file.tell()  # 获取文件的总大小
+                        buffer = []
+                        while len(buffer) < 12:
+                            # 每次向前移动400字节
+                            step = min(400, total_size)
+                            total_size -= step
+                            file.seek(total_size)
+                            # 读取当前块的内容
+                            lines = file.readlines()
+                            # 将读取到的行添加到缓冲区
+                            buffer = lines + buffer
+                            # 如果已经到达文件开头，退出循环
+                            if total_size == 0:
+                                break
+                except FileNotFoundError:
+                    continue
+                except Exception as e:
+                    log.error(e)
+                    continue
+
+                res = dict(line.strip().split("=", maxsplit=1) for line in buffer[-12:])
+
+                if p := res.get("progress"):
+                    out_time_us = res.get("out_time_us", -1)
+                    speed = res.get("speed", "-1").rstrip("x")
+
+                    self._progress["frame"] = int(res.get("frame", -1))
+                    self._progress["fps"] = float(res.get("fps", -1))
+                    self._progress["out_time_us"] = (
+                        int(out_time_us) if out_time_us != "N/A" else 0
+                    )
+                    self._progress["speed"] = float(speed) if speed != "N/A" else 0
+
+                    if easyrip_web.http_server.Event.is_run_command:
+                        easyrip_web.http_server.Event.progress.append(self._progress)
+                        easyrip_web.http_server.Event.progress.popleft()
+
+                    if self.media_info.nb_frames and self._progress["frame"] != -1:
+                        terminal_progress.set(
+                            round(
+                                100
+                                * self._progress["frame"]
+                                / self.media_info.nb_frames
+                            )
+                        )
+                    elif self.media_info.duration > 0 and self._progress["out_time_us"]:
+                        terminal_progress.set(
+                            round(
+                                self._progress["out_time_us"]
+                                / self.media_info.duration
+                                / 10_000
+                            )
+                        )
+                    else:
+                        log.debug(
+                            "Can not get progress: {} {}",
+                            self.media_info,
+                            self._progress,
+                            print_level=log.LogLevel._detail,
+                        )
+
+                    if p != "continue":
+                        break
+
+            easyrip_web.http_server.Event.progress.append({})
+            easyrip_web.http_server.Event.progress.popleft()
+
+        _refresh_progress_thread = Thread(
+            target=refresh_progress,
             args=(
                 config.get_user_profile(
                     Config_key.refresh_progress_sec,
@@ -1178,7 +1184,8 @@ class Ripper:
                 ),
             ),
             daemon=True,
-        ).start()
+        )
+        _refresh_progress_thread.start()
 
         if self.preset_name is not Ripper.Preset_name.custom:
             os.environ["FFREPORT"] = f"file={FF_REPORT_LOG_FILE}:level=31"
@@ -1205,6 +1212,8 @@ class Ripper:
                 )
                 terminal_progress.error()
                 break
+
+        refresh_progress_continue = False
 
         # 读取编码速度
         speed: str = "N/A"
