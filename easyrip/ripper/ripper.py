@@ -1,5 +1,6 @@
 import ast
 import csv
+import itertools
 import os
 import re
 import shutil
@@ -896,10 +897,10 @@ class Ripper:
                 _output_dir = self.output_dir / basename
                 _output_dir.mkdir(parents=True, exist_ok=True)
 
-                _ass_list: Final[list[Path]] = add_tr_file_list.copy()
+                _ass_list: Final[list[Path]] = []
                 _other_sub_list: Final[list[Path]] = []
 
-                for path in self.input_path_list:
+                for path in itertools.chain(self.input_path_list, add_tr_file_list):
                     if path.suffix == ".ass":
                         _ass_list.append(path)
                     else:
