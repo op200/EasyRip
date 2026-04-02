@@ -256,7 +256,7 @@ class Cmd_type(enum.Enum):
     )
     config = Cmd_type_val(
         ("config",),
-        param="<config option>",
+        param="[<config option>]",
         childs=(
             Cmd_type_val(
                 ("regenerate", "clear", "clean", "reset"),

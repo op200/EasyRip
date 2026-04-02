@@ -772,7 +772,7 @@ def run_command(command: Iterable[str] | str) -> bool:
             match cmd_list[1]:
                 case "list" | "":
                     config.show_config_list()
-                case "regenerate" | "clear" | "clean":
+                case "regenerate" | "clear" | "clean" | "reset":
                     config.regenerate_config()
                     init()
                 case "open":

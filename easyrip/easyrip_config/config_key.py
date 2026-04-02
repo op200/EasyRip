@@ -1,6 +1,6 @@
 import enum
 
-CONFIG_VERSION = "4.6.0"
+CONFIG_VERSION = "4.17.10"
 
 
 class Config_key(enum.Enum):

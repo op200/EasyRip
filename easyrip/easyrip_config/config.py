@@ -58,10 +58,11 @@ class config:
             with cls._config_file.open("rt", encoding="utf-8") as f:
                 try:
                     data = json.load(f)
+                    assert isinstance(data, dict)
                     if data.get("version") != CONFIG_VERSION:
                         log.warning(
                             "The config version is not match, use '{}' to regenerate config file",
-                            "config clear",
+                            "config regenerate",
                         )
                 except json.JSONDecodeError as e:
                     log.error(f"{e!r} {e}", deep=True)
@@ -261,11 +262,11 @@ class config:
                     CONFIG_DEFAULT_DICT[Config_key.check_dependent],
                 ),
                 Config_key.startup_dir.name: gettext(
-                    "Program startup directory, when the value is empty, starts in the working directory. Default: {}",
+                    "Program startup directory, when the value is empty, starts in the working directory. In blacklist mode, this value serves as the rollback target. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.startup_dir] or '""',
                 ),
                 Config_key.startup_dir_blacklist.name: gettext(
-                    "Directory list. When the startup directory is a blacklisted directory, rollback to startup directory. Default: {}",
+                    "Directory list, if not empty, activate blacklist mode. When the startup directory is a blacklisted directory, rollback to startup directory. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.startup_dir] or '""',
                 ),
                 Config_key.force_log_file_path.name: gettext(

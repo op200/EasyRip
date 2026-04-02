@@ -320,15 +320,17 @@ LANG_MAP: dict[str, str] = {
     "User profile is not found in config file": "用户配置文件不存在于配置文件",
     "Type mismatch: need '{}'": "类型不匹配: 需要 '{}'",
     "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
-    "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}": "将 prompt 历史保存到 config 目录，否则保存到内存。重启后生效。默认: {}",
     # config about
     "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}": "Easy Rip 的语言, 支持不完整匹配。默认: {}。支持: {}",
     "Auto check the update of Easy Rip. Default: {}": "自动检测 Easy Rip 更新。默认: {}",
     "Auto check the versions of all dependent programs. Default: {}": "自动检测所有依赖的程序的版本。默认: {}",
-    "Program startup directory, when the value is empty, starts in the working directory. Default: {}": "程序启动目录, 值为空时在工作目录启动。默认: {}",
+    "Program startup directory, when the value is empty, starts in the working directory. In blacklist mode, this value serves as the rollback target. Default: {}": "程序启动目录, 值为空时在工作目录启动。黑名单模式时，该值作为回退目标。默认: {}",
+    "Directory list, if not empty, activate blacklist mode. When the startup directory is a blacklisted directory, rollback to startup directory. Default: {}": "目录列表，非空则启动黑名单模式。当启动目录为黑名单目录时，回退到启动目录。默认值: {}",
     "Force change of log file path, when the value is empty, it is the working directory. Default: {}": "强制更改日志文件所在路径, 值为空时为工作目录。默认: {}",
     "Logs this level and above will be printed, and if the value is '{}', they will not be printed. Default: {}. Supported: {}": "此等级及以上的日志会打印到控制台, 若值为 '{}' 则不打印。默认: {}。支持: {}",
     "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Default: {}. Supported: {}": "此等级及以上的日志会写入日志文件, 若值为 '{}' 则不写入, '{}' 仅在 'server' 时写入。默认: {}。支持: {}",
+    "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}": "将 prompt 历史保存到 config 目录，否则保存到内存。重启后生效。默认: {}",
+    "Refresh progress interval. Default: {}": "刷新进度间隔。默认: {}",
     # 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
     # mlang
