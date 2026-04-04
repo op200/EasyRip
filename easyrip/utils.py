@@ -120,7 +120,7 @@ def get_base62_time() -> str:
     return int_to_base62(time.time_ns())
 
 
-def read_text(path: Path) -> str:
+def read_text(path: "Path") -> str:
     from .easyrip_log import log
 
     data = path.read_bytes()

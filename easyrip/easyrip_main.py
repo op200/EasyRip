@@ -234,7 +234,7 @@ def get_input_prompt(is_color: bool = False) -> str:
 def file_dialog(
     *,
     is_askdir: bool = False,
-    initialdir: _StrOrBytesPath | None = None,
+    initialdir: "_StrOrBytesPath | None" = None,
 ) -> tuple[str, ...]:
     tkRoot = tk.Tk()
 
@@ -407,7 +407,7 @@ def get_web_server_params(
     return (host or "", int(port), password)
 
 
-def run_command(command: Iterable[str] | str) -> bool:
+def run_command(command: "Iterable[str] | str") -> bool:
     try:
         cmd_list: list[str] = (
             shlex.split(command.replace("\\", "\\\\") if os.name == "nt" else command)
@@ -1047,7 +1047,7 @@ def run_command(command: Iterable[str] | str) -> bool:
 
                     def _create_iterator_fmt_replace(
                         time: datetime, num: int
-                    ) -> Callable[[re.Match[str]], str]:
+                    ) -> "Callable[[re.Match[str]], str]":
                         def _iterator_fmt_replace(match: re.Match[str]) -> str:
                             s = match.group(1)
                             match s:

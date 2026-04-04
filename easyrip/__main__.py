@@ -79,12 +79,12 @@ def run() -> NoReturn:
     @key_bindings.add(Keys.F24)
     def _(
         event: KeyPressEvent,
-    ) -> object | Coroutine[Any, Any, object]:
+    ) -> "object | Coroutine[Any, Any, object]":
         return named_commands.get_by_name("unix-word-rubout").handler(event)
 
     clipboard = PyperclipClipboard()
 
-    def _ctv_to_nd(ctvs: Iterable[Cmd_type_val]) -> nested_dict:
+    def _ctv_to_nd(ctvs: "Iterable[Cmd_type_val]") -> nested_dict:
         return {
             name: (
                 merge_completers(

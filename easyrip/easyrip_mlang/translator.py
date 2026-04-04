@@ -11,13 +11,13 @@ if TYPE_CHECKING:
 
 
 def translate_subtitles(
-    directory: Path,
+    directory: "Path",
     infix: str,
     target_lang: str | Lang_tag,
     *,
-    file_intersection_selector: Iterable[Path] | None = None,
+    file_intersection_selector: "Iterable[Path] | None" = None,
     enable_multithreading: bool = True,
-) -> list[tuple[Path, str]]:
+) -> "list[tuple[Path, str]]":
     """
     自动搜索符合中缀的字幕文件，翻译为目标语言
 

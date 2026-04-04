@@ -2,7 +2,7 @@ import os
 import re
 import tomllib
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
 from prompt_toolkit.history import FileHistory
@@ -92,7 +92,7 @@ def highlight_fuzzy_match(
     suggestion: str,
     user_input: str,
     style_config: dict | None = None,
-) -> StyleAndTextTuples:
+) -> "StyleAndTextTuples":
     """
     高亮显示模糊匹配结果
 
@@ -179,11 +179,12 @@ class SmartPathCompleter(Completer):
     def __init__(self) -> None:
         pass
 
+    @override
     def get_completions(
         self,
-        document: Document,
-        complete_event: CompleteEvent,  # noqa: ARG002
-    ) -> Iterable[Completion]:
+        document: "Document",
+        complete_event: CompleteEvent,
+    ) -> "Iterable[Completion]":
         text = document.text_before_cursor
         input_path = text.strip("\"'")
 
@@ -222,11 +223,12 @@ class SmartPathCompleter(Completer):
 
 
 class CustomPromptCompleter(Completer):
+    @override
     def get_completions(
         self,
-        document: Document,
-        complete_event: CompleteEvent,  # noqa: ARG002
-    ) -> Iterable[Completion]:
+        document: "Document",
+        complete_event: CompleteEvent,
+    ) -> "Iterable[Completion]":
         text = document.text_before_cursor
         words = text.split()
 

@@ -2,7 +2,7 @@ import enum
 import itertools
 import textwrap
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, Self, final
+from typing import TYPE_CHECKING, Final, Self, final, override
 
 from prompt_toolkit.completion import (
     Completer,
@@ -794,9 +794,10 @@ class CmdCompleter(Completer):
             (), childs=tuple(ct.value for ct in Cmd_type if ct != Cmd_type.Option)
         )
 
+    @override
     def get_completions(
         self, document: Document, complete_event: CompleteEvent
-    ) -> Iterable[Completion]:
+    ) -> "Iterable[Completion]":
         if (text := document.text_before_cursor.lstrip()).startswith("-"):
             return
         words: Final[list[str]] = text.split()
@@ -861,9 +862,10 @@ class OptCompleter(Completer):
     def __init__(self, *, opt_tree: nested_dict) -> None:
         self.opt_tree: Final[nested_dict] = opt_tree
 
+    @override
     def get_completions(
         self, document: Document, complete_event: CompleteEvent
-    ) -> Iterable[Completion]:
+    ) -> "Iterable[Completion]":
         text = document.text_before_cursor.lstrip()
 
         words = text.split()

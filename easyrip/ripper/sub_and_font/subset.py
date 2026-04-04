@@ -29,8 +29,8 @@ def _bold_italic_to_font_type(bold: bool | int, italic: bool | int) -> Font_type
 
 
 def subset(
-    sub_path_list: Iterable[str | Path],
-    font_path_list: Iterable[str | Path],
+    sub_path_list: "Iterable[str | Path]",
+    font_path_list: "Iterable[str | Path]",
     output_dir: str | Path = Path("subset"),
     *,
     font_in_sub: bool = False,

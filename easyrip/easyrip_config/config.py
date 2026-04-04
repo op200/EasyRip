@@ -30,8 +30,8 @@ assert all(k in CONFIG_DEFAULT_DICT for k in Config_key), [
 
 
 class config:
-    _config_dir: Path
-    _config_file: Path
+    _config_dir: "Path"
+    _config_file: "Path"
     _config: dict | None = None
 
     @classmethod

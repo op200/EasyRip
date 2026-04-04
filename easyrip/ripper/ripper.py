@@ -48,8 +48,8 @@ class Ripper:
     @classmethod
     def add_ripper(
         cls: type["Ripper"],
-        input_path: Iterable[str | Path],
-        output_prefix: Iterable[str | None],
+        input_path: "Iterable[str | Path]",
+        output_prefix: "Iterable[str | None]",
         output_dir: str | Path | None,
         option: "Option | Preset_name",
         option_map: dict[str, str],
@@ -104,8 +104,8 @@ class Ripper:
 
     def __init__(
         self,
-        input_path: Iterable[str | Path],
-        output_prefix: Iterable[str | None],
+        input_path: "Iterable[str | Path]",
+        output_prefix: "Iterable[str | None]",
         output_dir: str | Path | None,
         option: Option | Preset_name,
         option_map: dict[str, str],
@@ -795,7 +795,7 @@ class Ripper:
 
     def run(
         self,
-        prep_func: Callable[[Self], None] = lambda _: None,
+        prep_func: "Callable[[Self], None]" = lambda _: None,
     ) -> bool:
         terminal_progress.indeterminate()
 

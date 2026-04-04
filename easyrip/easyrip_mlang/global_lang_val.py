@@ -23,7 +23,7 @@ class Lang_tag:
 
     def match(
         self,
-        target_tags: Iterable[Self],
+        target_tags: "Iterable[Self]",
         *,
         is_incomplete_match: bool = True,
         priority: Match_priority = Match_priority.script,

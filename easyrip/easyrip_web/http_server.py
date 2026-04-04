@@ -26,7 +26,7 @@ class Event:
     is_run_command: bool = False
     """用于防止 server 二次运行，以及告知客户端运行状态"""
 
-    progress: deque[Ripper._Progress] = deque([{}])
+    progress: deque["Ripper._Progress"] = deque([{}])
 
     @classmethod
     def post_run_event(cls, cmd: str) -> None:
@@ -216,7 +216,7 @@ def run_server(
     port: int = 0,
     password: str | None = None,
     *,
-    after_start_server_hook: Callable[[], None] = lambda: None,
+    after_start_server_hook: "Callable[[], None]" = lambda: None,
 ) -> None:
     from ..easyrip_log import log
 
