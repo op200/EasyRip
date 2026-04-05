@@ -46,19 +46,21 @@ class Media_info:
         media_info = cls()
 
         # 第一个视频轨
+        _cmd = [
+            "ffprobe",
+            "-v",
+            "0",
+            "-select_streams",
+            "v:0",
+            "-show_streams",
+            "-print_format",
+            "json",
+            path,
+        ]
+        log.debug(_cmd, print_level=log.LogLevel._detail)
         _info: dict = json.loads(
             subprocess.Popen(
-                [
-                    "ffprobe",
-                    "-v",
-                    "0",
-                    "-select_streams",
-                    "v:0",
-                    "-show_streams",
-                    "-print_format",
-                    "json",
-                    path,
-                ],
+                _cmd,
                 stdout=subprocess.PIPE,
                 text=True,
                 encoding="utf-8",
@@ -89,19 +91,21 @@ class Media_info:
         media_info.duration = _duration
 
         # 遍历所有音频轨
+        _cmd = [
+            "ffprobe",
+            "-v",
+            "0",
+            "-select_streams",
+            "a",
+            "-show_streams",
+            "-print_format",
+            "json",
+            path,
+        ]
+        log.debug(_cmd, print_level=log.LogLevel._detail)
         _info: dict = json.loads(
             subprocess.Popen(
-                [
-                    "ffprobe",
-                    "-v",
-                    "0",
-                    "-select_streams",
-                    "a",
-                    "-show_streams",
-                    "-print_format",
-                    "json",
-                    path,
-                ],
+                _cmd,
                 stdout=subprocess.PIPE,
                 text=True,
                 encoding="utf-8",

@@ -15,10 +15,9 @@ from threading import Thread
 from time import sleep
 from typing import TYPE_CHECKING, Final, Self, TypedDict, final
 
-from easyrip.easyrip_config.config import CONFIG_DEFAULT_DICT, config
-from easyrip.easyrip_config.config_key import Config_key
-
 from .. import easyrip_web
+from ..easyrip_config.config import CONFIG_DEFAULT_DICT, config
+from ..easyrip_config.config_key import Config_key
 from ..easyrip_log import log
 from ..easyrip_mlang import (
     Global_lang_val,
@@ -289,11 +288,17 @@ class Ripper:
             log.debug(f"-track-name -> {track_name_list!r}", is_format=False)
 
         mkv_all_need_opt_str: str = (
-            "".join(f"--track-name {track_name} " for track_name in track_name_list)
-        ) + (
-            f"--chapters {chapters} "
-            if (chapters := self.option_map.get("chapters"))
-            else ""
+            ("".join(f"--track-name {track_name} " for track_name in track_name_list))
+            + (
+                f"--chapters {chapters} "
+                if (chapters := self.option_map.get("chapters"))
+                else ""
+            )
+            + (
+                _mkvmerge_params + " "
+                if (_mkvmerge_params := self.option_map.get("mkvmerge-params"))
+                else ""
+            )
         )
 
         if muxer := self.option_map.get("muxer"):

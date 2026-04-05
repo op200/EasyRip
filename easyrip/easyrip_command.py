@@ -639,7 +639,7 @@ class Opt_type(enum.Enum):
         ("-ff-params", "-ff-params:ff"),
         param="<string>",
         description=(
-            "Set FFmpeg global options\n"  # .
+            "Add FFmpeg global options\n"  # .
             "Same as ffmpeg <option> ... -i ..."
         ),
     )
@@ -647,7 +647,7 @@ class Opt_type(enum.Enum):
         ("-ff-params:in",),
         param="<string>",
         description=(
-            "Set FFmpeg input options\n"  # .
+            "Add FFmpeg input options\n"  # .
             "Same as ffmpeg ... <option> -i ..."
         ),
     )
@@ -655,8 +655,16 @@ class Opt_type(enum.Enum):
         ("-ff-params:out",),
         param="<string>",
         description=(
-            "Set FFmpeg output options\n"  # .
+            "Add FFmpeg output options\n"  # .
             "Same as ffmpeg -i ... <option> ..."
+        ),
+    )
+    _mkvmerge_params = Cmd_type_val(
+        ("-mkvmerge-params",),
+        param="<string>",
+        description=(
+            "Add mkvmerge options\n"  # .
+            "Same as mkvmerge ... <option> ..."
         ),
     )
     _hwaccel = Cmd_type_val(

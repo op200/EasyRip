@@ -208,16 +208,20 @@ LANG_MAP: dict[str, str] = {
         '默认: ""'
     ),
     Opt_type._ff_params_ff.value.description: (
-        "设置 FFmpeg 的全局选项\n"  # .
-        "等同于 ffmpeg <option> ... -i ..."
+        "添加 FFmpeg 的全局选项\n"  # .
+        "等同于 ffmpeg <选项> ... -i ..."
     ),
     Opt_type._ff_params_in.value.description: (
-        "设置 FFmpeg 的输入选项\n"  # .
-        "等同于 ffmpeg ... <option> -i ..."
+        "添加 FFmpeg 的输入选项\n"  # .
+        "等同于 ffmpeg ... <选项> -i ..."
     ),
     Opt_type._ff_params_out.value.description: (
-        "设置 FFmpeg 的输出选项\n"  # .
-        "等同于 ffmpeg -i ... <option> ..."
+        "添加 FFmpeg 的输出选项\n"  # .
+        "等同于 ffmpeg -i ... <选项> ..."
+    ),
+    Opt_type._mkvmerge_params.value.description: (
+        "添加 mkvmerge 的选项\n"  # .
+        "等同于 mkvmerge ... <选项> ..."
     ),
     Opt_type._hwaccel.value.description: "使用 FFmpeg 的硬件加速 (详见 'ffmpeg -hwaccels')",
     Opt_type._ss.value.description: (
