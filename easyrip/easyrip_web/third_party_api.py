@@ -1,5 +1,6 @@
 import enum
 import json
+import re
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -89,8 +90,13 @@ class zhconvert:
 
 class github:
     @classmethod
-    def get_latest_release_ver(cls, release_api_url: str) -> str | None:
-        """失败返回 None"""
+    def get_latest_release_ver(
+        cls,
+        release_api_url: str,
+        *,
+        reg: str | None = None,
+    ) -> str | None:
+        """失败返回 None，存在 reg 则返回 group(1)"""
         from ..easyrip_log import log
 
         try:
@@ -105,7 +111,15 @@ class github:
                 if ver is None:
                     return None
                 if isinstance(ver, str):
-                    return ver.lstrip("v")
+                    if reg is None:
+                        return ver.lstrip("v")
+                    _match = re.search(reg, ver)
+                    if _match is None:
+                        log.error(
+                            "Match failed: {}", f"{release_api_url} {reg} {_match}"
+                        )
+                        return None
+                    return _match.group(1)
                 raise ValueError(f"ver = {ver!r}")
         except Exception as e:
             log.debug(

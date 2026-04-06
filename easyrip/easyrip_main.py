@@ -171,7 +171,10 @@ def check_env() -> None:
                 log.print(get_input_prompt(True), end="")
             else:
                 log_new_ver(
-                    "2.5",
+                    easyrip_web.github.get_latest_release_ver(
+                        "https://api.github.com/repos/gpac/gpac/releases/latest",
+                        reg=r"v?(\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?)",
+                    ),
                     subprocess.run("mp4box -version", capture_output=True, text=True)
                     .stderr.split("-", 2)[1]
                     .strip()
