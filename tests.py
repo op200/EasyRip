@@ -185,7 +185,6 @@ class TestRip(unittest.TestCase):
             "ffmpeg",
             "ffprobe",
             "flac",
-            "mp4fpsmod",
             "mp4box",
             "mkvpropedit",
             "mkvmerge",

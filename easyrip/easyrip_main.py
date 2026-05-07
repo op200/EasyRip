@@ -145,24 +145,6 @@ def check_env() -> None:
                     _url,
                 )
 
-            _name, _url = "mp4fpsmod", "https://github.com/nu774/mp4fpsmod/releases"
-            if not shutil.which(_name):
-                log.warning(
-                    "\n" + gettext("{} not found, download it: {}", _name, _url)
-                )
-                log.print(get_input_prompt(True), end="")
-            else:
-                log_new_ver(
-                    easyrip_web.github.get_latest_release_ver(
-                        "https://api.github.com/repos/nu774/mp4fpsmod/releases/latest"
-                    ),
-                    subprocess.run(_name, capture_output=True, text=True).stderr.split(
-                        maxsplit=2
-                    )[1],
-                    _name,
-                    _url,
-                )
-
             _name, _url = "MP4Box", "https://gpac.io/downloads/gpac-nightly-builds/"
             if not shutil.which(_name):
                 log.warning(

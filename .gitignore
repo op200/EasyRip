@@ -4,10 +4,8 @@
 !LICENSE
 !README.md
 !.github/
-!easyrip.py
 !easyrip/
 !resources/
-!requirements.txt
 !tests.py
 !pyproject.toml
 !ruff.toml

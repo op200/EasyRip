@@ -308,18 +308,13 @@ class Ripper:
                 case Ripper.Muxer.mp4:
                     muxer_format_str_list = [
                         'mp4box -add "{output}" -new "{output}" '
+                        + (f"-fps {force_fps} " if force_fps else "")
                         + (
                             f"-chap {chapters} "
                             if (chapters := self.option_map.get("chapters"))
                             else ""
                         )
                     ]
-                    if self.preset_name != Ripper.Preset_name.flac:
-                        muxer_format_str_list.append(
-                            "mp4fpsmod "
-                            + (f"-r 0:{force_fps}" if force_fps else "")
-                            + ' -i "{output}"'
-                        )
 
                 case Ripper.Muxer.mkv:
                     only_mux_sub_file_list: Sequence[Path] | None = None
