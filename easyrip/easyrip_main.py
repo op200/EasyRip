@@ -13,6 +13,7 @@ import threading
 import tkinter as tk
 import tomllib
 from concurrent.futures import ThreadPoolExecutor
+from contextlib import suppress
 from datetime import datetime
 from multiprocessing import shared_memory
 from pathlib import Path
@@ -769,10 +770,8 @@ def run_command(command: "Iterable[str] | str") -> bool:
                     if (_old_val := config.get_user_profile(_key)) is None:
                         return False
 
-                    try:
+                    with suppress(ValueError, SyntaxError):
                         _val = ast.literal_eval(_val)
-                    except (ValueError, SyntaxError):
-                        pass
 
                     if _old_val == _val:
                         log.info(

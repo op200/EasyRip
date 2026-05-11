@@ -22,6 +22,7 @@ CONFIG_DEFAULT_DICT: dict[Config_key, str | bool | list[str] | int] = {
     Config_key.log_write_level: log.LogLevel.send.name,
     Config_key.save_prompt_history: True,
     Config_key.refresh_progress_sec: 3,
+    Config_key.proxies: "auto",
 }
 
 assert all(k in CONFIG_DEFAULT_DICT for k in Config_key), [
@@ -155,6 +156,7 @@ class config:
             Config_key.force_log_file_path,
             Config_key.log_print_level,
             Config_key.log_write_level,
+            Config_key.proxies,
         ],
         default: T = None,
         /,
@@ -293,6 +295,11 @@ class config:
                 Config_key.refresh_progress_sec.name: gettext(
                     "Refresh progress interval. Default: {}",
                     CONFIG_DEFAULT_DICT[Config_key.refresh_progress_sec],
+                ),
+                Config_key.proxies.name: gettext(
+                    'Set proxies str in the format of dict[str, str] like {}. If it is "auto", use system proxies. Default: {}',
+                    "\"{'http': 'http://127.0.0.1:5678'}\"",
+                    CONFIG_DEFAULT_DICT[Config_key.proxies],
                 ),
             }
             | (cls._config or {})

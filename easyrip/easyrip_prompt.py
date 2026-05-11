@@ -1,6 +1,7 @@
 import os
 import re
 import tomllib
+from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
@@ -176,6 +177,7 @@ def fuzzy_filter_and_sort(
 
 
 class SmartPathCompleter(Completer):
+    @override
     def __init__(self) -> None:
         pass
 
@@ -188,7 +190,7 @@ class SmartPathCompleter(Completer):
         text = document.text_before_cursor
         input_path = text.strip("\"'")
 
-        try:
+        with suppress(OSError):
             # 不要使用 pathlib 解析，解析逻辑不一致
             directory = os.path.dirname(input_path) or "."  # noqa: PTH120
             basename = os.path.basename(input_path)  # noqa: PTH119
@@ -217,9 +219,6 @@ class SmartPathCompleter(Completer):
                     start_position=-len(text),
                     display=highlight_fuzzy_match(filename, basename),
                 )
-
-        except OSError:
-            pass
 
 
 class CustomPromptCompleter(Completer):

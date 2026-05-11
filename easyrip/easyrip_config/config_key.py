@@ -1,6 +1,6 @@
 import enum
 
-CONFIG_VERSION = "4.17.10"
+CONFIG_VERSION = "4.18.1"
 
 
 class Config_key(enum.Enum):
@@ -14,6 +14,7 @@ class Config_key(enum.Enum):
     log_write_level = enum.auto()
     save_prompt_history = enum.auto()
     refresh_progress_sec = enum.auto()
+    proxies = enum.auto()
 
 
 CONFIG_TYPE_DICT: dict[Config_key, type] = {
@@ -27,4 +28,5 @@ CONFIG_TYPE_DICT: dict[Config_key, type] = {
     Config_key.log_write_level: str,
     Config_key.save_prompt_history: bool,
     Config_key.refresh_progress_sec: int,
+    Config_key.proxies: str,
 }

@@ -13,7 +13,7 @@ from prompt_toolkit import ANSI, print_formatted_text
 from . import easyrip_web
 from .easyrip_mlang import gettext
 
-__all__ = ["log"]
+__all__ = ["Log"]
 
 
 class Event:
@@ -21,9 +21,42 @@ class Event:
     def append_http_server_log_queue(message: tuple[str, str, str], /) -> None: ...
 
 
-class log:
-    @classmethod
-    def init(cls) -> None:
+class Log:
+    class LogLevel(enum.Enum):
+        _detail = enum.auto()
+        debug = enum.auto()
+        send = enum.auto()
+        info = enum.auto()
+        warning = enum.auto()
+        error = enum.auto()
+        none = enum.auto()
+
+    class LogMode(enum.Enum):
+        normal = enum.auto()
+        only_print = enum.auto()
+        only_write = enum.auto()
+
+    def __init__(self) -> None:
+        self.html_file: Path = Path("EasyRip_log.html")  # 在调用前覆写
+        self.print_level: Log.LogLevel = Log.LogLevel.send
+        self.write_level: Log.LogLevel = Log.LogLevel.send
+
+        self.default_foreground_color: int = 39
+        self.default_background_color: int = 49
+        self.time_color: int = 32
+        self.debug_color: int = 32
+        self.info_color: int = 34
+        self.warning_color: int = 33
+        self.error_color: int = 31
+        self.send_color: int = 35
+
+        self.debug_num: int = 0
+        self.info_num: int = 0
+        self.warning_num: int = 0
+        self.error_num: int = 0
+        self.send_num: int = 0
+
+    def init(self) -> None:
         """
         初始化日志功能
 
@@ -58,73 +91,52 @@ class log:
                 7: 7,  # 白色
             }
 
-            cls.default_foreground_color = (
+            self.default_foreground_color = (
                 30
                 + color_map.get(attributes & 0x0007, 9)
                 + 60 * ((attributes & 0x0008) != 0)
             )
-            cls.default_background_color = (
+            self.default_background_color = (
                 40
                 + color_map.get((attributes >> 4) & 0x0007, 9)
                 + 60 * ((attributes & 0x0080) != 0)
             )
 
-            if cls.default_foreground_color == 37:
-                cls.default_foreground_color = 39
-            if cls.default_background_color == 40:
-                cls.default_background_color = 49
+            if self.default_foreground_color == 37:
+                self.default_foreground_color = 39
+            if self.default_background_color == 40:
+                self.default_background_color = 49
 
-            if cls.default_background_color == 42:
-                cls.debug_color = cls.time_color = 92
+            if self.default_background_color == 42:
+                self.debug_color = self.time_color = 92
 
-            if cls.default_background_color == 44 or cls.default_foreground_color == 34:
-                cls.info_color = 96
+            if (
+                self.default_background_color == 44
+                or self.default_foreground_color == 34
+            ):
+                self.info_color = 96
 
-            if cls.default_background_color == 43 or cls.default_foreground_color == 33:
-                cls.warning_color = 93
+            if (
+                self.default_background_color == 43
+                or self.default_foreground_color == 33
+            ):
+                self.warning_color = 93
 
-            if cls.default_background_color == 41 or cls.default_foreground_color == 31:
-                cls.error_color = 91
+            if (
+                self.default_background_color == 41
+                or self.default_foreground_color == 31
+            ):
+                self.error_color = 91
 
-            if cls.default_background_color == 45 or cls.default_foreground_color == 35:
-                cls.send_color = 95
+            if (
+                self.default_background_color == 45
+                or self.default_foreground_color == 35
+            ):
+                self.send_color = 95
 
         # 写入 </div>
-        if cls.html_file.is_file() and cls.html_file.stat().st_size:
-            cls.write_html_log("</div></div></div>")
-
-    class LogLevel(enum.Enum):
-        _detail = enum.auto()
-        debug = enum.auto()
-        send = enum.auto()
-        info = enum.auto()
-        warning = enum.auto()
-        error = enum.auto()
-        none = enum.auto()
-
-    class LogMode(enum.Enum):
-        normal = enum.auto()
-        only_print = enum.auto()
-        only_write = enum.auto()
-
-    html_file: Path = Path("EasyRip_log.html")  # 在调用前覆写
-    print_level: LogLevel = LogLevel.send
-    write_level: LogLevel = LogLevel.send
-
-    default_foreground_color: int = 39
-    default_background_color: int = 49
-    time_color: int = 32
-    debug_color: int = 32
-    info_color: int = 34
-    warning_color: int = 33
-    error_color: int = 31
-    send_color: int = 35
-
-    debug_num: int = 0
-    info_num: int = 0
-    warning_num: int = 0
-    error_num: int = 0
-    send_num: int = 0
+        if self.html_file.is_file() and self.html_file.stat().st_size:
+            self.write_html_log("</div></div></div>")
 
     @staticmethod
     def print(
@@ -145,9 +157,8 @@ class log:
                 file=file,
             )
 
-    @classmethod
     def _do_log(
-        cls,
+        self,
         log_level: LogLevel,
         mode: LogMode,
         message: object,
@@ -161,7 +172,7 @@ class log:
         http_send_header: str = "",
         **fmt_kwargs: object,
     ) -> None:
-        if log_level == cls.LogLevel.none:
+        if log_level == self.LogLevel.none:
             return
 
         time_now = datetime.datetime.now().strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]
@@ -175,145 +186,144 @@ class log:
         if is_deep:
             message = f"{traceback.format_exc()}\n{message}"
 
-        time_str = f"\033[{cls.time_color}m{time_now}"
+        time_str = f"\033[{self.time_color}m{time_now}"
 
         match log_level:
-            case cls.LogLevel.debug:
-                cls.debug_num += 1
+            case self.LogLevel.debug:
+                self.debug_num += 1
 
                 if (
-                    mode != cls.LogMode.only_write
-                    and cls.print_level.value <= cls.LogLevel.debug.value
-                    and cls.print_level.value <= print_level.value
+                    mode != self.LogMode.only_write
+                    and self.print_level.value <= self.LogLevel.debug.value
+                    and self.print_level.value <= print_level.value
                 ):
-                    cls.print(
-                        f"{time_str}\033[{cls.debug_color}m [DEBUG] {message}\033[{cls.default_foreground_color}m\n",
+                    self.print(
+                        f"{time_str}\033[{self.debug_color}m [DEBUG] {message}\033[{self.default_foreground_color}m\n",
                         end="",
                         file=stream,
                     )
 
                 if (
-                    mode != cls.LogMode.only_print
-                    and cls.write_level.value <= cls.LogLevel.debug.value
-                    and cls.write_level.value <= write_level.value
+                    mode != self.LogMode.only_print
+                    and self.write_level.value <= self.LogLevel.debug.value
+                    and self.write_level.value <= write_level.value
                 ):
-                    cls.write_html_log(
+                    self.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:green;">[DEBUG] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "DEBUG", message))
 
-            case cls.LogLevel.info:
-                cls.info_num += 1
+            case self.LogLevel.info:
+                self.info_num += 1
 
                 if (
-                    mode != cls.LogMode.only_write
-                    and cls.print_level.value <= cls.LogLevel.info.value
-                    and cls.print_level.value <= print_level.value
+                    mode != self.LogMode.only_write
+                    and self.print_level.value <= self.LogLevel.info.value
+                    and self.print_level.value <= print_level.value
                 ):
-                    cls.print(
-                        f"{time_str}\033[{cls.info_color}m [INFO] {message}\033[{cls.default_foreground_color}m\n",
+                    self.print(
+                        f"{time_str}\033[{self.info_color}m [INFO] {message}\033[{self.default_foreground_color}m\n",
                         end="",
                         file=stream,
                     )
 
                 if (
-                    mode != cls.LogMode.only_print
-                    and cls.write_level.value <= cls.LogLevel.info.value
-                    and cls.write_level.value <= write_level.value
+                    mode != self.LogMode.only_print
+                    and self.write_level.value <= self.LogLevel.info.value
+                    and self.write_level.value <= write_level.value
                 ):
-                    cls.write_html_log(
+                    self.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
-            case cls.LogLevel.warning:
-                cls.warning_num += 1
+            case self.LogLevel.warning:
+                self.warning_num += 1
 
                 if (
-                    mode != cls.LogMode.only_write
-                    and cls.print_level.value <= cls.LogLevel.warning.value
-                    and cls.print_level.value <= print_level.value
+                    mode != self.LogMode.only_write
+                    and self.print_level.value <= self.LogLevel.warning.value
+                    and self.print_level.value <= print_level.value
                 ):
-                    cls.print(
-                        f"{time_str}\033[{cls.warning_color}m [WARNING] {message}\033[{cls.default_foreground_color}m\n",
+                    self.print(
+                        f"{time_str}\033[{self.warning_color}m [WARNING] {message}\033[{self.default_foreground_color}m\n",
                         end="",
                         file=stream,
                     )
 
                 if (
-                    mode != cls.LogMode.only_print
-                    and cls.write_level.value <= cls.LogLevel.warning.value
-                    and cls.write_level.value <= write_level.value
+                    mode != self.LogMode.only_print
+                    and self.write_level.value <= self.LogLevel.warning.value
+                    and self.write_level.value <= write_level.value
                 ):
-                    cls.write_html_log(
+                    self.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
-            case cls.LogLevel.error:
-                cls.error_num += 1
+            case self.LogLevel.error:
+                self.error_num += 1
 
                 if (
-                    mode != cls.LogMode.only_write
-                    and cls.print_level.value <= cls.LogLevel.error.value
-                    and cls.print_level.value <= print_level.value
+                    mode != self.LogMode.only_write
+                    and self.print_level.value <= self.LogLevel.error.value
+                    and self.print_level.value <= print_level.value
                 ):
-                    cls.print(
-                        f"{time_str}\033[{cls.error_color}m [ERROR] {message}\033[{cls.default_foreground_color}m\n",
+                    self.print(
+                        f"{time_str}\033[{self.error_color}m [ERROR] {message}\033[{self.default_foreground_color}m\n",
                         end="",
                         file=stream,
                     )
 
                 if (
-                    mode != cls.LogMode.only_print
-                    and cls.write_level.value <= cls.LogLevel.error.value
-                    and cls.write_level.value <= write_level.value
+                    mode != self.LogMode.only_print
+                    and self.write_level.value <= self.LogLevel.error.value
+                    and self.write_level.value <= write_level.value
                 ):
-                    cls.write_html_log(
+                    self.write_html_log(
                         f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
-            case cls.LogLevel.send:
-                cls.send_num += 1
+            case self.LogLevel.send:
+                self.send_num += 1
 
                 if is_server or easyrip_web.http_server.Event.is_run_command:
                     if (
-                        mode != cls.LogMode.only_write
-                        and cls.print_level.value <= cls.LogLevel.send.value
-                        and cls.print_level.value <= print_level.value
+                        mode != self.LogMode.only_write
+                        and self.print_level.value <= self.LogLevel.send.value
+                        and self.print_level.value <= print_level.value
                     ):
-                        cls.print(
-                            f"{time_str}\033[{cls.send_color}m [Send] {message}\033[{cls.default_foreground_color}m\n",
+                        self.print(
+                            f"{time_str}\033[{self.send_color}m [Send] {message}\033[{self.default_foreground_color}m\n",
                             end="",
                             file=stream,
                         )
 
                     if (
-                        mode != cls.LogMode.only_print
-                        and cls.write_level.value <= cls.LogLevel.send.value
-                        and cls.write_level.value <= write_level.value
+                        mode != self.LogMode.only_print
+                        and self.write_level.value <= self.LogLevel.send.value
+                        and self.write_level.value <= write_level.value
                     ):
-                        cls.write_html_log(
+                        self.write_html_log(
                             f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
 
                     Event.append_http_server_log_queue(
                         (http_send_header, "Send", message)
                     )
-                elif cls.print_level.value <= cls.LogLevel.send.value:
-                    cls.print(
-                        f"\033[{cls.send_color}m{message}\033[{cls.default_foreground_color}m\n",
+                elif self.print_level.value <= self.LogLevel.send.value:
+                    self.print(
+                        f"\033[{self.send_color}m{message}\033[{self.default_foreground_color}m\n",
                         end="",
                     )
 
-    @classmethod
     def debug(
-        cls,
+        self,
         message: object,
         /,
         *fmt_args: object,
@@ -325,8 +335,8 @@ class log:
         mode: LogMode = LogMode.normal,
         **fmt_kwargs: object,
     ) -> None:
-        cls._do_log(
-            log.LogLevel.debug,
+        self._do_log(
+            self.LogLevel.debug,
             mode,
             message,
             *fmt_args,
@@ -340,9 +350,8 @@ class log:
             **fmt_kwargs,
         )
 
-    @classmethod
     def info(
-        cls,
+        self,
         message: object,
         /,
         *fmt_args: object,
@@ -354,8 +363,8 @@ class log:
         mode: LogMode = LogMode.normal,
         **fmt_kwargs: object,
     ) -> None:
-        cls._do_log(
-            log.LogLevel.info,
+        self._do_log(
+            self.LogLevel.info,
             mode,
             message,
             *fmt_args,
@@ -369,9 +378,8 @@ class log:
             **fmt_kwargs,
         )
 
-    @classmethod
     def warning(
-        cls,
+        self,
         message: object,
         /,
         *fmt_args: object,
@@ -383,8 +391,8 @@ class log:
         mode: LogMode = LogMode.normal,
         **fmt_kwargs: object,
     ) -> None:
-        cls._do_log(
-            log.LogLevel.warning,
+        self._do_log(
+            self.LogLevel.warning,
             mode,
             message,
             *fmt_args,
@@ -398,9 +406,8 @@ class log:
             **fmt_kwargs,
         )
 
-    @classmethod
     def error(
-        cls,
+        self,
         message: object,
         /,
         *fmt_args: object,
@@ -412,8 +419,8 @@ class log:
         mode: LogMode = LogMode.normal,
         **fmt_kwargs: object,
     ) -> None:
-        cls._do_log(
-            log.LogLevel.error,
+        self._do_log(
+            self.LogLevel.error,
             mode,
             message,
             *fmt_args,
@@ -427,9 +434,8 @@ class log:
             **fmt_kwargs,
         )
 
-    @classmethod
     def send(
-        cls,
+        self,
         message: object,
         /,
         *fmt_args: object,
@@ -442,8 +448,8 @@ class log:
         http_send_header: str = "",
         **fmt_kwargs: object,
     ) -> None:
-        cls._do_log(
-            log.LogLevel.send,
+        self._do_log(
+            self.LogLevel.send,
             mode,
             message,
             *fmt_args,
@@ -457,16 +463,19 @@ class log:
             **fmt_kwargs,
         )
 
-    @classmethod
     def write_html_log(
-        cls,
+        self,
         message: str,
     ) -> None:
         try:
-            with cls.html_file.open("at", encoding="utf-8") as f:
+            with self.html_file.open("at", encoding="utf-8") as f:
                 f.write(message)
         except Exception as e:
-            _level = cls.write_level
-            cls.write_level = cls.LogLevel.none
-            cls.error(f"{e!r} {e}", deep=True)
-            cls.write_level = _level
+            _level = self.write_level
+            self.write_level = self.LogLevel.none
+            self.error(f"{e!r} {e}", deep=True)
+            self.write_level = _level
+
+
+log = Log()
+"""Easy Rip 内部使用的 log 单例，用于向前兼容"""

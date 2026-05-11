@@ -1,3 +1,4 @@
+import ast
 import enum
 import json
 import re
@@ -7,16 +8,33 @@ import urllib.request
 import xml.etree.ElementTree
 from time import sleep
 
+from ..utils import type_match
+
 REQ_HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
 }
 
 
 def open_req(req: urllib.request.Request):
+    from ..easyrip_config.config import config
+    from ..easyrip_config.config_key import Config_key
     from ..easyrip_log import log
 
-    proxies = urllib.request.getproxies()
-    log.debug("Proxies: {}", proxies, print_level=log.LogLevel._detail)
+    proxies = config.get_user_profile(Config_key.proxies, "auto")
+    if proxies == "auto":
+        proxies = urllib.request.getproxies()
+    else:
+        proxies = ast.literal_eval(proxies)
+        if not type_match(proxies, dict[str, str]):
+            log.error("The type of proxies is unsupported")
+
+    log.debug(
+        "Request: {}\n\tProxies: {}",
+        req.full_url,
+        proxies,
+        print_level=log.LogLevel._detail,
+    )
+
     opener = urllib.request.build_opener(urllib.request.ProxyHandler(proxies))
 
     return opener.open(req)
