@@ -37,8 +37,7 @@ LANG_MAP: dict[str, str] = {
     ),
     Cmd_type._run_any.value.description: (
         "直接从内部环境运行代码\n"  # .
-        "直接执行 $ 之后的代码\n"
-        '字符串"\\N"将变为实际的"\\n"'
+        "直接执行 $ 之后的代码"
     ),
     Cmd_type.exit.value.description: "退出程序",
     Cmd_type.cd.value.description: "更改当前目录",

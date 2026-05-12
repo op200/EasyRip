@@ -6,7 +6,7 @@ import sys
 import traceback
 from ctypes import wintypes
 from pathlib import Path
-from typing import TextIO
+from typing import Self, TextIO
 
 from prompt_toolkit import ANSI, print_formatted_text
 
@@ -56,7 +56,7 @@ class Log:
         self.error_num: int = 0
         self.send_num: int = 0
 
-    def init(self) -> None:
+    def init(self) -> Self:
         """
         初始化日志功能
 
@@ -138,6 +138,8 @@ class Log:
         if self.html_file.is_file() and self.html_file.stat().st_size:
             self.write_html_log("</div></div></div>")
 
+        return self
+
     @staticmethod
     def print(
         value: str,
@@ -199,7 +201,6 @@ class Log:
                 ):
                     self.print(
                         f"{time_str}\033[{self.debug_color}m [DEBUG] {message}\033[{self.default_foreground_color}m\n",
-                        end="",
                         file=stream,
                     )
 
@@ -224,7 +225,6 @@ class Log:
                 ):
                     self.print(
                         f"{time_str}\033[{self.info_color}m [INFO] {message}\033[{self.default_foreground_color}m\n",
-                        end="",
                         file=stream,
                     )
 
@@ -249,7 +249,6 @@ class Log:
                 ):
                     self.print(
                         f"{time_str}\033[{self.warning_color}m [WARNING] {message}\033[{self.default_foreground_color}m\n",
-                        end="",
                         file=stream,
                     )
 
@@ -274,7 +273,6 @@ class Log:
                 ):
                     self.print(
                         f"{time_str}\033[{self.error_color}m [ERROR] {message}\033[{self.default_foreground_color}m\n",
-                        end="",
                         file=stream,
                     )
 
@@ -300,7 +298,6 @@ class Log:
                     ):
                         self.print(
                             f"{time_str}\033[{self.send_color}m [Send] {message}\033[{self.default_foreground_color}m\n",
-                            end="",
                             file=stream,
                         )
 
@@ -319,7 +316,6 @@ class Log:
                 elif self.print_level.value <= self.LogLevel.send.value:
                     self.print(
                         f"\033[{self.send_color}m{message}\033[{self.default_foreground_color}m\n",
-                        end="",
                     )
 
     def debug(

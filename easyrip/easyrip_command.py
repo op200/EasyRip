@@ -160,13 +160,11 @@ class Cmd_type(enum.Enum):
         param="<code>",
         description=(
             "Run code directly from the internal environment.\n"
-            "Execute the code string directly after the '$'.\n"
-            'The string "\\N" will be changed to real "\\n".\n'
+            "Execute the code string directly after the '$'."
         ),
     )
     exit = Cmd_type_val(
         ("exit",),
-        param="exit",
         description="Exit this program",
     )
     cd = Cmd_type_val(

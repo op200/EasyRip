@@ -509,7 +509,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
 
         case Cmd_type._run_any:
             try:
-                exec(" ".join(cmd_list)[1:].lstrip().replace(r"\N", "\n"))
+                exec(" ".join(cmd_list)[1:].lstrip())
             except Exception as e:
                 log.error("Your input command has error:\n{}", e)
 
