@@ -7,15 +7,19 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree
 from time import sleep
+from typing import TYPE_CHECKING
 
 from ..utils import type_match
+
+if TYPE_CHECKING:
+    import http.client
 
 REQ_HEADER = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:147.0) Gecko/20100101 Firefox/147.0"
 }
 
 
-def open_req(req: urllib.request.Request):
+def open_req(req: urllib.request.Request) -> "http.client.HTTPResponse":
     from ..easyrip_config.config import config
     from ..easyrip_config.config_key import Config_key
     from ..easyrip_log import log
@@ -179,6 +183,43 @@ class mkvtoolnix:
                     return None
                 cls.__latest_release_ver_cache = ver.text
                 return ver.text
+        except Exception as e:
+            log.debug(
+                "'{}' execution failed: {}",
+                f"{cls.__name__}.{cls.get_latest_release_ver.__name__}",
+                e,
+                print_level=log.LogLevel._detail,
+            )
+
+        return None
+
+
+class ffmpeg:
+    __latest_release_ver_cache: str | None = None
+
+    @classmethod
+    def get_latest_release_ver(cls, *, flush_cache: bool = False) -> str | None:
+        """失败返回 None"""
+        if flush_cache is False and cls.__latest_release_ver_cache is not None:
+            return cls.__latest_release_ver_cache
+
+        from ..easyrip_log import log
+
+        try:
+            with open_req(
+                urllib.request.Request(
+                    url="https://evermeet.cx/ffmpeg/info/ffmpeg/release",
+                    headers=REQ_HEADER,
+                )
+            ) as response:
+                data: dict = json.loads(response.read().decode("utf-8"))
+                ver = data.get("version")
+                if ver is None:
+                    return None
+                if isinstance(ver, str):
+                    cls.__latest_release_ver_cache = ver
+                    return ver
+                raise ValueError(f"ver = {ver!r}")
         except Exception as e:
             log.debug(
                 "'{}' execution failed: {}",

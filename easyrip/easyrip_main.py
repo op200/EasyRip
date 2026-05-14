@@ -110,10 +110,18 @@ def check_env() -> None:
                     )
 
                     if "." in _new_ver:
-                        log_new_ver("8.1", _new_ver.split("-")[0], _name, _url)
+                        log_new_ver(
+                            easyrip_web.ffmpeg.get_latest_release_ver() or "8.1.1",
+                            _new_ver.split("-")[0],
+                            _name,
+                            _url,
+                        )
                     else:
                         log_new_ver(
-                            "2026.03.16", ".".join(_new_ver.split("-")[:3]), _name, _url
+                            "2026.05.04",  # 格式: YYYY.MM.DD
+                            ".".join(_new_ver.split("-")[:3]),
+                            _name,
+                            _url,
                         )
 
             _name, _url = "flac", "https://github.com/xiph/flac/releases"
@@ -129,19 +137,19 @@ def check_env() -> None:
             elif check_ver(
                 "1.5.0",
                 (
-                    old_ver_str := subprocess.run(
+                    current_ver_str := subprocess.run(
                         "flac -v", capture_output=True, text=True
                     ).stdout.split()[1]
                 ),
             ):
-                log.error("flac ver ({}) must >= 1.5.0", old_ver_str)
+                log.error("flac ver ({}) must >= 1.5.0", current_ver_str)
 
             else:
                 log_new_ver(
                     easyrip_web.github.get_latest_release_ver(
                         "https://api.github.com/repos/xiph/flac/releases/latest"
                     ),
-                    old_ver_str,
+                    current_ver_str,
                     _name,
                     _url,
                 )
@@ -156,12 +164,16 @@ def check_env() -> None:
                 log_new_ver(
                     easyrip_web.github.get_latest_release_ver(
                         "https://api.github.com/repos/gpac/gpac/releases/latest",
-                        reg=r"v?(\d+\.\d+\.\d+(?:-[a-zA-Z0-9.-]+)?)",
+                        reg=r"(?i:v(?:er(?:sion)?)?)?(\d+(?:\.\d)*(?:-[a-zA-Z0-9.-]+)?)",
                     ),
-                    subprocess.run("mp4box -version", capture_output=True, text=True)
-                    .stderr.split("-", 2)[1]
-                    .strip()
-                    .split()[2],
+                    (
+                        subprocess.run(
+                            "mp4box -version", capture_output=True, text=True
+                        )
+                        .stderr.split("-", 2)[1]
+                        .strip()
+                        .split()[2]
+                    ),
                     _name,
                     _url,
                 )
@@ -175,7 +187,7 @@ def check_env() -> None:
                     log.print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        easyrip_web.mkvtoolnix.get_latest_release_ver(),
+                        easyrip_web.mkvtoolnix.get_latest_release_ver() or "98.0",
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
