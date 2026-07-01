@@ -1,6 +1,6 @@
 import json
 import os
-from typing import TYPE_CHECKING, Any, Literal, get_origin, overload
+from typing import TYPE_CHECKING, Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
@@ -148,7 +148,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: Literal[
             Config_key.language,
@@ -164,7 +164,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: Literal[
             Config_key.check_update,
@@ -177,7 +177,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: Literal[Config_key.startup_dir_blacklist],
         default: T = None,
@@ -186,7 +186,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: Literal[Config_key.refresh_progress_sec],
         default: T = None,
@@ -195,7 +195,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: str,
         default: T = None,
@@ -203,7 +203,7 @@ class config:
     ) -> str | bool | list[str] | int | T: ...
 
     @classmethod
-    def get_user_profile[T: Any | None](
+    def get_user_profile[T](
         cls,
         config_key: Config_key | str,
         default: T = None,

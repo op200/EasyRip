@@ -1,5 +1,5 @@
 import sys
-from typing import TYPE_CHECKING, Any, NoReturn
+from typing import TYPE_CHECKING, NoReturn
 
 import Crypto
 import fontTools
@@ -30,10 +30,10 @@ from .easyrip_prompt import (
     CustomPromptCompleter,
     easyrip_prompt,
 )
-from .global_val import C_D, C_Z
+from .global_val import C_D, C_H, C_Z
 
 if TYPE_CHECKING:
-    from collections.abc import Coroutine, Iterable
+    from collections.abc import Iterable
 
 
 def run() -> NoReturn:
@@ -74,13 +74,19 @@ def run() -> NoReturn:
     def _(event: KeyPressEvent) -> None:
         event.app.current_buffer.insert_text(C_D)
 
-    ANSI_SEQUENCES["\x08"] = Keys.F24
+    ANSI_SEQUENCES[C_H] = Keys.F24
 
     @key_bindings.add(Keys.F24)
-    def _(
-        event: KeyPressEvent,
-    ) -> "object | Coroutine[Any, Any, object]":
-        return named_commands.get_by_name("unix-word-rubout").handler(event)
+    def _(event: KeyPressEvent) -> None:
+        named_commands.get_by_name("unix-word-rubout").handler(event)
+
+    # @key_bindings.add(Keys.ControlZ)
+    # def _(event: KeyPressEvent) -> None:
+    #     event.current_buffer.undo()
+
+    @key_bindings.add(Keys.ControlY)
+    def _(event: KeyPressEvent) -> None:
+        event.current_buffer.undo()
 
     clipboard = PyperclipClipboard()
 

@@ -595,7 +595,7 @@ class Opt_type(enum.Enum):
         ),
     )
     _custom_template = _custom = _custom_format = Cmd_type_val(
-        ("-custom", "-custom:format", "-custom:tempate"),
+        ("-custom", "-custom:format", "-custom:template"),
         param="<string>",
         description=(
             "When -preset custom, this option will run\n"

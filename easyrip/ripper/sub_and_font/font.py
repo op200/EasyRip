@@ -185,7 +185,7 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
 
     if missing_chars:
         # 将缺失字符按 Unicode 码点排序
-        sorted_missing = sorted(missing_chars, key=lambda c: ord(c))
+        sorted_missing = sorted(missing_chars, key=ord)
         missing_info = ", ".join(f"'{c}' (U+{ord(c):04X})" for c in sorted_missing)
         log.warning(
             'The font "{}" does not contain these characters: {}',

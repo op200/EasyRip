@@ -742,13 +742,10 @@ class Ripper:
 
             case Ripper.Preset_name.svtav1:
                 _option_map = {
-                    "crf": self.option_map.get("crf"),
-                    "qp": self.option_map.get("qp"),
+                    **preset_param_getted,
                     "pix_fmt": self.option_map.get(
                         "pix_fmt", None if is_pipe_input else "yuv420p10le"
                     ),
-                    "preset:v": self.option_map.get("preset:v"),
-                    "svtav1-params": self.option_map.get("svtav1-params"),
                 }
 
                 _param = " ".join(
@@ -759,12 +756,10 @@ class Ripper:
 
             case Ripper.Preset_name.vvenc:
                 _option_map = {
-                    "qp": self.option_map.get("qp"),
+                    **preset_param_getted,
                     "pix_fmt": self.option_map.get(
                         "pix_fmt", None if is_pipe_input else "yuv420p10le"
                     ),
-                    "preset:v": self.option_map.get("preset:v"),
-                    "vvenc-params": self.option_map.get("vvenc-params"),
                 }
 
                 _param = " ".join(
@@ -775,8 +770,8 @@ class Ripper:
 
             case Ripper.Preset_name.ffv1:
                 _option_map = {
-                    "pix_fmt": self.option_map.get("pix_fmt"),
                     **preset_param_getted,
+                    "pix_fmt": self.option_map.get("pix_fmt"),
                 }
 
                 _param = " ".join(
@@ -967,7 +962,7 @@ class Ripper:
                     return subset_res
 
                 suffix = ".mks"
-                only_mux_sub_file_list = []
+                only_mux_sub_file_list: list[Path] = []
                 for _path in (self.output_dir / self.output_prefix_list[0]).iterdir():
                     if _path.suffix in (SUBTITLE_SUFFIX_SET | FONT_SUFFIX_SET):
                         only_mux_sub_file_list.append(_path)
@@ -1199,10 +1194,11 @@ class Ripper:
         )
         is_cmd_run_failed: bool = False
         for i, cmd in enumerate(cmd_list, 1):
-            log.info("Run the command {}", i)
+            _cmd_num = f"{i}{'' if sub_ripper_num is None else f' (Sub Ripper {sub_ripper_num} - {sub_ripper_title})'}"
+            log.info("Run the command {}", _cmd_num)
             log.debug(
                 "Run the command {}",
-                f"{i}:\n  {cmd}",
+                f"{_cmd_num}:\n  {cmd}",
             )
             if (_cmd_res := subprocess.call(cmd, shell=True)) != 0:
                 is_cmd_run_failed = True

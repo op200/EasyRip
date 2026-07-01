@@ -86,8 +86,8 @@ class zhconvert:
                     )
                 ) as response:
                     for _ in range(5):  # 尝试重连
-                        if response.getcode() != 200:
-                            log.debug("response.getcode() != 200")
+                        if response.status != 200:
+                            log.debug("response.status != 200")
                             continue
 
                         res = json.loads(response.read().decode("utf-8"))
@@ -99,7 +99,7 @@ class zhconvert:
                             raise TypeError("The 'text' in response is not a 'str'")
                         return text
 
-                    raise Exception(f"HTTP error: {response.getcode()}")
+                    raise Exception(f"HTTP error: {response.status}")
             except urllib.error.HTTPError as e:
                 sleep(0.5)
                 if retry_num == 4:

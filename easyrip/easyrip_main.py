@@ -243,7 +243,7 @@ def file_dialog(
         file_paths = filedialog.askopenfilenames(initialdir=initialdir)
 
     tkRoot.destroy()
-    return file_paths if file_paths else ()
+    return file_paths or ()
 
 
 def run_ripper_list(
@@ -316,16 +316,17 @@ def run_ripper_list(
                 log.error(e, deep=True)
                 log.warning("Stop run Ripper")
                 terminal_progress.error()
-            except KeyboardInterrupt:
-                log.warning("Manually stop run and clear Ripper list")
-                Ripper.ripper_list.clear()
-                terminal_progress.warning()
-                raise
 
-        with ThreadPoolExecutor() as executor:
-            for ripper in Ripper.ripper_list:
-                executor.submit(_executor_submit_ripper_run, ripper)
-                sleep(0.1)
+        try:
+            with ThreadPoolExecutor() as executor:
+                for ripper in Ripper.ripper_list:
+                    executor.submit(_executor_submit_ripper_run, ripper)
+                    sleep(0.1)
+        except KeyboardInterrupt:
+            log.warning("Manually stop run and clear Ripper list")
+            Ripper.ripper_list.clear()
+            terminal_progress.warning()
+            raise
 
     else:
         for i, ripper in enumerate(Ripper.ripper_list, 1):
