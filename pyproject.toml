@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-    "setuptools>=82",
+    "setuptools>=83",
 ]
 
 [project]
@@ -12,6 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Multimedia",
     # "Operating System :: MacOS",
     # "Operating System :: POSIX :: Linux",

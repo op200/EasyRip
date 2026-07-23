@@ -3,14 +3,17 @@ import ctypes
 import enum
 import os
 import re
+import shutil
 import string
 import sys
 import time
+from collections.abc import Iterable
+from dataclasses import asdict, is_dataclass
 from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Final, TypeGuard, get_args, get_origin
 
-from Crypto.Cipher import AES as CryptoAES
-from Crypto.Util.Padding import pad, unpad
+import Crypto.Cipher.AES
+import Crypto.Util.Padding
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -21,16 +24,18 @@ BASE62 = string.digits + string.ascii_letters
 class AES:
     @staticmethod
     def encrypt(plaintext: bytes, key: bytes) -> bytes:
-        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC)  # 使用 CBC 模式
-        ciphertext = cipher.encrypt(pad(plaintext, CryptoAES.block_size))  # 加密并填充
+        cipher = Crypto.Cipher.AES.new(key, Crypto.Cipher.AES.MODE_CBC)  # 使用 CBC 模式
+        ciphertext = cipher.encrypt(
+            Crypto.Util.Padding.pad(plaintext, Crypto.Cipher.AES.block_size)
+        )  # 加密并填充
         return bytes(cipher.iv) + ciphertext  # 返回 IV 和密文
 
     @staticmethod
     def decrypt(ciphertext: bytes, key: bytes) -> bytes:
         iv = ciphertext[:16]  # 提取 IV
-        cipher = CryptoAES.new(key, CryptoAES.MODE_CBC, iv=iv)
-        return unpad(
-            cipher.decrypt(ciphertext[16:]), CryptoAES.block_size
+        cipher = Crypto.Cipher.AES.new(key, Crypto.Cipher.AES.MODE_CBC, iv=iv)
+        return Crypto.Util.Padding.unpad(
+            cipher.decrypt(ciphertext[16:]), Crypto.Cipher.AES.block_size
         )  # 解密并去除填充
 
 
@@ -325,3 +330,90 @@ def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]:
         return any(type_match(val, t) for t in args)
 
     return True
+
+
+def obj_fmt(
+    obj: object,
+    /,
+    indent: int = 2,
+    width: int | None = None,
+    _layer: int = 0,
+    _llen: int = 0,
+) -> str:
+    """
+    部分情况下替代 pformat
+
+    - str 不换行
+    - dict 绝对换行
+    - list 等视长度换行
+    - 优先使用 str 而不是 repr
+    """
+    width = shutil.get_terminal_size().columns if width is None else width
+
+    if isinstance(obj, (str, bytes)):
+        return repr(obj)
+
+    if is_dataclass(obj) and not isinstance(obj, type):
+        obj = asdict(obj)
+
+    if isinstance(obj, dict):
+        indent_str = " " * indent * (_layer + 1)
+        return "\n".join(
+            (
+                "{",
+                *(
+                    (
+                        indent_str
+                        + (
+                            _k_str := obj_fmt(
+                                k,
+                                indent=indent,
+                                width=width,
+                                _layer=_layer + 1,
+                                _llen=len(indent_str),
+                            )
+                        )
+                        + ": "
+                        + obj_fmt(
+                            v,
+                            indent=indent,
+                            width=width,
+                            _layer=_layer + 1,
+                            _llen=len(indent_str) + len(_k_str.rsplit("\n", 1)) + 2,
+                        )
+                        + ","
+                    )
+                    for k, v in obj.items()
+                ),
+                " " * indent * _layer + "}",
+            )
+        )
+
+    if isinstance(obj, Iterable):
+        obj_str = str(obj)
+        if len(obj_str) + _llen > width:
+            match obj:
+                case tuple():
+                    bracket = "()"
+                case set() | frozenset():
+                    bracket = "{}"
+                case _:
+                    bracket = "[]"
+
+            obj_str = "\n".join(
+                (
+                    bracket[0],
+                    *(
+                        (
+                            " " * indent * (_layer + 1)
+                            + obj_fmt(v, indent=indent, width=width, _layer=_layer + 1)
+                            + ","
+                        )
+                        for v in obj
+                    ),
+                    " " * indent * _layer + bracket[1],
+                )
+            )
+        return obj_str
+
+    return str(obj)

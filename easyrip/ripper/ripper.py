@@ -25,7 +25,7 @@ from ..easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from ..utils import get_base62_time, terminal_progress, type_match
+from ..utils import get_base62_time, obj_fmt, terminal_progress, type_match
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -69,9 +69,6 @@ class Ripper:
         audio_encoder: "Ripper.Audio_codec | None"
         muxer: "Ripper.Muxer | None"
         muxer_format_str_list: list[str]
-
-        def __str__(self) -> str:
-            return f"  preset_name = {self.preset_name}\n  option_format = {self.encoder_format_str_list}"
 
     input_path_list: list[Path]
     output_prefix_list: list[str]
@@ -140,13 +137,11 @@ class Ripper:
 
         self._progress: Ripper._Progress = {}
 
-    def __str__(self) -> str:
+    def __str__(self, *, indent: int = 2, width: int | None = None) -> str:
         return (
             f"-i {self.input_path_list[0]} -o {self.output_prefix_list[0]} -o:dir {self.output_dir} -preset {self.option.preset_name.value} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
-            "  option:  {\n"
-            f"  {str(self.option).replace('\n', '\n  ')}\n"
-            "  }\n"
-            f"  option_map: {self.option_map}"
+            f"option: {obj_fmt(self.option, indent=indent, width=width)}\n"
+            f"option_map: {obj_fmt(self.option_map, indent=indent, width=width)}"
         )
 
     def preset_name_to_option(self, preset_name: Preset_name) -> Option:
@@ -689,8 +684,8 @@ class Ripper:
 
                 # 低版本 x265 不支持 -hme 0 主动关闭 HME
                 if _option_map.get("hme", "0") == "0":
-                    _option_map.pop("hme-search")
-                    _option_map.pop("hme-range")
+                    _option_map.pop("hme-search", None)
+                    _option_map.pop("hme-range", None)
 
                 if (
                     (_crf := _option_map.get("crf"))

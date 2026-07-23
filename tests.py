@@ -53,6 +53,8 @@ def run_command_and_run_ripper_list(cmd: str) -> bool:
 
 class TestBasic(unittest.TestCase):
     def test_init(self):
+        log.debug(f"Python: v{sys.version}")
+
         easyrip.init(True)
         easyrip.init()
         easyrip.check_env()

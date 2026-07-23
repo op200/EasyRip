@@ -668,11 +668,16 @@ def run_command(command: "Iterable[str] | str") -> bool:
                             reverse=reverse,
                         )
                 case "":
+                    _INDENT = 2
+                    _columns: Final[int] = shutil.get_terminal_size().columns - _INDENT
                     log.send(
                         f"Ripper list ({len(Ripper.ripper_list)}):"
-                        + f"\n {'─' * (shutil.get_terminal_size().columns - 2)}".join(
-                            f"\n  {i}.\n  {ripper}"
-                            for i, ripper in enumerate(Ripper.ripper_list, 1)
+                        + textwrap.indent(
+                            f"\n{'─' * _columns}".join(
+                                f"\n{i}.\n{ripper.__str__(width=_columns)}"
+                                for i, ripper in enumerate(Ripper.ripper_list, 1)
+                            ),
+                            " " * _INDENT,
                         ),
                         is_format=False,
                     )
