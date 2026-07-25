@@ -6,13 +6,7 @@ Self-use codec tool
 **[Easy Rip Web Panel  
 Easy Rip 网页版控制台](https://op200.github.io/EasyRip-WebPanel/)**
 
-<a href="https://www.star-history.com/#op200/EasyRip&type=date&legend=top-left">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&theme=dark&legend=top-left" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&legend=top-left" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=op200/EasyRip&type=date&legend=top-left" />
- </picture>
-</a>
+[![Star History Chart](https://api.star-history.com/chart?repos=op200/EasyRip&type=date&legend=top-left&sealed_token=mREINCr-gQ9RaM_m6OtSqvakGorAkEKgNKsLyI3RPjSYawB7oyPx489GA3zMeBAQkAo-5w0sgKmfEPSnsbdz0_7gAysuGtzFm2ef1o9AQgSZHS6aTCt8fg)](https://www.star-history.com/?repos=op200%2FEasyRip&type=date&legend=top-left)
 
 ## Start
 
