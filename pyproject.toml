@@ -24,7 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "fonttools>=4.63.0",
-    "prompt-toolkit>=3.0.52",
+    "prompt-toolkit>=3.0.53",
     "pycryptodome>=3.23.0",
     "pyperclip>=1.11.0",
 ]
@@ -42,10 +42,13 @@ Source   = "https://github.com/op200/EasyRip"
 easyrip = "easyrip.__main__:run"
 
 [tool.setuptools.dynamic]
-version = { attr = "easyrip.global_val.PROJECT_VERSION" }
+version = { attr = "easyrip.global_val.PROJECT_VERSION_PEP440" }
 
 [tool.setuptools.package-dir]
 easyrip = "easyrip"
 
 [tool.setuptools.package-data]
 easyrip = ["resources/**/*"]
+
+[tool.pyright]
+typeCheckingMode = "standard"

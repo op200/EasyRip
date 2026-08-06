@@ -116,7 +116,7 @@ class github:
         cls,
         release_api_url: str,
         *,
-        reg: str | None = None,
+        reg: str = r"(?i)(?:v(?:er(?:sion)?)?)?\s*(\d+(?:\.\d+)*(?:[-_][0-9a-z.-]+)?(?:\+[0-9a-z.-]+)?)",
     ) -> str | None:
         """失败返回 None，存在 reg 则返回 group(1)"""
         from ..easyrip_log import log
@@ -133,8 +133,6 @@ class github:
                 if ver is None:
                     return None
                 if isinstance(ver, str):
-                    if reg is None:
-                        return ver.lstrip("v")
                     _match = re.search(reg, ver)
                     if _match is None:
                         log.error(

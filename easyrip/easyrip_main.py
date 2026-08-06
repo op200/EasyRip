@@ -163,8 +163,7 @@ def check_env() -> None:
             else:
                 log_new_ver(
                     easyrip_web.github.get_latest_release_ver(
-                        "https://api.github.com/repos/gpac/gpac/releases/latest",
-                        reg=r"(?i:v(?:er(?:sion)?)?)?(\d+(?:\.\d)*(?:-[a-zA-Z0-9.-]+)?)",
+                        "https://api.github.com/repos/gpac/gpac/releases/latest"
                     ),
                     (
                         subprocess.run(

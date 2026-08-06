@@ -9,7 +9,6 @@ import sys
 import time
 from collections.abc import Iterable
 from dataclasses import asdict, is_dataclass
-from itertools import zip_longest
 from typing import TYPE_CHECKING, Any, Final, TypeGuard, get_args, get_origin
 
 import Crypto.Cipher.AES
@@ -85,30 +84,87 @@ def change_title(title: str) -> None:
 
 
 def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
-    new_ver = list(re.sub(r"^\D*(\d.*\d)\D*$", r"\1", new_ver_str).split("."))
-    new_ver_add_num = list(str(new_ver[-1]).split("+"))
-    new_ver = (
-        [int(v) for v in (*new_ver[:-1], new_ver_add_num[0])],
-        [int(v) for v in new_ver_add_num[1:]],
-    )
+    """
+    Compare software versions. (AI)
 
-    old_ver = list(re.sub(r"^\D*(\d.*\d)\D*$", r"\1", old_ver_str).split("."))
-    old_ver_add_num = list(str(old_ver[-1]).split("+"))
-    old_ver = (
-        [int(v) for v in (*old_ver[:-1], old_ver_add_num[0])],
-        [int(v) for v in old_ver_add_num[1:]],
-    )
+    Supported:
+        1.2.3
+        v1.2.3
+        version 1.2.3
+        1.2.3-alpha
+        1.2.3-alpha.1
+        1.2.3-rc1
+        1.2.3+build.1
 
-    for i in range(2):
-        for new, old in zip_longest(new_ver[i], old_ver[i], fillvalue=0):
-            if new > old:
-                return True
-            if new < old:
-                break
-        else:
+    Return:
+        True if new_ver_str > old_ver_str
+
+    """
+
+    def parse(ver: str) -> tuple[tuple[int, ...], tuple[int | str, ...] | None]:
+        match = re.fullmatch(
+            r"(?ix)"
+            r"\s*(?:version|ver|v)?\s*"
+            r"(\d+(?:\.\d+)*)"
+            r"(?:-([0-9a-z.-]+))?"
+            r"(?:\+[0-9a-z.-]+)?"
+            r"\s*",
+            ver,
+        )
+
+        if match is None:
+            raise ValueError(f"Invalid version: {ver}")
+
+        core = tuple(int(x) for x in match.group(1).split("."))
+
+        # 1.2 == 1.2.0
+        core += (0,) * (3 - len(core))
+
+        pre = match.group(2)
+
+        if pre is None:
+            return core, None
+
+        return (
+            core,
+            tuple(int(x) if x.isdigit() else x for x in pre.split(".")),
+        )
+
+    new_core, new_pre = parse(new_ver_str)
+    old_core, old_pre = parse(old_ver_str)
+
+    # 主版本比较
+    if new_core != old_core:
+        return new_core > old_core
+
+    # 正式版 > 预发布版
+    if new_pre is None:
+        return old_pre is not None
+
+    if old_pre is None:
+        return False
+
+    for new, old in zip(new_pre, old_pre, strict=True):
+        if new == old:
             continue
-        break
-    return False
+
+        # int 和 str 混合时，SemVer 规定数字标识符优先级低
+        if isinstance(new, int) and isinstance(old, str):
+            return False
+
+        if isinstance(new, str) and isinstance(old, int):
+            return True
+
+        if isinstance(new, int) and isinstance(old, int):
+            return new > old
+
+        if isinstance(new, str) and isinstance(old, str):
+            return new > old
+
+        raise AssertionError("unreachable")
+
+    # 前缀相同，长度更长优先
+    return len(new_pre) > len(old_pre)
 
 
 def int_to_base62(num: int) -> str:
