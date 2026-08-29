@@ -2,11 +2,11 @@ import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Self
+from typing import Any, Self
 
 from ..easyrip_log import log
 from ..easyrip_mlang import Mlang_exception
-from ..utils import time_str_to_sec
+from ..utils import time_str_to_sec, type_match
 
 
 class Stream_error(Mlang_exception):
@@ -15,6 +15,8 @@ class Stream_error(Mlang_exception):
 
 @dataclass(slots=True, kw_only=True)
 class Audio_info:
+    _org_data: dict[Any, Any] = field(default_factory=dict)
+
     index: int
     sample_fmt: str = ""
     sample_rate: int = 0
@@ -23,7 +25,9 @@ class Audio_info:
 
 
 @dataclass(slots=True, kw_only=True)
-class Media_info:
+class Video_info:
+    _org_data: dict[Any, Any] = field(default_factory=dict)
+
     width: int = 0
     height: int = 0
 
@@ -36,10 +40,14 @@ class Media_info:
     duration: float = 0
     """时长 (s)"""
 
-    audio_info: list[Audio_info] = field(default_factory=list[Audio_info])
+
+@dataclass(slots=True, kw_only=True)
+class Media_info:
+    video: list[Video_info] = field(default_factory=list[Video_info])
+    audio: list[Audio_info] = field(default_factory=list[Audio_info])
 
     @classmethod
-    def from_path(cls, path: str | Path) -> Self:
+    def from_path(cls, path: str | Path, /) -> Self:
         path = Path(path)
         media_info = cls()
 
@@ -64,18 +72,22 @@ class Media_info:
                 encoding="utf-8",
             ).communicate()[0]
         )
-        _info_list: list = _info.get("streams", [])
+        _info_list = _info.get("streams", [])
+        if not type_match(_info_list, list[dict]):
+            _info_list = list[dict]()
 
-        _video_info_dict: dict = _info_list[0] if _info_list else {}
+        _video_info_dict = _info_list[0] if _info_list else {}
 
-        media_info.width = int(_video_info_dict.get("width", "0"))
-        media_info.height = int(_video_info_dict.get("height", "0"))
+        video_info = Video_info(_org_data=_video_info_dict)
+
+        video_info.width = int(_video_info_dict.get("width", "0"))
+        video_info.height = int(_video_info_dict.get("height", "0"))
 
         _fps_str: str = _video_info_dict.get("r_frame_rate", "0") + "/1"
         _fps = [int(s) for s in _fps_str.split("/")]
-        media_info.r_frame_rate = (_fps[0], _fps[1])
+        video_info.r_frame_rate = (_fps[0], _fps[1])
 
-        media_info.nb_frames = int(_video_info_dict.get("nb_frames", 0))
+        video_info.nb_frames = int(_video_info_dict.get("nb_frames", 0))
 
         if (_duration := _video_info_dict.get("duration")) is None:
             _duration = _video_info_dict.get("tags")
@@ -86,7 +98,9 @@ class Media_info:
                 _duration = 0
         else:
             _duration = float(_duration)
-        media_info.duration = _duration
+        video_info.duration = _duration
+
+        media_info.video.append(video_info)
 
         # 遍历所有音频轨
         _cmd = [
@@ -109,12 +123,11 @@ class Media_info:
                 encoding="utf-8",
             ).communicate()[0]
         )
-        _info_list: list = _info.get("streams", [])
+        _info_list = _info.get("streams", [])
+        if not type_match(_info_list, list[dict[str, Any]]):
+            _info_list = list[dict]()
 
         for _audio_info_dict in _info_list:
-            if not isinstance(_audio_info_dict, dict):
-                _audio_info_dict = {}
-
             index = _audio_info_dict.get("index")
             if index is None:
                 raise RuntimeWarning
@@ -159,8 +172,9 @@ class Media_info:
                 )
                 bits_per_raw_sample = 0
 
-            media_info.audio_info.append(
+            media_info.audio.append(
                 Audio_info(
+                    _org_data=_audio_info_dict,
                     index=int(index),
                     sample_fmt=str(sample_fmt),
                     sample_rate=int(sample_rate),

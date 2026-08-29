@@ -7,23 +7,36 @@ import subprocess
 import sys
 import timeit
 import unittest
+from collections import Counter, UserDict, UserList
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Final
-
-import easyrip
-import easyrip.easyrip_web
-from easyrip import (
-    Ass,
-    Lang_tag,
-    gettext,
-    log,
-    run_command,
+from typing import (
+    Annotated,
+    Any,
+    Final,
+    Literal,
+    NewType,
+    NotRequired,
+    TypedDict,
+    TypeVar,
 )
+
+import easyrip.easyrip_main
+import easyrip.easyrip_web
 from easyrip.easyrip_command import Cmd_type, Opt_type
-from easyrip.easyrip_mlang import Lang_tag_val, all_supported_lang_map
+from easyrip.easyrip_log import log
+from easyrip.easyrip_main import run_command
+from easyrip.easyrip_mlang import (
+    Lang_tag,
+    Lang_tag_val,
+    all_supported_lang_map,
+    gettext,
+)
 from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
 from easyrip.ripper.ripper import Ripper
+from easyrip.ripper.sub_and_font import Ass
 from easyrip.ripper.sub_and_font.font import load_fonts, load_windows_fonts
+from easyrip.utils import check_ver, type_match
 
 if sys.stdout.encoding != "UTF-8":
     sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
@@ -55,35 +68,33 @@ class TestBasic(unittest.TestCase):
     def test_init(self):
         log.debug(f"Python: v{sys.version}")
 
-        easyrip.init(True)
-        easyrip.init()
-        easyrip.check_env()
+        easyrip.easyrip_main.init(True)
+        easyrip.easyrip_main.init()
+        easyrip.easyrip_main.check_env()
 
     def test_version(self):
-        self.assertTrue(easyrip.check_ver("1.2.3.1", "1.2.3"))
-        self.assertFalse(easyrip.check_ver("1.2.3", "1.2.3.1"))
-        self.assertTrue(easyrip.check_ver("1.2.3.1", "1.2.3.0"))
-        self.assertFalse(easyrip.check_ver("1.2.3.0", "1.2.3.1"))
+        self.assertTrue(check_ver("1.2.3.1", "1.2.3"))
+        self.assertFalse(check_ver("1.2.3", "1.2.3.1"))
+        self.assertTrue(check_ver("1.2.3.1", "1.2.3.0"))
+        self.assertFalse(check_ver("1.2.3.0", "1.2.3.1"))
 
-        self.assertTrue(easyrip.check_ver("1.3.3", "1.2.3"))
-        self.assertFalse(easyrip.check_ver("1.2.3", "1.2.3"))
-        self.assertFalse(easyrip.check_ver("1.2.3+1", "1.2.3+2"))
-        self.assertFalse(easyrip.check_ver("1.2.3+2", "1.2.3+2"))
-        self.assertFalse(easyrip.check_ver("1.2.3+0", "1.2.3"))
-        self.assertFalse(easyrip.check_ver("1.2.3", "1.2.3+0"))
-        self.assertFalse(easyrip.check_ver("1.2", "1.2.0"))
-        self.assertFalse(easyrip.check_ver("1.2", "1.2.1"))
-        self.assertFalse(easyrip.check_ver("1.2+2", "1.2.1"))
-        self.assertFalse(
-            easyrip.check_ver("2.9.4+4", easyrip.global_val.PROJECT_VERSION)
-        )
+        self.assertTrue(check_ver("1.3.3", "1.2.3"))
+        self.assertFalse(check_ver("1.2.3", "1.2.3"))
+        self.assertFalse(check_ver("1.2.3+1", "1.2.3+2"))
+        self.assertFalse(check_ver("1.2.3+2", "1.2.3+2"))
+        self.assertFalse(check_ver("1.2.3+0", "1.2.3"))
+        self.assertFalse(check_ver("1.2.3", "1.2.3+0"))
+        self.assertFalse(check_ver("1.2", "1.2.0"))
+        self.assertFalse(check_ver("1.2", "1.2.1"))
+        self.assertFalse(check_ver("1.2+2", "1.2.1"))
+        self.assertFalse(check_ver("2.9.4+4", easyrip.global_val.PROJECT_VERSION))
 
     def test_log(self):
         self.assertEqual(gettext(""), "")
         self.assertEqual(gettext("{}"), "{}")
 
         html_log_file = str(log.html_file)
-        easyrip.init(True)
+        easyrip.easyrip_main.init(True)
         self.assertEqual(str(log.html_file), gettext(html_log_file))
 
         # the *val format
@@ -119,7 +130,7 @@ class TestBasic(unittest.TestCase):
                 self.assertEqual(log.debug_num, 0)
 
     def test_run_cmd(self):
-        easyrip.init(True)
+        easyrip.easyrip_main.init(True)
 
         run = run_command
 
@@ -136,6 +147,53 @@ class TestBasic(unittest.TestCase):
         run("-i inputVideo -preset x265slow -hme 0")
         run("-i inputVideo -preset x265fast4 -x265-params hme=0")
         run("list")
+
+
+class TestUtils(unittest.TestCase):
+    def test_type_match(self):
+        self.assertTrue(type_match(object(), Any))
+
+        for v in ([], [{}], [{"": ""}, {"2": 3}]):
+            self.assertTrue(type_match(v, list[dict[str, Any]]), v)
+
+        for v in ((), [{1: 2}], [{}, []]):
+            self.assertFalse(type_match(v, list[dict[str, Any]]), v)
+
+        self.assertTrue(type_match(1, int | str))
+        self.assertTrue(type_match("x", Literal["x", "y"]))
+        self.assertFalse(type_match("z", Literal["x", "y"]))
+        self.assertTrue(type_match(1, Annotated[int, "metadata"]))
+        self.assertTrue(type_match(None, type(None)))
+        self.assertTrue(type_match([1, 2], Sequence[int]))
+        self.assertFalse(type_match([1, "2"], Sequence[int]))
+        self.assertTrue(type_match({"a": 1}, Mapping[str, int]))
+        self.assertTrue(type_match(UserList([1, 2]), Sequence[int]))
+        self.assertTrue(type_match(UserDict(a=1), Mapping[str, int]))
+        self.assertTrue(type_match(Counter(a=1), Mapping[str, int]))
+        self.assertTrue(type_match(int, type[int]))
+        self.assertFalse(type_match(str, type[int]))
+
+        constrained = TypeVar("constrained", int, str)
+        bounded = TypeVar("bounded", bound=int)
+        self.assertTrue(type_match(1, constrained))
+        self.assertFalse(type_match([], constrained))
+        self.assertTrue(type_match(1, bounded))
+        self.assertFalse(type_match("1", bounded))
+
+        UserId = NewType("UserId", int)
+        self.assertTrue(type_match(1, UserId))
+        self.assertFalse(type_match("1", UserId))
+
+        class User(TypedDict):
+            name: str
+            age: NotRequired[int]
+
+        self.assertTrue(type_match({"name": "Alice"}, User))
+        self.assertTrue(type_match({"name": "Alice", "age": 1}, User))
+        self.assertFalse(type_match({"name": 1}, User))
+
+        for v in (1, "2"):
+            self.assertTrue(type_match(v, int | str), v)
 
 
 class TestRip(unittest.TestCase):
@@ -193,7 +251,7 @@ class TestRip(unittest.TestCase):
         ):
             self.assertTrue(shutil.which(tool), f"The '{tool}' not found in PATH")
 
-        easyrip.init(True)
+        easyrip.easyrip_main.init(True)
 
     def test_x265(self):
         """测试 hme 关闭，以及其他标准传参"""

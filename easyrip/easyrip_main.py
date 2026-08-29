@@ -38,7 +38,7 @@ from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
-from .utils import change_title, check_ver, read_text, terminal_progress
+from .utils import change_title, check_ver, obj_fmt, read_text, terminal_progress
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -560,7 +560,12 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         log.error(e)
                 case Cmd_type.mediainfo:
                     for _path in _path_tuple:
-                        log.send(f"{_path}: {Media_info.from_path(_path)}")
+                        _media_info = Media_info.from_path(_path)
+                        _media_info_dict = {
+                            "video": [v._org_data for v in _media_info.video],
+                            "audio": [v._org_data for v in _media_info.audio],
+                        }
+                        log.send(f"{_path}: {obj_fmt(_media_info_dict)}")
                 case Cmd_type.assinfo:
                     USE_LIBASS_SPEC_OPT_NAME = "-use-libass-spec"
                     use_libass_spec: bool = True

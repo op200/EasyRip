@@ -7,9 +7,45 @@ import shutil
 import string
 import sys
 import time
-from collections.abc import Iterable
+import types
+from collections.abc import (
+    AsyncIterable,
+    AsyncIterator,
+    Callable,
+    Collection,
+    Container,
+    Iterable,
+    Iterator,
+    Mapping,
+    MutableMapping,
+    MutableSequence,
+    MutableSet,
+    Sequence,
+    Sized,
+)
+from collections.abc import (
+    Set as AbstractSet,
+)
 from dataclasses import asdict, is_dataclass
-from typing import TYPE_CHECKING, Any, Final, TypeGuard, get_args, get_origin
+from typing import (
+    TYPE_CHECKING,
+    Annotated,
+    Any,
+    ClassVar,
+    Final,
+    Literal,
+    LiteralString,
+    Never,
+    NoReturn,
+    NotRequired,
+    Required,
+    TypeGuard,
+    cast,
+    get_args,
+    get_origin,
+    get_type_hints,
+    overload,
+)
 
 import Crypto.Cipher.AES
 import Crypto.Util.Padding
@@ -309,7 +345,11 @@ def non_ascii_str_len(s: str) -> int:
     return sum(2 - int(ord(c) < 256) for c in s)
 
 
-def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]:
+@overload
+def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]: ...
+@overload
+def type_match(val: Any, t: object) -> bool: ...
+def type_match(val: Any, t: object) -> bool:
     """
     检查值是否匹配给定的类型（支持泛型）
 
@@ -328,40 +368,143 @@ def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]:
         bool: 值是否匹配目标类型
 
     """
+    # Any 表示不限制值的类型，不能直接传给 isinstance。
+    if t is Any:
+        return True
+
+    # None 可以作为 typing.Optional 的参数，也允许直接传入。
+    if t is None:
+        return val is None
+
+    # Never/NoReturn 没有合法的值。
+    if t is Never or t is NoReturn:
+        return False
+
+    # LiteralString 在运行时只能可靠地检查为 str。
+    if t is LiteralString:
+        return isinstance(val, str)
+
+    # TypeVar：无约束时等价于 Any；有约束时满足任意约束即可；有上界时
+    # 必须满足上界。TypeVar 的具体绑定值在运行时不可得。
+    if type(t).__name__ == "TypeVar" and hasattr(t, "__constraints__"):
+        constraints = getattr(t, "__constraints__", ())
+        if constraints:
+            return any(type_match(val, constraint) for constraint in constraints)
+        bound = getattr(t, "__bound__", None)
+        return True if bound is None else type_match(val, bound)
+
+    # NewType 的运行时对象带有 __supertype__，其值本身仍是基础类型。
+    supertype = getattr(t, "__supertype__", None)
+    if supertype is not None:
+        return type_match(val, supertype)
+
+    # TypedDict 在运行时是普通 dict 的伪类型，使用其字段定义进行检查。
+    if isinstance(t, type) and hasattr(t, "__required_keys__"):
+        if not isinstance(val, dict):
+            return False
+
+        typed_dict = cast("type[Any]", t)
+        try:
+            annotations = get_type_hints(typed_dict, include_extras=True)
+        except (NameError, TypeError):
+            annotations = getattr(typed_dict, "__annotations__", {})
+
+        required_keys = getattr(typed_dict, "__required_keys__", frozenset())
+        if not required_keys.issubset(val):
+            return False
+
+        return all(
+            key not in val or type_match(val[key], value_type)
+            for key, value_type in annotations.items()
+        )
+
     t_org = get_origin(t)
+
+    # 联合类型必须在 isinstance 之前处理；PEP 604 和 typing.Union 的
+    # origin 不同，且两者都不能直接作为 isinstance 的第二个参数。
+    from typing import Union
+
+    if t_org in (types.UnionType, Union):
+        return any(type_match(val, arg) for arg in get_args(t))
+
+    # Literal 比较值而不是比较类型。额外检查类型以区分 True 和 1。
+    if t_org is Literal:
+        return any(
+            type(val) is type(literal) and val == literal for literal in get_args(t)
+        )
+
+    # Annotated、Final、ClassVar、Required、NotRequired 的运行时检查都
+    # 应检查其第一个实际类型参数，后续参数只是元数据或限定信息。
+    if t_org in (Annotated, Final, ClassVar, Required, NotRequired):
+        args = get_args(t)
+        return not args or type_match(val, args[0])
 
     # 如果不是泛型类型，直接使用 isinstance
     if t_org is None:
-        return isinstance(val, t)
+        if isinstance(t, str):
+            # 未解析的前向引用缺少命名空间，无法可靠地运行时解析。
+            return False
+        try:
+            return isinstance(val, cast("type[Any]", t))
+        except TypeError:
+            return False
 
-    # 首先检查是否是 b_org 的实例
-    if not isinstance(val, t_org):
+    args = get_args(t)
+
+    # type[T] / typing.Type[T] 检查传入值是否为 T 的子类。
+    if t_org is type:
+        if not isinstance(val, type):
+            return False
+        if not args or args[0] is Any:
+            return True
+        try:
+            return issubclass(val, cast("type[Any]", args[0]))
+        except TypeError:
+            return type_match(val, args[0])
+
+    # Callable 的参数和返回值签名无法通过 isinstance 完整验证；这里
+    # 检查其可调用性，Callable[..., T] 也遵循相同规则。
+    if t_org is Callable:
+        return callable(val)
+
+    # re.Pattern[T] / re.Match[T] 的参数表示 str 或 bytes。
+    if t_org is re.Pattern:
+        return isinstance(val, re.Pattern) and (
+            not args or type_match(val.pattern, args[0])
+        )
+    if t_org is re.Match:
+        return isinstance(val, re.Match) and (
+            not args or type_match(val.string, args[0])
+        )
+
+    try:
+        is_instance = isinstance(val, t_org)
+    except TypeError:
+        return False
+    if not is_instance:
         return False
 
-    # 获取类型参数
-    args = get_args(t)
-    if not args:  # 没有类型参数，如 List
+    if not args:  # 没有类型参数，如 list、List
         return True
 
-    # 根据不同的原始类型进行检查
     if t_org is list:
-        # list[T] 检查
         if len(args) == 1:
             elem_type = args[0]
             return all(type_match(item, elem_type) for item in val)
 
     elif t_org is tuple:
-        # tuple[T1, T2, ...] 或 tuple[T, ...] 检查
+        # tuple[()] 表示空元组；它的 get_args() 在不同版本中可能为空。
+        if len(args) == 1 and args[0] == ():
+            return not val
         if len(args) == 2 and args[1] is ...:  # 可变长度元组
             elem_type = args[0]
             return all(type_match(item, elem_type) for item in val)
-        # 固定长度元组
         if len(val) != len(args):
             return False
         return all(type_match(item, t) for item, t in zip(val, args, strict=False))
 
-    elif t_org is dict:
-        # dict[K, V] 检查
+    elif isinstance(t_org, type) and issubclass(t_org, Mapping):
+        # dict[K, V]、defaultdict[K, V]、Counter[K] 等映射类型检查。
         if len(args) == 2:
             key_type, value_type = args
             return all(
@@ -369,22 +512,43 @@ def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]:
                 for k, v in val.items()
             )
 
-    elif t_org is set:
-        # set[T] 检查
+    elif t_org in (set, frozenset):
         if len(args) == 1:
-            elem_type = args[0]
-            return all(type_match(item, elem_type) for item in val)
+            return all(type_match(item, args[0]) for item in val)
 
-    elif t_org is frozenset:
-        # frozenset[T] 检查
+    elif t_org in (Mapping, MutableMapping):
+        if len(args) == 2:
+            key_type, value_type = args
+            return all(
+                type_match(key, key_type) and type_match(value, value_type)
+                for key, value in val.items()
+            )
+
+    elif isinstance(t_org, type) and issubclass(
+        t_org,
+        (
+            Sequence,
+            MutableSequence,
+            Collection,
+            Iterable,
+            Container,
+            AbstractSet,
+            MutableSet,
+        ),
+    ):
         if len(args) == 1:
-            elem_type = args[0]
-            return all(type_match(item, elem_type) for item in val)
+            return all(type_match(item, args[0]) for item in val)
 
-    elif hasattr(t_org, "__name__") and t_org.__name__ == "Union":
-        # Union[T1, T2, ...] 或 T1 | T2 检查
-        return any(type_match(val, t) for t in args)
+    elif t_org in (Iterator, AsyncIterable, AsyncIterator):
+        # 迭代器是一次性对象，遍历它会改变程序状态；这里只能可靠
+        # 检查其外层类型，不能为了类型检查消耗它。
+        return True
 
+    elif t_org is Sized:
+        return True
+
+    # 对自定义泛型类，运行时通常无法从实例恢复类型参数；但 origin 的
+    # 实例检查已经完成，因此将其视为外层类型匹配。
     return True
 
 

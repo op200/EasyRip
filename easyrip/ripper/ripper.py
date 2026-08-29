@@ -156,7 +156,8 @@ class Ripper:
         ) == "auto":
             try:
                 force_fps = (
-                    self.media_info.r_frame_rate[0] / self.media_info.r_frame_rate[1]
+                    self.media_info.video[0].r_frame_rate[0]
+                    / self.media_info.video[0].r_frame_rate[1]
                 )
                 if 23.975 < force_fps < 23.977:
                     force_fps = "24000/1001"
@@ -191,7 +192,7 @@ class Ripper:
         # Audio
         if audio_encoder_str := self.option_map.get("c:a"):
             if (
-                not self.media_info.audio_info
+                not self.media_info.audio
                 and self.preset_name != Ripper.Preset_name.subset
             ):
                 raise Stream_error(
@@ -484,7 +485,7 @@ class Ripper:
                             _encoder_format_str = (
                                 'mp4box -add "{input}" -new "{output}"'
                             )
-                            for _audio_info in self.media_info.audio_info:
+                            for _audio_info in self.media_info.audio:
                                 _encoder_format_str += f" -rem {_audio_info.index + 1}"
                         else:
                             _encoder_format_str = (
@@ -511,7 +512,7 @@ class Ripper:
                 _mux_flac_input_list: list[str] = []
                 _del_flac_str_list: list[str] = []
 
-                for _audio_info in self.media_info.audio_info:
+                for _audio_info in self.media_info.audio:
                     _encoder: str = (
                         "pcm_s24le"
                         if 24
@@ -658,15 +659,15 @@ class Ripper:
                 # HEVC 规范
                 if self.option_map.get(
                     "hevc-strict", "1"
-                ) != "0" and self.media_info.width * self.media_info.height >= (
-                    _RESOLUTION := 1920 * 1080 * 4
-                ):
+                ) != "0" and self.media_info.video[0].width * self.media_info.video[
+                    0
+                ].height >= (_RESOLUTION := 1920 * 1080 * 4):
                     if _option_map.get("hme", "0") == "1":
                         _option_map["hme"] = "0"
                         log.warning(
                             "The resolution {} * {} >= {}, auto close HME",
-                            self.media_info.width,
-                            self.media_info.height,
+                            self.media_info.video[0].width,
+                            self.media_info.video[0].height,
                             _RESOLUTION,
                         )
 
@@ -674,8 +675,8 @@ class Ripper:
                         _option_map["ref"] = str(_NEW_REF)
                         log.warning(
                             "The resolution {} * {} >= {}, auto reduce {} to {}",
-                            self.media_info.width,
-                            self.media_info.height,
+                            self.media_info.video[0].width,
+                            self.media_info.video[0].height,
                             _RESOLUTION,
                             _option_map.get("ref"),
                             _NEW_REF,
@@ -822,7 +823,7 @@ class Ripper:
                 ]
 
             case Ripper.Preset_name.flac:
-                if self.option.muxer is not None or len(self.media_info.audio_info) > 1:
+                if self.option.muxer is not None or len(self.media_info.audio) > 1:
                     suffix = f".flac.{'mp4' if self.option.muxer == Ripper.Muxer.mp4 else 'mkv'}"
                     temp_name = temp_name + suffix
                     cmd_list = [
@@ -1086,8 +1087,8 @@ class Ripper:
         self._progress["frame_count"] = 0
         self._progress["duration"] = 0
         if self.input_path_list[0].suffix != ".vpy":
-            self._progress["frame_count"] = self.media_info.nb_frames
-            self._progress["duration"] = self.media_info.duration
+            self._progress["frame_count"] = self.media_info.video[0].nb_frames
+            self._progress["duration"] = self.media_info.video[0].duration
 
         refresh_progress_continue: bool = True
 
@@ -1135,19 +1136,25 @@ class Ripper:
                         easyrip_web.http_server.Event.progress.append(self._progress)
                         easyrip_web.http_server.Event.progress.popleft()
 
-                    if self.media_info.nb_frames and self._progress["frame"] != -1:
+                    if (
+                        self.media_info.video[0].nb_frames
+                        and self._progress["frame"] != -1
+                    ):
                         terminal_progress.set(
                             round(
                                 100
                                 * self._progress["frame"]
-                                / self.media_info.nb_frames
+                                / self.media_info.video[0].nb_frames
                             )
                         )
-                    elif self.media_info.duration > 0 and self._progress["out_time_us"]:
+                    elif (
+                        self.media_info.video[0].duration > 0
+                        and self._progress["out_time_us"]
+                    ):
                         terminal_progress.set(
                             round(
                                 self._progress["out_time_us"]
-                                / self.media_info.duration
+                                / self.media_info.video[0].duration
                                 / 10_000
                             )
                         )

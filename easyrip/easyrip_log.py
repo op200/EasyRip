@@ -19,7 +19,9 @@ __all__ = ["Log"]
 
 
 class Event:
-    append_http_server_log_queue: ClassVar[Callable[[tuple[str, str, str]], None]]
+    append_http_server_log_queue: ClassVar[Callable[[tuple[str, str, str]], None]] = (
+        lambda _: None
+    )
 
 
 @dataclass(slots=True, kw_only=True)
