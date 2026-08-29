@@ -2,7 +2,7 @@ import enum
 import itertools
 import textwrap
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Final, Self, final, override
+from typing import TYPE_CHECKING, Final, Self, override
 
 from prompt_toolkit.completion import (
     Completer,
@@ -27,7 +27,6 @@ if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-@final
 @dataclass(slots=True, init=False, eq=False)
 class Cmd_type_val:
     names: tuple[str, ...]

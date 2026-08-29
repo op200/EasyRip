@@ -9,5 +9,7 @@
 !tests.py
 !pyproject.toml
 !ruff.toml
+!.oxfmtrc.jsonc
+!.markdownlint.jsonc
 
 __pycache__

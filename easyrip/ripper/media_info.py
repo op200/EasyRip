@@ -2,7 +2,7 @@ import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Self, final
+from typing import Self
 
 from ..easyrip_log import log
 from ..easyrip_mlang import Mlang_exception
@@ -13,8 +13,7 @@ class Stream_error(Mlang_exception):
     pass
 
 
-@final
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Audio_info:
     index: int
     sample_fmt: str = ""
@@ -23,8 +22,7 @@ class Audio_info:
     bits_per_raw_sample: int = 0
 
 
-@final
-@dataclass(slots=True)
+@dataclass(slots=True, kw_only=True)
 class Media_info:
     width: int = 0
     height: int = 0

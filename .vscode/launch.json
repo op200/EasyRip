@@ -2,7 +2,7 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Python 调试",
+      "name": "Python debug",
       "type": "debugpy",
       "request": "launch",
       "module": "easyrip",

@@ -1,9 +1,7 @@
 import enum
 from dataclasses import dataclass
-from typing import final
 
 
-@final
 @dataclass(slots=True, init=False, eq=False)
 class Lang_tag_val:
     en_name: str

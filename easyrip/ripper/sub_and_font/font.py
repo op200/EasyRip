@@ -158,8 +158,8 @@ def load_windows_fonts(
     strict: bool = False,
 ) -> list[Font]:
     paths: tuple[Path, ...] = (
-        Path(os.environ["SYSTEMROOT"]) / "Fonts",
-        Path(os.environ["LOCALAPPDATA"]) / "Microsoft/Windows/Fonts",
+        Path(os.environ["SYSTEMROOT"], "Fonts"),
+        Path(os.environ["LOCALAPPDATA"], "Microsoft/Windows/Fonts"),
     )
 
     return list(

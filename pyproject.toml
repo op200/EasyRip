@@ -1,45 +1,48 @@
-[build-system]
-requires = [
-    "setuptools>=83",
-]
-
 [project]
-authors = [{ name = "op200" }]
-classifiers = [
-    "Development Status :: 5 - Production/Stable",
-    "Operating System :: Microsoft :: Windows :: Windows 10",
-    "Operating System :: Microsoft :: Windows :: Windows 11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Programming Language :: Python :: 3.14",
-    "Programming Language :: Python :: 3.15",
-    "Topic :: Multimedia",
-    # "Operating System :: MacOS",
-    # "Operating System :: POSIX :: Linux",
-    "Environment :: Console",
-    "Intended Audience :: Developers",
-    "Intended Audience :: End Users/Desktop",
-    "Intended Audience :: Information Technology",
-    "Typing :: Typed",
-]
-dependencies = [
-    "fonttools>=4.63.0",
-    "prompt-toolkit>=3.0.53",
-    "pycryptodome>=3.23.0",
-    "pyperclip>=1.11.0",
-]
-dynamic = ["version"]
-license = "AGPL-3.0-or-later"
 name = "easyrip"
 readme = "README.md"
 requires-python = ">=3.12"
+license = "AGPL-3.0-or-later"
+authors = [{ name = "op200" }]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  # "Operating System :: MacOS",
+  # "Operating System :: POSIX :: Linux",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "Intended Audience :: Information Technology",
+  "Operating System :: Microsoft :: Windows :: Windows 10",
+  "Operating System :: Microsoft :: Windows :: Windows 11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Programming Language :: Python :: 3.15",
+  "Topic :: Multimedia",
+  "Typing :: Typed",
+]
+dependencies = [
+  "fonttools>=4.63.0",
+  "prompt-toolkit>=3.0.53",
+  "pycryptodome>=3.23.0",
+  "pyperclip>=1.11.0",
+]
+dynamic = ["version"]
 
 [project.urls]
 Homepage = "https://github.com/op200/EasyRip"
-Source   = "https://github.com/op200/EasyRip"
+Source = "https://github.com/op200/EasyRip"
 
 [project.scripts]
 easyrip = "easyrip.__main__:run"
+
+[build-system]
+requires = [
+  "setuptools>=83",
+]
+
+[tool.pyright]
+typeCheckingMode = "standard"
 
 [tool.setuptools.dynamic]
 version = { attr = "easyrip.global_val.PROJECT_VERSION_PEP440" }
@@ -50,5 +53,17 @@ easyrip = "easyrip"
 [tool.setuptools.package-data]
 easyrip = ["resources/**/*"]
 
-[tool.pyright]
-typeCheckingMode = "standard"
+[[tool.tombi.schemas]]
+path = "tombi://www.schemastore.org/pyproject.json"
+include = ["pyproject.toml"]
+
+[[tool.tombi.schemas]]
+path = "https://www.schemastore.org/ruff.json"
+include = ["ruff.toml"]
+
+[[tool.tombi.schemas.overrides]]
+targets = ["lint", "lint.*"]
+
+[tool.tombi.schemas.overrides.format.rules]
+array-values-order = "ascending"
+table-keys-order = "ascending"

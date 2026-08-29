@@ -1,7 +1,7 @@
 import enum
 import textwrap
 from functools import reduce
-from typing import Final, LiteralString
+from typing import Final, LiteralString, overload
 
 
 class Preset_name(enum.Enum):
@@ -64,17 +64,33 @@ class Preset_name(enum.Enum):
                 lambda acc, add: (
                     f"{acc}{' ' if add.startswith(acc.split()[-1][:4]) else '\n'}{add}"
                 ),
-                tuple[str](cls._value2member_map_),
+                tuple[str, ...](cls._value2member_map_),
             ),
             prefix=prefix,
         )
 
-    def get_param_name_set[T](self, default: T = None, /) -> set[LiteralString] | T:
+    @overload
+    def get_param_name_set[T](self, default: T, /) -> set[LiteralString] | T: ...
+    @overload
+    def get_param_name_set(
+        self, default: None = None, /
+    ) -> set[LiteralString] | None: ...
+    def get_param_name_set[T](
+        self, default: T | None = None, /
+    ) -> set[LiteralString] | T | None:
         return _PRESET__PARAM_NAME_SET.get(self, default)
 
+    @overload
     def get_param_default_dict[T](
-        self, default: T = None, /
-    ) -> dict[LiteralString, LiteralString] | T:
+        self, default: T, /
+    ) -> dict[LiteralString, LiteralString] | T: ...
+    @overload
+    def get_param_default_dict(
+        self, default: None = None, /
+    ) -> dict[LiteralString, LiteralString] | None: ...
+    def get_param_default_dict[T](
+        self, default: T | None = None, /
+    ) -> dict[LiteralString, LiteralString] | T | None:
         return _PRESET__DEFAULT_PARAMS.get(self, default)
 
 
@@ -107,17 +123,33 @@ class Audio_codec(enum.Enum):
                 lambda acc, add: (
                     f"{acc}{' ' if add.endswith(acc.split()[-1][-4:]) else '\n'}{add}"
                 ),
-                tuple[str](cls._member_map_),
+                tuple[str, ...](cls._member_map_),
             ),
             prefix=prefix,
         )
 
-    def get_param_name_set[T](self, default: T = None, /) -> set[LiteralString] | T:
+    @overload
+    def get_param_name_set[T](self, default: T, /) -> set[LiteralString] | T: ...
+    @overload
+    def get_param_name_set(
+        self, default: None = None, /
+    ) -> set[LiteralString] | None: ...
+    def get_param_name_set[T](
+        self, default: T | None = None, /
+    ) -> set[LiteralString] | T | None:
         return _AUDIO_CODEC__PARAM_NAME_SET.get(self, default)
 
+    @overload
     def get_param_default_dict[T](
-        self, default: T = None, /
-    ) -> dict[LiteralString, LiteralString] | T:
+        self, default: T, /
+    ) -> dict[LiteralString, LiteralString] | T: ...
+    @overload
+    def get_param_default_dict(
+        self, default: None = None, /
+    ) -> dict[LiteralString, LiteralString] | None: ...
+    def get_param_default_dict[T](
+        self, default: T | None = None, /
+    ) -> dict[LiteralString, LiteralString] | T | None:
         return _AUDIO_CODEC__DEFAULT_PARAMS.get(self, default)
 
 
@@ -146,7 +178,7 @@ class Muxer(enum.Enum):
                 lambda acc, add: (
                     f"{acc}{' ' if add.endswith(acc.split()[-1][-4:]) else '\n'}{add}"
                 ),
-                tuple[str](cls._member_map_),
+                tuple[str, ...](cls._member_map_),
             ),
             prefix=prefix,
         )

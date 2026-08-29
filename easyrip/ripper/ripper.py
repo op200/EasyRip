@@ -13,7 +13,7 @@ from operator import itemgetter
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import TYPE_CHECKING, Final, Self, TypedDict, final
+from typing import TYPE_CHECKING, Final, Self, TypedDict
 
 from .. import easyrip_web
 from ..easyrip_config.config import CONFIG_DEFAULT_DICT, config
@@ -40,7 +40,6 @@ FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
 
 
-@final
 class Ripper:
     ripper_list: Final[list["Ripper"]] = []
 

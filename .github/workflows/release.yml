@@ -1,48 +1,38 @@
-name: Release
+name: Build
 
 on:
+  push:
+    paths:
+      - "easyrip/**"
+      - "resources/*.ico"
+      - "pyproject.toml"
+      - ".github/workflows/*"
+    branches: ["main"]
+  pull_request:
+    paths:
+      - "easyrip/**"
+      - "resources/*.ico"
+      - "pyproject.toml"
+      - ".github/workflows/*"
+    branches: ["main"]
   release:
-    types: [published] # 创建 Release 时触发
+    types: [published]
 
 permissions:
-  id-token: write # 启用 OIDC
+  contents: read
 
 jobs:
-  pypi-publish:
-    name: Upload release to PyPI
-    runs-on: ubuntu-latest
-    permissions:
-      id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
-    steps:
-      # retrieve your distributions here
-      - uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.14"
-          cache: "pip"
-
-      - name: Install build dependencies
-        run: python -m pip install -U build
-
-      - name: Build distributions
-        run: python -m build
-
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-
-  build-and-upload:
-    name: Build and Upload to Release - Windows
+  build:
+    name: Build - Windows
     runs-on: windows-latest
     permissions:
       contents: write
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v7
         with:
           python-version: "3.14"
           cache: "pip"
@@ -50,11 +40,18 @@ jobs:
 
       - name: Build - zipapp
         run: |
-          python -m compileall -f easyrip
-          python -m zipapp easyrip --output easyrip.pyz --compress
+          $build = Join-Path $PWD "_build"
+
+          Remove-Item $build -Recurse -Force -ErrorAction SilentlyContinue
+          Copy-Item -Path .\easyrip -Destination "$build\easyrip" -Recurse -Force
+
+          python -m compileall -f "$build\easyrip"
+          python -m zipapp $build --output easyrip.pyz --compress -m easyrip.__main__:run
+
+          Remove-Item $build -Recurse -Force
 
       - name: Upload pyz
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: easyrip.pyz
           path: ./easyrip.pyz
@@ -65,9 +62,16 @@ jobs:
 
       - name: exe -> 7z
         run: |
-          7z a -t7z -m0=LZMA2 -mx=9 easyrip.exe.7z ./easyrip_nuitka_output/*.exe
+          7z a -t7z -m0=LZMA2 -mx=9 -mfb=273 easyrip.exe.7z ./easyrip_nuitka_output/*.exe
 
-      - name: Upload to Release
+      - name: Upload exe.7z
+        uses: actions/upload-artifact@v7
+        with:
+          name: easyrip.exe
+          path: ./easyrip.exe.7z
+
+      - name: Upload build files to Release
+        if: github.event_name == 'release' && github.event.action == 'published'
         uses: softprops/action-gh-release@v3
         with:
           files: |
@@ -75,3 +79,27 @@ jobs:
             ./easyrip.exe.7z
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pypi-publish:
+    name: Upload release to PyPI
+    if: github.event_name == 'release' && github.event.action == 'published'
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.14"
+          cache: "pip"
+
+      - name: Build distributions
+        run: |
+          python -m pip install -U build
+          python -m build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

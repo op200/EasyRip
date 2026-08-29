@@ -110,7 +110,7 @@ class MainHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # 设置标志请求关闭服务
             if data.get("shutdown") == "shutdown":
-                self.server.shutdown_requested = True  # pyright: ignore[reportAttributeAccessIssue]
+                self.server.shutdown()
 
             # 通过 token 判断一致性
             if (

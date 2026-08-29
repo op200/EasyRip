@@ -1,7 +1,26 @@
 {
+  "explorer.fileNesting.enabled": true,
+  "explorer.fileNesting.patterns": {
+    "pyproject.toml": "ruff.toml, .markdownlint.jsonc, .oxfmtrc.jsonc"
+  },
   "python.testing.unittestArgs": ["-v", "-s", ".", "-p", "*test*.py"],
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
   "python-envs.defaultEnvManager": "ms-python.python:system",
-  "python.analysis.diagnosticMode": "workspace"
+  "python.analysis.diagnosticMode": "workspace",
+  "python.languageServer": "Pylance",
+  "ty.disableLanguageServices": true,
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff"
+  },
+  "[json][jsonc][yaml]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[toml]": {
+    "editor.defaultFormatter": "tombi-toml.tombi"
+  },
+  "[markdown]": {
+    "editor.defaultFormatter": "Jota0222.multi-formatter",
+    "multiFormatter.formatterList": ["DavidAnson.vscode-markdownlint", "yzhang.markdown-all-in-one"]
+  }
 }

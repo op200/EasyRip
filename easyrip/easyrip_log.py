@@ -4,9 +4,11 @@ import enum
 import os
 import sys
 import traceback
+from collections.abc import Callable
 from ctypes import wintypes
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Self, TextIO
+from typing import ClassVar, Self, TextIO
 
 from prompt_toolkit import ANSI, print_formatted_text
 
@@ -17,10 +19,10 @@ __all__ = ["Log"]
 
 
 class Event:
-    @staticmethod
-    def append_http_server_log_queue(message: tuple[str, str, str], /) -> None: ...
+    append_http_server_log_queue: ClassVar[Callable[[tuple[str, str, str]], None]]
 
 
+@dataclass(slots=True, kw_only=True)
 class Log:
     class LogLevel(enum.Enum):
         _detail = enum.auto()
@@ -36,25 +38,24 @@ class Log:
         only_print = enum.auto()
         only_write = enum.auto()
 
-    def __init__(self) -> None:
-        self.html_file: Path = Path("EasyRip_log.html")  # 在调用前覆写
-        self.print_level: Log.LogLevel = Log.LogLevel.send
-        self.write_level: Log.LogLevel = Log.LogLevel.send
+    html_file: Path
+    print_level: LogLevel = LogLevel.send
+    write_level: LogLevel = LogLevel.none
 
-        self.default_foreground_color: int = 39
-        self.default_background_color: int = 49
-        self.time_color: int = 32
-        self.debug_color: int = 32
-        self.info_color: int = 34
-        self.warning_color: int = 33
-        self.error_color: int = 31
-        self.send_color: int = 35
+    default_foreground_color: int = 39
+    default_background_color: int = 49
+    time_color: int = 32
+    debug_color: int = 32
+    info_color: int = 34
+    warning_color: int = 33
+    error_color: int = 31
+    send_color: int = 35
 
-        self.debug_num: int = 0
-        self.info_num: int = 0
-        self.warning_num: int = 0
-        self.error_num: int = 0
-        self.send_num: int = 0
+    debug_num: int = 0
+    info_num: int = 0
+    warning_num: int = 0
+    error_num: int = 0
+    send_num: int = 0
 
     def init(self) -> Self:
         """
@@ -473,5 +474,5 @@ class Log:
             self.write_level = _level
 
 
-log = Log()
+log = Log(html_file=Path("EasyRip_log.html"), write_level=Log.LogLevel.send)
 """Easy Rip 内部使用的 log 单例，用于向前兼容"""

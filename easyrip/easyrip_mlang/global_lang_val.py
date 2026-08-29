@@ -1,12 +1,11 @@
 import enum
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Self, final
+from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
-@final
 @dataclass(slots=True, kw_only=True)
 class Lang_tag:
     from .lang_tag_val import Lang_tag_language as Language

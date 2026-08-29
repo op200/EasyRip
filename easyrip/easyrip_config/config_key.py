@@ -17,7 +17,9 @@ class Config_key(enum.Enum):
     proxies = enum.auto()
 
 
-CONFIG_TYPE_DICT: dict[Config_key, type] = {
+type Config_type = str | bool | list[str] | int
+
+CONFIG_TYPE_DICT: dict[Config_key, type[Config_type]] = {
     Config_key.language: str,
     Config_key.check_update: bool,
     Config_key.check_dependent: bool,

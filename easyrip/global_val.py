@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "4.18.6"
+PROJECT_VERSION = "4.19.0-alpha"
 PROJECT_VERSION_PEP440 = (
     PROJECT_VERSION.replace("-", "").replace("alpha", "a").replace("beta", "b")
 )
@@ -14,7 +14,7 @@ PROJECT_RELEASE_API = "https://api.github.com/repos/op200/EasyRip/releases/lates
 
 
 @cache
-def get_CONFIG_DIR():
+def get_CONFIG_DIR() -> Path:
     if sys.platform == "win32":
         # Windows: C:\Users\<用户名>\AppData\Roaming\<app_name>
         __config_dir = Path(os.getenv("APPDATA", ""))

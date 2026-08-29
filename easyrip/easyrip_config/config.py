@@ -6,7 +6,7 @@ from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
 from ..global_val import get_CONFIG_DIR
 from ..utils import type_match
-from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key
+from .config_key import CONFIG_TYPE_DICT, CONFIG_VERSION, Config_key, Config_type
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -148,7 +148,7 @@ class config:
 
     @overload
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile[T: Config_type](
         cls,
         config_key: Literal[
             Config_key.language,
@@ -158,57 +158,113 @@ class config:
             Config_key.log_write_level,
             Config_key.proxies,
         ],
-        default: T = None,
+        default: T,
         /,
     ) -> str | T: ...
 
     @overload
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile(
+        cls,
+        config_key: Literal[
+            Config_key.language,
+            Config_key.startup_dir,
+            Config_key.force_log_file_path,
+            Config_key.log_print_level,
+            Config_key.log_write_level,
+            Config_key.proxies,
+        ],
+        default: None = None,
+        /,
+    ) -> str | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile[T: Config_type](
         cls,
         config_key: Literal[
             Config_key.check_update,
             Config_key.check_dependent,
             Config_key.save_prompt_history,
         ],
-        default: T = None,
+        default: T,
         /,
     ) -> bool | T: ...
 
     @overload
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile(
+        cls,
+        config_key: Literal[
+            Config_key.check_update,
+            Config_key.check_dependent,
+            Config_key.save_prompt_history,
+        ],
+        default: None = None,
+        /,
+    ) -> bool | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile[T: Config_type](
         cls,
         config_key: Literal[Config_key.startup_dir_blacklist],
-        default: T = None,
+        default: T,
         /,
     ) -> list[str] | T: ...
 
     @overload
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile(
+        cls,
+        config_key: Literal[Config_key.startup_dir_blacklist],
+        default: None = None,
+        /,
+    ) -> list[str] | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile[T: Config_type](
         cls,
         config_key: Literal[Config_key.refresh_progress_sec],
-        default: T = None,
+        default: T,
         /,
     ) -> int | T: ...
 
     @overload
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile(
+        cls,
+        config_key: Literal[Config_key.refresh_progress_sec],
+        default: None = None,
+        /,
+    ) -> int | None: ...
+
+    @overload
+    @classmethod
+    def get_user_profile[T: Config_type](
         cls,
         config_key: str,
-        default: T = None,
+        default: T,
         /,
-    ) -> str | bool | list[str] | int | T: ...
+    ) -> Config_type | T: ...
+
+    @overload
+    @classmethod
+    def get_user_profile(
+        cls,
+        config_key: str,
+        default: None = None,
+        /,
+    ) -> Config_type | None: ...
 
     @classmethod
-    def get_user_profile[T](
+    def get_user_profile[T: Config_type](
         cls,
         config_key: Config_key | str,
-        default: T = None,
+        default: T | None = None,
         /,
-    ) -> str | bool | list[str] | int | T:
+    ) -> Config_type | T | None:
         key = config_key.name if isinstance(config_key, Config_key) else config_key
 
         if key not in Config_key._member_map_:

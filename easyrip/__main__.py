@@ -1,10 +1,7 @@
 import sys
+from threading import Thread
 from typing import TYPE_CHECKING, NoReturn
 
-import Crypto
-import fontTools
-import prompt_toolkit
-import pyperclip
 from prompt_toolkit import ANSI, prompt
 from prompt_toolkit.application import get_app
 from prompt_toolkit.clipboard.pyperclip import PyperclipClipboard
@@ -39,11 +36,19 @@ if TYPE_CHECKING:
 def run() -> NoReturn:
     init(True)
 
-    log.debug(f"Python: v{sys.version}")
-    log.debug(f"pyperclip: v{pyperclip.__version__}")  # pyright: ignore[reportAttributeAccessIssue]
-    log.debug(f"prompt-toolkit: v{prompt_toolkit.__version__}")
-    log.debug(f"fonttools: v{fontTools.__version__}")
-    log.debug(f"pycryptodome: v{Crypto.__version__}")
+    def _print_ver() -> None:
+        import Crypto
+        import fontTools
+        import prompt_toolkit
+        import pyperclip
+
+        log.debug(f"Python: v{sys.version}")
+        log.debug(f"pyperclip: v{pyperclip.__version__}")  # pyright: ignore[reportAttributeAccessIssue]
+        log.debug(f"prompt-toolkit: v{prompt_toolkit.__version__}")
+        log.debug(f"fonttools: v{fontTools.__version__}")
+        log.debug(f"pycryptodome: v{Crypto.__version__}")
+
+    Thread(target=_print_ver).start()
 
     if len(sys.argv) > 1:
         run_command(sys.argv[1:])
