@@ -3,12 +3,13 @@ import datetime
 import enum
 import os
 import sys
+import textwrap
 import traceback
 from collections.abc import Callable
 from ctypes import wintypes
 from dataclasses import dataclass
 from pathlib import Path
-from typing import ClassVar, Self, TextIO
+from typing import ClassVar, Literal, Self, TextIO
 
 from prompt_toolkit import ANSI, print_formatted_text
 
@@ -164,7 +165,14 @@ class Log:
 
     def _do_log(
         self,
-        log_level: LogLevel,
+        log_level: Literal[
+            LogLevel.debug,
+            LogLevel.send,
+            LogLevel.info,
+            LogLevel.warning,
+            LogLevel.error,
+            LogLevel.none,
+        ],
         mode: LogMode,
         message: object,
         *fmt_args: object,
@@ -188,110 +196,115 @@ class Log:
             is_format=is_format,
         )
 
-        if is_deep:
-            message = f"{traceback.format_exc()}\n{message}"
+        default_color_str = (
+            f"\x1b[0;{self.default_foreground_color};{self.default_background_color}m"
+        )
 
-        time_str = f"\033[{self.time_color}m{time_now}"
+        time_str = f"{default_color_str}\x1b[{self.time_color}m{time_now}"
 
+        log_str: str | None = None
+        log_color: int
+        write_str: str | None = None
         match log_level:
             case self.LogLevel.debug:
                 self.debug_num += 1
+                log_color = self.debug_color
 
                 if (
                     mode != self.LogMode.only_write
                     and self.print_level.value <= self.LogLevel.debug.value
                     and self.print_level.value <= print_level.value
                 ):
-                    self.print(
-                        f"{time_str}\033[{self.debug_color}m [DEBUG] {message}\033[{self.default_foreground_color}m\n",
-                        file=stream,
-                    )
+                    log_str = f"{time_str}\x1b[{log_color}m [DEBUG] "
 
                 if (
                     mode != self.LogMode.only_print
                     and self.write_level.value <= self.LogLevel.debug.value
                     and self.write_level.value <= write_level.value
                 ):
-                    self.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:green;">[DEBUG] {message}</span></div>'
+                    write_str = (
+                        '<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;">'
+                        f'<span style="color:green;">{time_now}</span> '
+                        f'<span style="color:green;">[DEBUG] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "DEBUG", message))
 
             case self.LogLevel.info:
                 self.info_num += 1
+                log_color = self.info_color
 
                 if (
                     mode != self.LogMode.only_write
                     and self.print_level.value <= self.LogLevel.info.value
                     and self.print_level.value <= print_level.value
                 ):
-                    self.print(
-                        f"{time_str}\033[{self.info_color}m [INFO] {message}\033[{self.default_foreground_color}m\n",
-                        file=stream,
-                    )
+                    log_str = f"{time_str}\x1b[{log_color}m [INFO] "
 
                 if (
                     mode != self.LogMode.only_print
                     and self.write_level.value <= self.LogLevel.info.value
                     and self.write_level.value <= write_level.value
                 ):
-                    self.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:blue;">[INFO] {message}</span></div>'
+                    write_str = (
+                        '<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;">'
+                        f'<span style="color:green;">{time_now}</span> '
+                        f'<span style="color:blue;">[INFO] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "INFO", message))
 
             case self.LogLevel.warning:
                 self.warning_num += 1
+                log_color = self.warning_color
 
                 if (
                     mode != self.LogMode.only_write
                     and self.print_level.value <= self.LogLevel.warning.value
                     and self.print_level.value <= print_level.value
                 ):
-                    self.print(
-                        f"{time_str}\033[{self.warning_color}m [WARNING] {message}\033[{self.default_foreground_color}m\n",
-                        file=stream,
-                    )
+                    log_str = f"{time_str}\x1b[{log_color}m [WARNING] "
 
                 if (
                     mode != self.LogMode.only_print
                     and self.write_level.value <= self.LogLevel.warning.value
                     and self.write_level.value <= write_level.value
                 ):
-                    self.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:yellow;">[WARNING] {message}</span></div>'
+                    write_str = (
+                        '<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;">'
+                        f'<span style="color:green;">{time_now}</span> '
+                        f'<span style="color:yellow;">[WARNING] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "WARNING", message))
 
             case self.LogLevel.error:
                 self.error_num += 1
+                log_color = self.error_color
 
                 if (
                     mode != self.LogMode.only_write
                     and self.print_level.value <= self.LogLevel.error.value
                     and self.print_level.value <= print_level.value
                 ):
-                    self.print(
-                        f"{time_str}\033[{self.error_color}m [ERROR] {message}\033[{self.default_foreground_color}m\n",
-                        file=stream,
-                    )
+                    log_str = f"{time_str}\x1b[{log_color}m [ERROR] "
 
                 if (
                     mode != self.LogMode.only_print
                     and self.write_level.value <= self.LogLevel.error.value
                     and self.write_level.value <= write_level.value
                 ):
-                    self.write_html_log(
-                        f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;">{time_now}</span> <span style="color:red;">[ERROR] {message}</span></div>'
+                    write_str = (
+                        '<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;">'
+                        f'<span style="color:green;">{time_now}</span> '
+                        f'<span style="color:red;">[ERROR] {message}</span></div>'
                     )
 
                 Event.append_http_server_log_queue((time_now, "ERROR", message))
 
             case self.LogLevel.send:
                 self.send_num += 1
+                log_color = self.send_color
 
                 if is_server or easyrip_web.http_server.Event.is_run_command:
                     if (
@@ -299,27 +312,44 @@ class Log:
                         and self.print_level.value <= self.LogLevel.send.value
                         and self.print_level.value <= print_level.value
                     ):
-                        self.print(
-                            f"{time_str}\033[{self.send_color}m [Send] {message}\033[{self.default_foreground_color}m\n",
-                            file=stream,
-                        )
+                        log_str = f"{time_str}\x1b[{log_color}m [Send] "
 
                     if (
                         mode != self.LogMode.only_print
                         and self.write_level.value <= self.LogLevel.send.value
                         and self.write_level.value <= write_level.value
                     ):
-                        self.write_html_log(
-                            f'<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;"><span style="color:green;white-space:pre-wrap;">{time_now}</span> <span style="color:deeppink;">[Send] <span style="color:green;">{http_send_header}</span>{message}</span></div>'
+                        write_str = (
+                            '<div style="background-color:#b4b4b4;margin-bottom:2px;white-space:pre-wrap;">'
+                            f'<span style="color:green;white-space:pre-wrap;">{time_now}</span> '
+                            f'<span style="color:deeppink;">[Send] '
+                            f'<span style="color:green;">{http_send_header}</span>{message}</span></div>'
                         )
 
                     Event.append_http_server_log_queue(
                         (http_send_header, "Send", message)
                     )
                 elif self.print_level.value <= self.LogLevel.send.value:
-                    self.print(
-                        f"\033[{self.send_color}m{message}\033[{self.default_foreground_color}m\n",
-                    )
+                    log_str = f"\x1b[{log_color}m"
+
+        print_str: str = f"{log_str}{message}{default_color_str}"
+        if is_deep:
+            print_str += "\n" + textwrap.indent(
+                "".join(
+                    traceback.format_exception(  # ty: ignore[no-matching-overload]
+                        sys.exception(), colorize=True
+                    )  # pyright: ignore[reportCallIssue]
+                ).replace("\x1b[0m", default_color_str),
+                f"{default_color_str}\x1b[{log_color}m │ {default_color_str}",
+                lambda _: True,
+            )
+        if log_str:
+            self.print(
+                f"{print_str}{default_color_str}\n",
+                file=stream,
+            )
+        if write_str:
+            self.write_html_log(write_str)
 
     def debug(
         self,

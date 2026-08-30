@@ -1,7 +1,7 @@
 [project]
 name = "easyrip"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
 authors = [{ name = "op200" }]
 classifiers = [
@@ -14,7 +14,6 @@ classifiers = [
   "Operating System :: Microsoft :: Windows :: Windows 11",
   # "Operating System :: MacOS",
   # "Operating System :: POSIX :: Linux",
-  "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.15",
@@ -38,7 +37,7 @@ easyrip = "easyrip.__main__:run"
 
 [build-system]
 requires = [
-  "setuptools>=83",
+  "setuptools>=84",
 ]
 
 [tool.pyright]

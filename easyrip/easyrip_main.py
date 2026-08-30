@@ -223,7 +223,7 @@ def get_input_prompt(is_color: bool = False) -> str:
     cmd_prompt = f"{gettext('Easy Rip command')}>"
     if is_color:
         cmd_prompt = (
-            f"\033[{log.send_color}m{cmd_prompt}\033[{log.default_foreground_color}m"
+            f"\x1b[{log.send_color}m{cmd_prompt}\x1b[{log.default_foreground_color}m"
         )
     return f"{Path.cwd().resolve()}> {cmd_prompt}"
 

@@ -1,15 +1,15 @@
 /*
-!.vscode/
-!.gitignore
-!LICENSE
-!README.md
-!.github/
-!easyrip/
-!resources/
-!tests.py
-!pyproject.toml
-!ruff.toml
-!.oxfmtrc.jsonc
-!.markdownlint.jsonc
+!/.vscode/
+!/.github/
+!/.gitignore
+!/.oxfmtrc.jsonc
+!/.markdownlint.jsonc
+!/pyproject.toml
+!/ruff.toml
+!/LICENSE
+!/README.md
+!/easyrip/
+!/resources/
+!/tests.py
 
 __pycache__
