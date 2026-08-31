@@ -50,6 +50,8 @@ from typing import (
 import Crypto.Cipher.AES
 import Crypto.Util.Padding
 
+from .global_val import PROJECT_TITLE
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -111,12 +113,51 @@ class terminal_progress:
         cls.update(cls.State.warning, persent)
 
 
-def change_title(title: str) -> None:
-    if os.name == "nt":
-        ctypes.windll.kernel32.SetConsoleTitleW(title)
-    elif os.name == "posix":
-        sys.stdout.write(f"\x1b]2;{title}\x07")
-        sys.stdout.flush()
+class Title:
+    @staticmethod
+    def change_title(title: str) -> None:
+        if os.name == "nt":
+            ctypes.windll.kernel32.SetConsoleTitleW(title)
+        elif os.name == "posix":
+            sys.stdout.write(f"\x1b]2;{title}\x07")
+            sys.stdout.flush()
+
+    def __init__(self, project_title: str | None = None, /) -> None:
+        self.project_title: str | None = project_title
+        self._temp_status: str | None = None
+        self._progress: str | None = None
+
+    @property
+    def temp_status(self):
+        return self._temp_status
+
+    @temp_status.setter
+    def temp_status(self, value: str | None) -> None:
+        if self._temp_status != value:
+            self._temp_status = value
+            self.refresh_title()
+
+    @property
+    def progress(self):
+        return self._progress
+
+    @progress.setter
+    def progress(self, value: str | None) -> None:
+        if self._progress != value:
+            self._progress = value
+            self.refresh_title()
+
+    def refresh_title(self):
+        self.change_title(
+            " - ".join(
+                s
+                for s in (self.temp_status, self.progress, PROJECT_TITLE)
+                if s is not None
+            )
+        )
+
+
+title = Title()
 
 
 def check_ver(new_ver_str: str, old_ver_str: str) -> bool:

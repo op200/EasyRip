@@ -1,6 +1,6 @@
 import json
 import os
-from typing import TYPE_CHECKING, Literal, get_origin, overload
+from typing import TYPE_CHECKING, ClassVar, Literal, get_origin, overload
 
 from ..easyrip_log import log
 from ..easyrip_mlang import all_supported_lang_map, gettext
@@ -31,9 +31,9 @@ assert all(k in CONFIG_DEFAULT_DICT for k in Config_key), [
 
 
 class config:
-    _config_dir: "Path"
-    _config_file: "Path"
-    _config: dict | None = None
+    _config_dir: "ClassVar[Path]"
+    _config_file: "ClassVar[Path]"
+    _config: "ClassVar[dict | None]" = None
 
     @classmethod
     def init(cls) -> None:

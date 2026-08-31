@@ -277,7 +277,6 @@ _X264_PARAM_NAME_SET: Final[set[LiteralString]] = {
 
 _HW_ENCODER_PARAM_NAME_SET: Final[set[LiteralString]] = {
     "q:v",
-    "pix_fmt",
     "preset:v",
 }
 
@@ -293,7 +292,6 @@ _PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
     Preset_name.x265slow: _X265_PARAM_NAME_SET,
     Preset_name.x265full: _X265_PARAM_NAME_SET,
     Preset_name.svtav1: {
-        "pix_fmt",
         "preset:v",
         "crf",
         "qp",
@@ -301,7 +299,6 @@ _PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
         "dolbyvision",
     },
     Preset_name.vvenc: {
-        "pix_fmt",
         "preset:v",
         "qp",
         "qpa",
@@ -313,7 +310,6 @@ _PRESET__PARAM_NAME_SET: Final[dict[Preset_name, set[LiteralString]]] = {
         "tier",
     },
     Preset_name.ffv1: {
-        "pix_fmt",
         "slicecrc",
         "coder",
         "context",

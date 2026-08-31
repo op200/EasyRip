@@ -585,6 +585,11 @@ class Opt_type(enum.Enum):
         ),
         childs=(Cmd_type_val(("auto",), is_no_doc_child=True),),
     )
+    _pix_fmt = Cmd_type_val(
+        ("-pix_fmt",),
+        param="<pixel format>",
+        description="The available pixel formats are detailed in `ffmpeg -pix_fmts`",
+    )
     _chapters = Cmd_type_val(
         ("-chapters",),
         param="<path>",

@@ -13,7 +13,7 @@ from operator import itemgetter
 from pathlib import Path
 from threading import Thread
 from time import sleep
-from typing import TYPE_CHECKING, Final, Self, TypedDict
+from typing import TYPE_CHECKING, Final, Self, TypedDict, override
 
 from .. import easyrip_web
 from ..easyrip_config.config import CONFIG_DEFAULT_DICT, config
@@ -25,7 +25,7 @@ from ..easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from ..utils import get_base62_time, obj_fmt, terminal_progress, type_match
+from ..utils import get_base62_time, obj_fmt, terminal_progress, title, type_match
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -40,8 +40,15 @@ FF_PROGRESS_LOG_FILE = Path("FFProgress.log")
 FF_REPORT_LOG_FILE = Path("FFReport.log")
 
 
+class _Ripper_list[T](list[T]):
+    @override
+    def clear(self) -> None:
+        super().clear()
+        title.progress = None
+
+
 class Ripper:
-    ripper_list: Final[list["Ripper"]] = []
+    ripper_list: Final[_Ripper_list["Ripper"]] = _Ripper_list()
 
     @classmethod
     def add_ripper(
@@ -56,12 +63,13 @@ class Ripper:
             cls.ripper_list.append(
                 cls(input_path, output_prefix, output_dir, option, option_map)
             )
+            title.progress = f"{len(cls.ripper_list)}R"
         except Exception as e:
             log.error("Failed to add Ripper: {}", e, deep=True)
 
     from .param import Audio_codec, Muxer, Preset_name
 
-    @dataclass(slots=True)
+    @dataclass(slots=True, kw_only=True)
     class Option:
         preset_name: "Ripper.Preset_name"
         encoder_format_str_list: list[str]
@@ -405,7 +413,7 @@ class Ripper:
             hwaccel = (
                 [f"-hwaccel {hwaccel}"]
                 if (hwaccel := self.option_map.get("hwaccel"))
-                else []
+                else ()
             )
 
             return " ".join(
@@ -626,7 +634,9 @@ class Ripper:
 
                 encoder_format_str_list = [
                     get_vs_ff_cmd(
-                        f'-c:v libx264 {"" if is_pipe_input else "-pix_fmt yuv420p"} -x264-params "{_param}" '
+                        "-c:v libx264 "
+                        f"{'' if is_pipe_input else f'-pix_fmt {self.option_map.get("pix_fmt", "yuv420p")}'} "
+                        f'-x264-params "{_param}" '
                     )
                 ]
 
@@ -699,7 +709,9 @@ class Ripper:
 
                 encoder_format_str_list = [
                     get_vs_ff_cmd(
-                        f'-c:v libx265 {"" if is_pipe_input else "-pix_fmt yuv420p10le"} -x265-params "{_param}"'
+                        "-c:v libx265 "
+                        f"{'' if is_pipe_input else f'-pix_fmt {self.option_map.get("pix_fmt", "yuv420p10le")}'} "
+                        f'-x265-params "{_param}"'
                     )
                 ]
 
@@ -776,11 +788,11 @@ class Ripper:
                 encoder_format_str_list = [get_vs_ff_cmd(f"-c:v ffv1 {_param}")]
 
         return Ripper.Option(
-            preset_name,
-            encoder_format_str_list,
-            audio_encoder,
-            muxer,
-            muxer_format_str_list,
+            preset_name=preset_name,
+            encoder_format_str_list=encoder_format_str_list,
+            audio_encoder=audio_encoder,
+            muxer=muxer,
+            muxer_format_str_list=muxer_format_str_list,
         )
 
     def run(

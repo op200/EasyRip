@@ -25,6 +25,7 @@ from typing import TYPE_CHECKING, Final, Literal
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
 from .easyrip_config.config import Config_key, config
+from .easyrip_config.upgrader import upgrader
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
 from .easyrip_mlang import (
@@ -38,7 +39,7 @@ from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
-from .utils import change_title, check_ver, obj_fmt, read_text, terminal_progress
+from .utils import check_ver, obj_fmt, read_text, terminal_progress, title
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -85,7 +86,7 @@ def log_new_ver(
 
 def check_env() -> None:
     try:
-        change_title(f"{gettext('Check env...')} {PROJECT_TITLE}")
+        title.temp_status = gettext("Check env...")
 
         if config.get_user_profile(Config_key.check_dependent):
             _url = "https://ffmpeg.org/download.html"
@@ -111,14 +112,14 @@ def check_env() -> None:
 
                     if "." in _new_ver:
                         log_new_ver(
-                            easyrip_web.ffmpeg.get_latest_release_ver() or "8.1.1",
+                            easyrip_web.ffmpeg.get_latest_release_ver() or "9.0.1",
                             _new_ver.split("-")[0],
                             _name,
                             _url,
                         )
                     else:
                         log_new_ver(
-                            "2026.05.04",  # 格式: YYYY.MM.DD
+                            "2026.08.12",  # 格式: YYYY.MM.DD
                             ".".join(_new_ver.split("-")[:3]),
                             _name,
                             _url,
@@ -186,7 +187,7 @@ def check_env() -> None:
                     log.print(get_input_prompt(True), end="")
                 else:
                     log_new_ver(
-                        easyrip_web.mkvtoolnix.get_latest_release_ver() or "98.0",
+                        easyrip_web.mkvtoolnix.get_latest_release_ver() or "101.0",
                         subprocess.run(
                             f"{_name} --version", capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
@@ -209,7 +210,7 @@ def check_env() -> None:
                 }",
             )
 
-        change_title(PROJECT_TITLE)
+        title.temp_status = None
 
     except Exception as e:
         log.error(
@@ -304,9 +305,9 @@ def run_ripper_list(
             with threading_lock:
                 progress_num += 1
 
-            progress = f"{progress_num} / {total} - {PROJECT_TITLE}"
-            log.info(progress)
-            change_title(progress)
+            progress = f"{progress_num} / {total}"
+            log.info(f"{progress} - {PROJECT_TITLE}")
+            title.progress = f"{progress_num} / {total}"
 
             try:
                 if ripper.run() is False:
@@ -329,9 +330,9 @@ def run_ripper_list(
 
     else:
         for i, ripper in enumerate(Ripper.ripper_list, 1):
-            progress = f"{i} / {total} - {PROJECT_TITLE}"
-            log.info(progress)
-            change_title(progress)
+            progress = f"{i} / {total}"
+            log.info(f"{progress} - {PROJECT_TITLE}")
+            title.progress = progress
             try:
                 if ripper.run() is False:
                     log.error("Run {} failed", "Ripper")
@@ -371,7 +372,7 @@ def run_ripper_list(
     if is_exit_when_run_finished:
         sys.exit(0)
 
-    change_title(f"End - {PROJECT_TITLE}")
+    title.progress = gettext("End")
     log.info("Run completed")
 
 
@@ -419,7 +420,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
     if len(cmd_list) == 0:
         return True
 
-    change_title(PROJECT_TITLE)
+    title.refresh_title()
 
     cmd_list.append("")
 
@@ -1217,14 +1218,32 @@ def init(is_first_run: bool = False) -> None:
         except Exception:
             log.warning("Windows DPI Aware failed")
 
+    upgrader.init()
+
     if is_first_run:
-        # 当前路径添加到环境变量
-        new_path = Path.cwd().resolve()
-        if os.pathsep in (current_path := os.environ.get("PATH", "")) and (
-            str(new_path) not in current_path.split(os.pathsep)
+        # 工具扫描目录 (尾插)
+        tools_dir_list: list[str] = []
+        path_dirs = tuple(map(Path, os.environ.get("PATH", "").split(os.pathsep)))
+        for s in (R"C:\Program Files\MKVToolNix",):
+            if (p := Path(s).resolve()).is_dir() and not any(
+                ep.samefile(p) for ep in path_dirs if ep.exists()
+            ):
+                os.environ["PATH"] += f"{os.pathsep}{p}"
+
+        # 前插
+        for p in (
+            upgrader.download_dir,  # 安装模块目录
+            Path.cwd().resolve(),  # 启动目录
         ):
-            updated_path = f"{new_path}{os.pathsep}{current_path}"
-            os.environ["PATH"] = updated_path
+            current_path = os.environ.get("PATH", "")
+            if not any(
+                ep.samefile(p)
+                for ep in map(Path, current_path.split(os.pathsep))
+                if ep.exists()
+            ):
+                os.environ["PATH"] = f"{p}{os.pathsep}{current_path}"
+
+        del tools_dir_list
 
     # 设置语言
     _sys_lang = get_system_language()
