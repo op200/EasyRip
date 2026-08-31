@@ -1,3 +1,6 @@
+[format]
+line-ending = "lf"
+
 [lint]
 ignore = [
   "ANN001",

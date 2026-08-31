@@ -1,5 +1,5 @@
 {
   "ignorePatterns": ["*.toml", "*.md"],
-  "endOfLine": "crlf",
+  "endOfLine": "lf",
   "trailingComma": "none"
 }
