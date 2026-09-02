@@ -16,7 +16,7 @@ from .ass import (
     Event_type,
     Script_info_data,
 )
-from .font import Font, Font_type, load_fonts, load_windows_fonts, subset_font
+from .font import Font, Font_type, load_fonts, load_system_fonts, subset_font
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
@@ -292,7 +292,7 @@ def subset(
     for _path in font_path_list:
         fonts.extend(load_fonts(_path, strict=strict))
     if use_win_font:
-        fonts.extend(load_windows_fonts(strict=strict))
+        fonts.extend(load_system_fonts(strict=strict))
 
     font_sign__font: dict[tuple[str, Font_type], Font] = {}
     family_lower__family = {}  # 存储小写 family 用于判断 ASS 的大小写不敏感语法

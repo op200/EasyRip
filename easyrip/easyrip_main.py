@@ -89,7 +89,7 @@ def check_env() -> None:
 
         if config.get_user_profile(Config_key.check_dependent):
             _url = "https://ffmpeg.org/download.html"
-            for _name in ("FFmpeg", "FFprobe"):
+            for _name in ("ffmpeg", "ffprobe"):
                 if not shutil.which(_name):
                     log.error(
                         "\n"
@@ -103,10 +103,11 @@ def check_env() -> None:
                 else:
                     _new_ver = (
                         subprocess.run(
-                            f"{_name} -version", capture_output=True, text=True
+                            [_name, "-version"], capture_output=True, text=True
                         )
                         .stdout.split(maxsplit=3)[2]
                         .split("_")[0]
+                        .removeprefix("n")
                     )
 
                     if "." in _new_ver:
@@ -138,7 +139,7 @@ def check_env() -> None:
                 "1.5.0",
                 (
                     current_ver_str := subprocess.run(
-                        "flac -v", capture_output=True, text=True
+                        [_name, "-v"], capture_output=True, text=True
                     ).stdout.split()[1]
                 ),
             ):
@@ -167,7 +168,7 @@ def check_env() -> None:
                     ),
                     (
                         subprocess.run(
-                            "mp4box -version", capture_output=True, text=True
+                            [_name, "-version"], capture_output=True, text=True
                         )
                         .stderr.split("-", 2)[1]
                         .strip()
@@ -188,7 +189,7 @@ def check_env() -> None:
                     log_new_ver(
                         easyrip_web.mkvtoolnix.get_latest_release_ver() or "101.0",
                         subprocess.run(
-                            f"{_name} --version", capture_output=True, text=True
+                            [_name, "--version"], capture_output=True, text=True
                         ).stdout.split(maxsplit=2)[1],
                         _name,
                         _url,

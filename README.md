@@ -57,9 +57,9 @@ Run `easyrip`, input `help` to get help doc
 
   ```pwsh
   pyright
-  py -m ty check
-  py -m ruff check --fix
-  py -m ruff format
+  ty check
+  ruff check --fix
+  ruff format
   oxfmt
   tombi lint
   tombi format
@@ -69,7 +69,7 @@ Run `easyrip`, input `help` to get help doc
 
   - [ffmpeg & ffprobe](https://ffmpeg.org/)
   - [flac](https://xiph.org/flac/)
-  - [mp4box](https://gpac.io/)
+  - [MP4Box](https://gpac.io/)
   - [mkvpropedit & mkvmerge](https://mkvtoolnix.download/)
 
 ## Supported languages

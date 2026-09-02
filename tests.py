@@ -35,7 +35,7 @@ from easyrip.easyrip_mlang import (
 from easyrip.easyrip_mlang.global_lang_val import Global_lang_val
 from easyrip.ripper.ripper import Ripper
 from easyrip.ripper.sub_and_font import Ass
-from easyrip.ripper.sub_and_font.font import load_fonts, load_windows_fonts
+from easyrip.ripper.sub_and_font.font import load_fonts, load_system_fonts
 from easyrip.utils import check_ver, type_match
 
 if sys.stdout.encoding != "UTF-8":
@@ -245,7 +245,7 @@ class TestRip(unittest.TestCase):
             "ffmpeg",
             "ffprobe",
             "flac",
-            "mp4box",
+            "MP4Box",
             "mkvpropedit",
             "mkvmerge",
         ):
@@ -395,7 +395,7 @@ class TestSubset(unittest.TestCase):
 
     def test_load_font(self):
         self.assertFalse(load_fonts(":&?"))
-        self.assertTrue(load_windows_fonts())
+        load_system_fonts()
 
 
 class TestThirdPartyApi(unittest.TestCase):

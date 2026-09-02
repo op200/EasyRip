@@ -1,6 +1,7 @@
 import enum
 import itertools
 import os
+import sys
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -152,15 +153,34 @@ def load_fonts(
     return res_font_list
 
 
-def load_windows_fonts(
+def load_system_fonts(
     *,
     lazy: bool = True,
     strict: bool = False,
 ) -> list[Font]:
-    paths: tuple[Path, ...] = (
-        Path(os.environ["SYSTEMROOT"], "Fonts"),
-        Path(os.environ["LOCALAPPDATA"], "Microsoft/Windows/Fonts"),
-    )
+    paths: tuple[Path, ...]
+    if sys.platform == "win32":
+        paths = (
+            Path(os.environ["SYSTEMROOT"], "Fonts"),
+            Path(os.environ["LOCALAPPDATA"], "Microsoft/Windows/Fonts"),
+        )
+
+    elif sys.platform == "darwin":
+        paths = (
+            Path("/System/Library/Fonts"),
+            Path("/Library/Fonts"),
+            Path.home() / "Library/Fonts",
+        )
+    else:
+        xdg_data_home = Path(
+            os.environ.get("XDG_DATA_HOME", str(Path.home() / ".local/share"))
+        )
+        paths = (
+            Path("/usr/share/fonts"),
+            Path("/usr/local/share/fonts"),
+            Path.home() / ".fonts",
+            xdg_data_home / "fonts",
+        )
 
     return list(
         itertools.chain.from_iterable(

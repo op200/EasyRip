@@ -4,7 +4,7 @@ from functools import cache
 from pathlib import Path
 
 PROJECT_NAME = "Easy Rip"
-PROJECT_VERSION = "4.19.0"
+PROJECT_VERSION = "4.19.1"
 PROJECT_VERSION_PEP440 = (
     PROJECT_VERSION.replace("-", "").replace("alpha", "a").replace("beta", "b")
 )

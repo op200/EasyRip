@@ -162,7 +162,7 @@ class Ripper:
             cmd_head_del = "del /Q"
             cmd_head_copy = "copy"
         else:
-            cmd_head_del = "rm /f"
+            cmd_head_del = "rm -f"
             cmd_head_copy = "cp"
 
         if (
@@ -316,7 +316,7 @@ class Ripper:
             match muxer:
                 case Ripper.Muxer.mp4:
                     muxer_format_str_list = [
-                        'mp4box -add "{output}" -new "{output}" '
+                        'MP4Box -add "{output}" -new "{output}" '
                         + (f"-fps {force_fps} " if force_fps else "")
                         + (
                             f"-chap {chapters} "
@@ -497,7 +497,7 @@ class Ripper:
                     case None | "flac":
                         if muxer == Ripper.Muxer.mp4:
                             _encoder_format_str = (
-                                'mp4box -add "{input}" -new "{output}"'
+                                'MP4Box -add "{input}" -new "{output}"'
                             )
                             for _audio_info in self.media_info.audio:
                                 _encoder_format_str += f" -rem {_audio_info.index + 1}"
@@ -509,7 +509,7 @@ class Ripper:
                             )
                     case "copy":
                         _encoder_format_str = (
-                            'mp4box -add "{input}" -new "{output}"'
+                            'MP4Box -add "{input}" -new "{output}"'
                             if muxer == Ripper.Muxer.mp4
                             else (
                                 'mkvmerge -o "{output}" '
@@ -590,7 +590,7 @@ class Ripper:
                     case _:
                         _mux_str = (
                             (
-                                f"mp4box {' '.join(f'-add {s}' for s in _mux_flac_input_list)} "
+                                f"MP4Box {' '.join(f'-add {s}' for s in _mux_flac_input_list)} "
                                 '-new "{output}"'
                             )
                             if muxer == Ripper.Muxer.mp4
@@ -1259,7 +1259,7 @@ class Ripper:
                 and self.option.audio_encoder == Ripper.Audio_codec.flac
             ):
                 _flac_basename = f"flac_temp_{get_base62_time()}"
-                _flac_fullname = Path(_flac_basename + ".flac.mkv")
+                _flac_fullname = self.output_dir / f"{_flac_basename}.flac.mkv"
                 _flac_ripper = Ripper(
                     [self.input_path_list[0]],
                     [_flac_basename],
@@ -1280,7 +1280,9 @@ class Ripper:
                         if k not in {"soft-sub", "sub", "translate-sub"}
                     },
                 )
-                _flac_ripper.run()
+                if not _flac_ripper.run():
+                    log.error("FLAC encoding failed")
+                    return False
 
                 _mux_temp_name: Path
                 _mux_cmd: str
