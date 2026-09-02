@@ -30,7 +30,7 @@ Run `easyrip`, input `help` to get help doc
 
 ## Development
 
-- ### Python 3.14 (must >=3.12)
+- ### Python 3.15 (must >=3.13)
 
   ```pwsh
   pip install -e . --config-settings editable_mode=strict
@@ -57,9 +57,9 @@ Run `easyrip`, input `help` to get help doc
 
   ```pwsh
   pyright
-  ty check
-  ruff check --fix
-  ruff format
+  py -m ty check
+  py -m ruff check --fix
+  py -m ruff format
   oxfmt
   tombi lint
   tombi format

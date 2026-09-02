@@ -101,7 +101,7 @@ LANG_MAP: dict[str, str] = {
     Cmd_type.fontinfo.value.description: "使用 Font 类获取字体信息",
     Cmd_type.Option.value.description: (
         "-i <输入> -p <预设名> [-o <输出>] [-o:dir <目录>] [-pipe <vpy 路径名> -crf <值> -psy-rd <值> ...] [-sub <字幕文件路径名>] [-c:a <音频编码器> -b:a <音频码率>] [-muxer <复用器> [-r <帧率>]] [-run [<run 选项>]] [...]\n"
-        " \n"
+        "\n"
         "往 Ripper list 中添加一个 Ripper, 你可以单独设置预设中每个选项的值, 使用 -run 执行 Ripper"
     ),
     Opt_type._i.value.description: (
@@ -193,6 +193,7 @@ LANG_MAP: dict[str, str] = {
         "设置封装的帧率\n"  # .
         "使用 auto 时, 自动从输入的视频获取帧率, 并吸附到最近的预设点位"
     ),
+    Opt_type._pix_fmt.value.param: "<像素格式>",
     Opt_type._pix_fmt.value.description: "可用的像素格式详见 `ffmpeg -pix_fmts`",
     Opt_type._chapters.value.description: (
         "指定添加的章节文件\n"  # .

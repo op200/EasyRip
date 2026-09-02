@@ -144,11 +144,17 @@ class Ripper:
 
         self._progress: Ripper._Progress = {}
 
-    def __str__(self, *, indent: int = 2, width: int | None = None) -> str:
+    def __str__(
+        self,
+        *,
+        indent: int = 2,
+        width: int | None = None,
+        default_color: int = 0,
+    ) -> str:
         return (
             f"-i {self.input_path_list[0]} -o {self.output_prefix_list[0]} -o:dir {self.output_dir} -preset {self.option.preset_name.value} {' '.join((f'-{key} {val}' for key, val in self.option_map.items()))}\n"
-            f"option: {obj_fmt(self.option, indent=indent, width=width)}\n"
-            f"option_map: {obj_fmt(self.option_map, indent=indent, width=width)}"
+            f"option: {obj_fmt(self.option, indent=indent, width=width, default_color=default_color)}\n"
+            f"option_map: {obj_fmt(self.option_map, indent=indent, width=width, default_color=default_color)}"
         )
 
     def preset_name_to_option(self, preset_name: Preset_name) -> Option:

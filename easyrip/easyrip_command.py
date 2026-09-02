@@ -96,6 +96,8 @@ class Cmd_type_val:
         return hash(self.names)
 
     def to_doc(self) -> str:
+        from .easyrip_log import log
+
         description: str = ((f"{self.description}\n") if self.description else "") + (
             ""
             if self.is_all_no_doc_childs
@@ -105,9 +107,15 @@ class Cmd_type_val:
                 if not child.is_no_doc_child
             )
         )
+        cs_def: str = f"\x1b[{log.default_foreground_color}m"
+        cs_cmd: str = f"\x1b[{log.info_color}m"
+        cs_opt: str = f"\x1b[{log.warning_color}m"
+        cs_head: str = f"\x1b[{log.send_color}m"
+        cs_des: str = f"\x1b[{log.default_foreground_color}m"
         return (
-            f"{' / '.join(self.names)} {self.param}\n"
-            f"{textwrap.indent(description, ' │ ', lambda _: True)}"  # 永远返回 True 才能保证空行前也能加字符
+            f"{f'{cs_def} / '.join(f'{cs_cmd}{s}' for s in self.names)} "
+            f"{cs_opt}{self.param}\n"
+            f"{textwrap.indent(description, f'{cs_head} │ {cs_des}', lambda _: True)}"
         )
 
 
@@ -340,7 +348,7 @@ class Cmd_type(enum.Enum):
         param="...",
         description=(
             "-i <input> -p <preset name> [-o <output>] [-o:dir <dir>] [-pipe <vpy pathname> -crf <val> -psy-rd <val> ...] [-sub <subtitle pathname>] [-c:a <audio encoder> -b:a <audio bitrate>] [-muxer <muxer> [-r <fps>]] [-run [<run option>]] [...]\n"
-            " \n"
+            "\n"
             "Add a new Ripper to the Ripper list, you can set the values of the options in preset individually, you can run Ripper list when use -run"
         ),
     )

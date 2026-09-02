@@ -4,7 +4,6 @@ import itertools
 import json
 import os
 import re
-import shlex
 import shutil
 import subprocess
 import sys
@@ -39,7 +38,7 @@ from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
-from .utils import check_ver, obj_fmt, read_text, terminal_progress, title
+from .utils import check_ver, obj_fmt, read_text, shlex_split, terminal_progress, title
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -409,9 +408,7 @@ def get_web_server_params(
 def run_command(command: "Iterable[str] | str") -> bool:
     try:
         cmd_list: list[str] = (
-            shlex.split(command.replace("\\", "\\\\") if os.name == "nt" else command)
-            if isinstance(command, str)
-            else list(command)
+            shlex_split(command) if isinstance(command, str) else list(command)
         )
     except ValueError as e:
         log.error(e)
@@ -679,7 +676,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         f"Ripper list ({len(Ripper.ripper_list)}):"
                         + textwrap.indent(
                             f"\n{'─' * _columns}".join(
-                                f"\n{i}.\n{ripper.__str__(width=_columns)}"
+                                f"\n{i}.\n{ripper.__str__(width=_columns, default_color=log.send_color)}"
                                 for i, ripper in enumerate(Ripper.ripper_list, 1)
                             ),
                             " " * _INDENT,

@@ -41,7 +41,7 @@ class config:
         cls._config_file = cls._config_dir / "config.json"
 
         if not cls._config_file.is_file():
-            cls._config_dir.mkdir(exist_ok=True)
+            cls._config_dir.mkdir(parents=True, exist_ok=True)
             with cls._config_file.open("wt", encoding="utf-8", newline="\n") as f:
                 config_default_dict: dict[str, str | bool | list[str] | int] = {
                     k.name: v for k, v in CONFIG_DEFAULT_DICT.items()

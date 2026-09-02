@@ -3,6 +3,7 @@ import ctypes
 import enum
 import os
 import re
+import shlex
 import shutil
 import string
 import sys
@@ -158,6 +159,10 @@ class Title:
 
 
 title = Title()
+
+
+def shlex_split(command: str) -> list[str]:
+    return shlex.split(command.replace("\\", "\\\\") if os.name == "nt" else command)
 
 
 def check_ver(new_ver_str: str, old_ver_str: str) -> bool:
@@ -600,6 +605,11 @@ def obj_fmt(
     width: int | None = None,
     _layer: int = 0,
     _llen: int = 0,
+    *,
+    default_color: int = 0,
+    bracket_color: int = 32,
+    str_color: int = 33,
+    obj_color: int = 34,
 ) -> str:
     """
     部分情况下替代 pformat
@@ -611,8 +621,11 @@ def obj_fmt(
     """
     width = shutil.get_terminal_size().columns if width is None else width
 
-    if isinstance(obj, (str, bytes)):
-        return repr(obj)
+    def_cs = f"\x1b[{default_color}m"
+    bracket_cs = f"\x1b[{bracket_color}m"
+
+    if isinstance(obj, str | bytes):
+        return f"\x1b[{str_color}m{obj!r}{def_cs}"
 
     if is_dataclass(obj) and not isinstance(obj, type):
         obj = asdict(obj)
@@ -621,7 +634,7 @@ def obj_fmt(
         indent_str = " " * indent * (_layer + 1)
         return "\n".join(
             (
-                "{",
+                f"{bracket_cs}{{{def_cs}",
                 *(
                     (
                         indent_str
@@ -632,6 +645,10 @@ def obj_fmt(
                                 width=width,
                                 _layer=_layer + 1,
                                 _llen=len(indent_str),
+                                default_color=default_color,
+                                bracket_color=bracket_color,
+                                str_color=str_color,
+                                obj_color=obj_color,
                             )
                         )
                         + ": "
@@ -641,12 +658,16 @@ def obj_fmt(
                             width=width,
                             _layer=_layer + 1,
                             _llen=len(indent_str) + len(_k_str.rsplit("\n", 1)) + 2,
+                            default_color=default_color,
+                            bracket_color=bracket_color,
+                            str_color=str_color,
+                            obj_color=obj_color,
                         )
                         + ","
                     )
                     for k, v in obj.items()
                 ),
-                " " * indent * _layer + "}",
+                " " * indent * _layer + f"{bracket_cs}}}{def_cs}",
             )
         )
 
@@ -663,18 +684,36 @@ def obj_fmt(
 
             obj_str = "\n".join(
                 (
-                    bracket[0],
+                    bracket_cs + bracket[0] + def_cs,
                     *(
                         (
                             " " * indent * (_layer + 1)
-                            + obj_fmt(v, indent=indent, width=width, _layer=_layer + 1)
+                            + obj_fmt(
+                                v,
+                                indent=indent,
+                                width=width,
+                                _layer=_layer + 1,
+                                default_color=default_color,
+                                bracket_color=bracket_color,
+                                str_color=str_color,
+                                obj_color=obj_color,
+                            )
                             + ","
                         )
                         for v in obj
                     ),
-                    " " * indent * _layer + bracket[1],
+                    " " * indent * _layer + bracket_cs + bracket[1] + def_cs,
                 )
             )
-        return obj_str
+        # return (
+        #     bracket_cs
+        #     + obj_str[0]
+        #     + def_cs
+        #     + obj_str[1:-1]
+        #     + bracket_cs
+        #     + obj_str[-1]
+        #     + def_cs
+        # )
+        return obj_str  # TODO: 还有生成器问题 -i testVideo1080p23.98.mkv -p x264 -crf 12 -c:a libopus -b:a 80k
 
-    return str(obj)
+    return f"\x1b[{obj_color}m{obj}{def_cs}"

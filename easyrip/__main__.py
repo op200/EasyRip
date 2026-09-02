@@ -25,6 +25,8 @@ from .easyrip_main import Ripper, get_input_prompt, init, log, run_command
 from .easyrip_prompt import (
     ConfigFileHistory,
     CustomPromptCompleter,
+    CustomPromptLexer,
+    customPromptStyle,
     easyrip_prompt,
 )
 from .global_val import C_D, C_H, C_Z
@@ -138,6 +140,8 @@ def run() -> NoReturn:
                         CustomPromptCompleter(),
                     )
                 ),
+                lexer=CustomPromptLexer(),
+                style=customPromptStyle,
                 history=prompt_history,
                 complete_while_typing=True,
                 clipboard=clipboard,

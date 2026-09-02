@@ -1,12 +1,17 @@
 import os
 import re
 import tomllib
+from collections.abc import Callable
 from contextlib import suppress
 from pathlib import Path
 from typing import TYPE_CHECKING, override
 
 from prompt_toolkit.completion import CompleteEvent, Completer, Completion
+from prompt_toolkit.document import Document
+from prompt_toolkit.formatted_text.base import StyleAndTextTuples
 from prompt_toolkit.history import FileHistory
+from prompt_toolkit.lexers import Lexer
+from prompt_toolkit.styles import Style
 
 from .global_val import C_Z, get_CONFIG_DIR
 from .utils import type_match
@@ -241,3 +246,57 @@ class CustomPromptCompleter(Completer):
                     display=highlight_fuzzy_match(name, word),
                     display_meta=target_cmd,
                 )
+
+
+class CustomPromptLexer(Lexer):
+    @override
+    def lex_document(self, document: Document) -> Callable[[int], StyleAndTextTuples]:
+        split_pat = re.compile(r"(\s+)")
+        lines = document.text.splitlines()
+
+        def get_line(i: int) -> StyleAndTextTuples:
+            try:
+                line = lines[i]
+            except IndexError:
+                return []
+
+            line_split = re.split(split_pat, line)
+            assert type_match(line_split, list[str])
+            has_cmd: bool = False
+            res: StyleAndTextTuples = []
+
+            for w in line_split:
+                if w.isspace():
+                    res.append(("", w))
+                    continue
+                if w.startswith("-"):
+                    from .easyrip_command import Opt_type
+
+                    style = "class:opt"
+                    if any(w in opt.value.names for opt in Opt_type):
+                        style += " underline"
+                    res.append((style, w))
+                    has_cmd = True
+                    continue
+                if not has_cmd:
+                    from .easyrip_command import Cmd_type
+
+                    style = "class:cmd"
+                    if any(w in cmd.value.names for cmd in Cmd_type):
+                        style += " underline"
+                    res.append((style, w))
+                    has_cmd = True
+                    continue
+                res.append(("", w))
+
+            return res
+
+        return get_line
+
+
+customPromptStyle = Style.from_dict(
+    {
+        "cmd": "fg:ansiblue",
+        "opt": "fg:ansiyellow",
+    }
+)

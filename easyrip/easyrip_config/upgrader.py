@@ -10,4 +10,4 @@ class upgrader:
     @classmethod
     def init(cls) -> None:
         cls.download_dir = get_CONFIG_DIR() / "downloads"
-        cls.download_dir.mkdir(exist_ok=True)
+        cls.download_dir.mkdir(parents=True, exist_ok=True)
