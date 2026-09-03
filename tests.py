@@ -17,6 +17,7 @@ from typing import (
     Literal,
     NewType,
     NotRequired,
+    TypeAliasType,
     TypedDict,
     TypeVar,
 )
@@ -150,6 +151,10 @@ class TestBasic(unittest.TestCase):
 
 
 class TestUtils(unittest.TestCase):
+    UserListAlias = TypeAliasType(  # noqa: UP040
+        "UserListAlias", list[dict[str, str]]
+    )
+
     def test_type_match(self):
         self.assertTrue(type_match(object(), Any))
 
@@ -191,6 +196,9 @@ class TestUtils(unittest.TestCase):
         self.assertTrue(type_match({"name": "Alice"}, User))
         self.assertTrue(type_match({"name": "Alice", "age": 1}, User))
         self.assertFalse(type_match({"name": 1}, User))
+
+        self.assertTrue(type_match([{"name": "Alice"}], self.UserListAlias))
+        self.assertFalse(type_match([{"name": 1}], self.UserListAlias))
 
         for v in (1, "2"):
             self.assertTrue(type_match(v, int | str), v)

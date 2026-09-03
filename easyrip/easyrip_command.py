@@ -143,24 +143,15 @@ class Cmd_type(enum.Enum):
     log = Cmd_type_val(
         ("log",),
         param="[<LogLevel>] <string>",
-        description=(
-            "Output custom log\n"
-            "log level:\n"
-            "  info\n"
-            "  warning | warn\n"
-            "  error | err\n"
-            "  send\n"
-            "  debug\n"
-            "  Default: info"
-        ),
+        description="Output custom log",
         childs=(
-            Cmd_type_val(("info",)),
-            Cmd_type_val(("warning", "warn")),
-            Cmd_type_val(("error", "err")),
-            Cmd_type_val(("send",)),
-            Cmd_type_val(("debug",)),
+            Cmd_type_val(("info",), param="<string>"),
+            Cmd_type_val(("warning", "warn"), param="<string>"),
+            Cmd_type_val(("error", "err"), param="<string>"),
+            Cmd_type_val(("send",), param="<string>"),
+            Cmd_type_val(("debug",), param="<string>"),
+            Cmd_type_val(("Default:",), param="info", is_no_prompt_child=True),
         ),
-        is_all_no_doc_childs=True,
     )
     _run_any = Cmd_type_val(
         ("$",),
@@ -264,7 +255,7 @@ class Cmd_type(enum.Enum):
         param="[<config option>]",
         childs=(
             Cmd_type_val(
-                ("regenerate", "clear", "clean", "reset"),
+                ("regenerate", "reset"),
                 description="Regenerate config file",
             ),
             Cmd_type_val(

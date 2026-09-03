@@ -24,7 +24,6 @@ from typing import TYPE_CHECKING, Final, Literal
 from . import easyrip_mlang, easyrip_web, global_val
 from .easyrip_command import Cmd_type, Opt_type, get_help_doc
 from .easyrip_config.config import Config_key, config
-from .easyrip_config.upgrader import upgrader
 from .easyrip_log import Event as LogEvent
 from .easyrip_log import log
 from .easyrip_mlang import (
@@ -34,11 +33,20 @@ from .easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
+from .easyrip_mlang.global_lang_val import Lang_map
 from .easyrip_prompt import easyrip_prompt
 from .ripper.media_info import Media_info
 from .ripper.ripper import Ripper
 from .ripper.sub_and_font import Ass, load_fonts
-from .utils import check_ver, obj_fmt, read_text, shlex_split, terminal_progress, title
+from .utils import (
+    check_ver,
+    obj_fmt,
+    read_text,
+    shlex_split,
+    terminal_progress,
+    title,
+    type_match,
+)
 
 if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
@@ -780,7 +788,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
             match cmd_list[1]:
                 case "list" | "":
                     config.show_config_list()
-                case "regenerate" | "clear" | "clean" | "reset":
+                case "regenerate" | "reset":
                     config.regenerate_config()
                     init()
                 case "open":
@@ -1217,8 +1225,6 @@ def init(is_first_run: bool = False) -> None:
         except Exception:
             log.warning("Windows DPI Aware failed")
 
-    upgrader.init()
-
     if is_first_run:
         # 工具扫描目录 (尾插)
         tools_dir_list: list[str] = []
@@ -1231,7 +1237,6 @@ def init(is_first_run: bool = False) -> None:
 
         # 前插
         for p in (
-            upgrader.download_dir,  # 安装模块目录
             Path.cwd().resolve(),  # 启动目录
         ):
             current_path = os.environ.get("PATH", "")
@@ -1298,11 +1303,15 @@ def init(is_first_run: bool = False) -> None:
     ):
         match file.suffix:
             case ".json":
-                lang_map = dict[str, str](json.loads(read_text(file)))
+                lang_map = dict(json.loads(read_text(file)))
             case ".toml":
-                lang_map = dict[str, str](tomllib.loads(read_text(file)))
+                lang_map = dict(tomllib.loads(read_text(file)))
             case _:
                 continue
+
+        if not type_match(lang_map, Lang_map):
+            log.error("Failed to load language file: {}", file)
+            continue
 
         if (
             lang_tag := Lang_tag.from_str(file.stem[5:])

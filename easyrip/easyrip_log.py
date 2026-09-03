@@ -195,6 +195,7 @@ class Log:
             *fmt_args,
             **fmt_kwargs,
             is_format=is_format,
+            lang_tag=None,
         )
 
         default_color_str = (

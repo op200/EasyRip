@@ -1,5 +1,5 @@
 from ..easyrip_command import Audio_codec, Cmd_type, Muxer, Opt_type, Preset_name
-from .global_lang_val import Lang_tag
+from .global_lang_val import Lang_map, Lang_tag
 
 LANG_TAG = Lang_tag(
     language=Lang_tag.Language.zh,
@@ -7,8 +7,8 @@ LANG_TAG = Lang_tag(
     region=Lang_tag.Region.CN,
 )
 
-LANG_MAP: dict[str, str] = {
-    # doc
+LANG_MAP: Lang_map = {
+    # region doc
     "Version": "版本",
     "Help": "帮助",
     "Enter '<cmd> [<param> ...]' to execute Easy Rip commands or any commands that exist in environment.\nOr enter '<option> <param> [<option> <param> ...]' to add Ripper.": "键入 '<命令> [<参数> ...]' 以执行 Easy Rip 命令或任何环境中存在的命令。\n或者键入 '<选项> <参数> [<选项> <参数> ...]' 以添加 Ripper。",
@@ -25,16 +25,7 @@ LANG_MAP: dict[str, str] = {
         "例如你可以在修改动态翻译文件后执行它"
     ),
     Cmd_type.log.value.param: "[<日志级别>] <string>",
-    Cmd_type.log.value.description: (
-        "输出自定义日志\n"
-        "日志级别:\n"
-        "  info\n"
-        "  warning | warn\n"
-        "  error | err\n"
-        "  send\n"
-        "  debug\n"
-        "  默认: info"
-    ),
+    Cmd_type.log.value.description: "输出自定义日志",
     Cmd_type._run_any.value.description: (
         "直接从内部环境运行代码\n"  # .
         "直接执行 $ 之后的代码"
@@ -240,11 +231,11 @@ LANG_MAP: dict[str, str] = {
         "使用多线程执行 Ripper list, 适合性能占用低的情况\n"  # .
         "例如 -p subset 或 -p copy"
     ),
-    # utils
+    # region utils
     "{} has new version ({} -> {}). Suggest upgrading it: {}": "检测到 {} 有新版本 ({} -> {})。建议更新: {}",
     "{} not found, download it: {}": "没找到 {}, 在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
-    # main
+    # region main
     "Check env...": "检测环境中...",
     "Total:": "总计:",
     # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
@@ -278,7 +269,7 @@ LANG_MAP: dict[str, str] = {
     "Suggest running the following command to upgrade using pip: {}": "建议运行以下命令以使用 pip 更新: {}",
     "Wrong sec in -shutdown, change to default 60s": "-shutdown 设定的秒数错误, 改为默认值 60s",
     "Current work directory has an other Easy Rip is running: {}": "当前工作目录存在其他 Easy Rip 正在运行: {}",
-    # log
+    # region log
     "EasyRip_log.html": "EasyRip日志.html",
     "Start": "开始",
     "Input file pathname": "输入文件路径名",
@@ -289,7 +280,7 @@ LANG_MAP: dict[str, str] = {
     "File size": "文件体积",
     "Time consuming": "耗时",
     "End": "结束",
-    # ripper
+    # region ripper
     "'{}' is not a member of preset": "'{}' 不存在于 preset",
     "Failed to add Ripper: {}": "添加 Ripper 失败: {}",
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}', 已设为默认值 '{}'。有以下值可用: {}",
@@ -310,12 +301,12 @@ LANG_MAP: dict[str, str] = {
     "The style '{}' and the style 'Default' not in Styles. Defaulting to no font": "样式 '{}' 和样式 'Default' 都不在 Styles 中。默认不使用字体",
     "The \\r style {!r} not in Styles": "\\r 样式 {!r} 不在 Styles 中",
     "Illegal format: '{}' in file \"{}\" in line: {}": "非法格式: '{}' 在文件 \"{}\" 的此行: {}",
-    # web
+    # region web
     "Starting {protocol} service on port {port}...": "在端口 {port} 启动 {protocol} 服务...",
     "{} service stopped by ^C": "{} 服务被 ^C 停止",
     "There is a running command, terminate this request": "存在正在运行的命令, 终止此次请求",
     "Prohibited from use $ <code> in web service when no password": "禁止在未设定密码的 Web 服务中使用 $ <code>",
-    # config
+    # region config
     "The config version is not match, use '{}' to regenerate config file": "配置文件版本不匹配, 使用 '{}' 重新生成配置文件",
     "Regenerate config file": "重新生成 config 文件",
     "Config file is not found": "配置文件不存在",
@@ -325,7 +316,7 @@ LANG_MAP: dict[str, str] = {
     "User profile is not found in config file": "用户配置文件不存在于配置文件",
     "Type mismatch: need '{}'": "类型不匹配: 需要 '{}'",
     "Key '{}' is not found in user profile": "用户配置文件中不存在 {}",
-    # config about
+    # region config about
     "Easy Rip's language, support incomplete matching. Default: {}. Supported: {}": "Easy Rip 的语言, 支持不完整匹配。默认: {}。支持: {}",
     "Auto check the update of Easy Rip. Default: {}": "自动检测 Easy Rip 更新。默认: {}",
     "Auto check the versions of all dependent programs. Default: {}": "自动检测所有依赖的程序的版本。默认: {}",
@@ -336,14 +327,14 @@ LANG_MAP: dict[str, str] = {
     "Logs this level and above will be written, and if the value is '{}', the '{}' only be written when 'server', they will not be written. Default: {}. Supported: {}": "此等级及以上的日志会写入日志文件, 若值为 '{}' 则不写入, '{}' 仅在 'server' 时写入。默认: {}。支持: {}",
     "Save prompt history to config directory, otherwise save to memory. Take effect after reboot. Default: {}": "将 prompt 历史保存到 config 目录，否则保存到内存。重启后生效。默认: {}",
     "Refresh progress interval. Default: {}": "刷新进度间隔。默认: {}",
-    # 第三方 API
+    # region 第三方 API
     "Translating into '{target_lang}' using '{api_name}'": "正在使用 '{api_name}' 翻译为 '{target_lang}'",
-    # mlang
+    # region mlang
     "Unsupported language tag: {}": "不支持的语言标签: {}",
     'Start translating file "{}"': '开始翻译文件 "{}"',
     "Successfully translated: {}": "翻译完成: {}",
     "{num} file{s} in total": "总共 {num} 个文件",
-    # 通用
+    # region 通用
     "Run {} failed": "执行 {} 失败",
     "Unknown error": "未知错误",
     "'{}' execution failed: {}": "'{}' 执行失败: {}",

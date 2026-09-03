@@ -41,6 +41,7 @@ from typing import (
     NoReturn,
     NotRequired,
     Required,
+    TypeAliasType,
     TypeGuard,
     cast,
     get_args,
@@ -427,7 +428,7 @@ def non_ascii_str_len(s: str) -> int:
 
 
 @overload
-def type_match[T](val: Any, t: type[T]) -> TypeGuard[T]: ...
+def type_match[T](val: Any, t: type[T] | TypeAliasType) -> TypeGuard[T]: ...
 @overload
 def type_match(val: Any, t: object) -> bool: ...
 def type_match(val: Any, t: object) -> bool:
@@ -478,6 +479,11 @@ def type_match(val: Any, t: object) -> bool:
     supertype = getattr(t, "__supertype__", None)
     if supertype is not None:
         return type_match(val, supertype)
+
+    # TypeAliasType 的实际目标类型保存在 __value__ 中；别名本身不能
+    # 直接传给 isinstance，应先递归检查其目标类型。
+    if isinstance(t, TypeAliasType):
+        return type_match(val, t.__value__)
 
     # TypedDict 在运行时是普通 dict 的伪类型，使用其字段定义进行检查。
     if isinstance(t, type) and hasattr(t, "__required_keys__"):

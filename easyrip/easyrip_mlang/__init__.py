@@ -1,8 +1,9 @@
 import itertools
 import locale
+from collections.abc import Hashable, Mapping
 
 from . import lang_en, lang_zh_Hans_CN
-from .global_lang_val import Global_lang_val, Lang_tag
+from .global_lang_val import Global_lang_val, Lang_map, Lang_tag
 from .lang_tag_val import Lang_tag_val
 from .translator import translate_subtitles
 
@@ -17,7 +18,7 @@ __all__ = [
 ]
 
 
-all_supported_lang_map: dict[Lang_tag, dict[str, str]] = {
+all_supported_lang_map: dict[Lang_tag, Lang_map] = {
     lang_en.LANG_TAG: lang_en.LANG_MAP,
     lang_zh_Hans_CN.LANG_TAG: lang_zh_Hans_CN.LANG_MAP,
 }
@@ -32,19 +33,41 @@ def get_system_language() -> Lang_tag:
 
 
 def gettext(
-    org_text: str,
+    input_val: str | tuple[str, Hashable] | Mapping[Lang_tag | str, str],
     *fmt_args: object,
     is_format: bool = True,
+    lang_tag: Lang_tag | None = None,
     **fmt_kwargs: object,
 ) -> str:
-    new_text: str | None = None
-
-    new_text = all_supported_lang_map[
-        Global_lang_val.gettext_target_lang.match(all_supported_lang_map)
+    def_lang_tag = (
+        lang_tag
+        or Global_lang_val.gettext_target_lang.match(all_supported_lang_map)
         or lang_en.LANG_TAG
-    ].get(org_text)
+    )
 
-    new_text = str(org_text) if new_text is None else str(new_text)
+    if isinstance(input_val, Mapping):
+        try:
+            new_text = {
+                (k if isinstance(k, Lang_tag) else Lang_tag.from_str(k)): v
+                for k, v in input_val.items()
+            }.get(def_lang_tag, next(iter(input_val.values())))
+        except StopIteration:
+            from ..easyrip_log import log
+
+            log.error(
+                f"The input `{input_val}` of function `{gettext.__name__}` is empty",
+                deep=True,
+                is_format=False,
+            )
+            return str(input_val)
+    else:
+        new_text = all_supported_lang_map[def_lang_tag].get(input_val)
+
+        new_text = (
+            str(input_val if isinstance(input_val, str) else input_val[0])
+            if new_text is None
+            else str(new_text)
+        )
 
     need_join: bool = True
     if is_format and (fmt_args or fmt_kwargs):
@@ -54,7 +77,7 @@ def gettext(
             new_text = new_text.format(*fmt_args, **fmt_kwargs)
         except (IndexError, KeyError) as e:
             log.debug(
-                f"{e!r} in {gettext.__name__} when str.format",
+                f"`{e!r}` in `{gettext.__name__}` when str.format",
                 deep=True,
                 is_format=False,
                 print_level=log.LogLevel._detail,
@@ -85,7 +108,9 @@ class Mlang_exception(Exception):
     ) -> None:
         msg = args[0]
         if isinstance(msg, str):
-            new_msg: str = gettext(msg, *args[1:], is_format=True, **kwargs)
+            new_msg: str = gettext(
+                msg, *args[1:], is_format=True, lang_tag=None, **kwargs
+            )
             super().__init__(new_msg)
         else:
             super().__init__(*args)

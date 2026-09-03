@@ -1,9 +1,12 @@
 import enum
+from collections.abc import Hashable
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Self
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
+
+type Lang_map = dict[str | tuple[str, Hashable], str]
 
 
 @dataclass(slots=True, kw_only=True)
