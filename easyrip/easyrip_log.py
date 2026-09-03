@@ -15,6 +15,7 @@ from prompt_toolkit import ANSI, print_formatted_text
 
 from . import easyrip_web
 from .easyrip_mlang import gettext
+from .utils import title
 
 __all__ = ["Log"]
 
@@ -331,6 +332,8 @@ class Log:
                     )
                 elif self.print_level.value <= self.LogLevel.send.value:
                     log_str = f"\x1b[{log_color}m"
+
+        title.log_num = (self.warning_num, self.error_num)
 
         print_str: str = f"{log_str}{message}{default_color_str}"
         if is_deep:

@@ -266,6 +266,8 @@ class CustomPromptLexer(Lexer):
             res: StyleAndTextTuples = []
 
             for w in line_split:
+                if not w:
+                    continue
                 if w.isspace():
                     res.append(("", w))
                     continue
@@ -296,7 +298,7 @@ class CustomPromptLexer(Lexer):
 
 customPromptStyle = Style.from_dict(
     {
-        "cmd": "fg:ansiblue",
+        "cmd": "fg:ansicyan",
         "opt": "fg:ansiyellow",
     }
 )

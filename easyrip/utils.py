@@ -28,6 +28,7 @@ from collections.abc import (
     Set as AbstractSet,
 )
 from dataclasses import asdict, is_dataclass
+from functools import partial
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -123,10 +124,15 @@ class Title:
             sys.stdout.write(f"\x1b]2;{title}\x07")
             sys.stdout.flush()
 
+    type Log_num = tuple[int, int]
+    """(warn, err)"""
+
     def __init__(self, project_title: str | None = None, /) -> None:
         self.project_title: str | None = project_title
         self._temp_status: str | None = None
         self._progress: str | None = None
+        self._log_num_base: Title.Log_num = (0, 0)
+        self._log_num: Title.Log_num = (0, 0)
 
     @property
     def temp_status(self):
@@ -148,17 +154,46 @@ class Title:
             self._progress = value
             self.refresh_title()
 
+    @property
+    def log_num_base(self):
+        return self._log_num_base
+
+    @log_num_base.setter
+    def log_num_base(self, value: Log_num) -> None:
+        if self._log_num_base != value:
+            self._log_num_base = value
+            self.refresh_title()
+
+    @property
+    def log_num(self):
+        return self._log_num
+
+    @log_num.setter
+    def log_num(self, value: Log_num) -> None:
+        if self._log_num != value:
+            self._log_num = value
+            self.refresh_title()
+
     def refresh_title(self):
+        from .easyrip_log import log
+
+        res_log = ""
+        if n := log.warning_num - self.log_num_base[0]:
+            res_log += f"{n}W"
+        if n := log.error_num - self.log_num_base[1]:
+            res_log += f"{n}E"
+
         self.change_title(
             " - ".join(
                 s
-                for s in (self.temp_status, self.progress, PROJECT_TITLE)
-                if s is not None
+                for s in (self.temp_status, self.progress, res_log, PROJECT_TITLE)
+                if s
             )
         )
 
 
 title = Title()
+"""本项目用的单例"""
 
 
 def shlex_split(command: str) -> list[str]:
@@ -603,13 +638,13 @@ def obj_fmt(
     /,
     indent: int = 2,
     width: int | None = None,
-    _layer: int = 0,
-    _llen: int = 0,
     *,
     default_color: int = 0,
     bracket_color: int = 32,
     str_color: int = 33,
-    obj_color: int = 34,
+    obj_color: int = 36,
+    _layer: int = 0,
+    _llen: int = 0,
 ) -> str:
     """
     部分情况下替代 pformat
@@ -621,6 +656,16 @@ def obj_fmt(
     """
     width = shutil.get_terminal_size().columns if width is None else width
 
+    _obj_fmt = partial(
+        obj_fmt,
+        indent=indent,
+        width=width,
+        default_color=default_color,
+        bracket_color=bracket_color,
+        str_color=str_color,
+        obj_color=obj_color,
+    )
+
     def_cs = f"\x1b[{default_color}m"
     bracket_cs = f"\x1b[{bracket_color}m"
 
@@ -630,8 +675,10 @@ def obj_fmt(
     if is_dataclass(obj) and not isinstance(obj, type):
         obj = asdict(obj)
 
-    if isinstance(obj, dict):
+    if isinstance(obj, Mapping):
         indent_str = " " * indent * (_layer + 1)
+        if not obj:
+            return f"{bracket_cs}{obj}{def_cs}"
         return "\n".join(
             (
                 f"{bracket_cs}{{{def_cs}",
@@ -639,29 +686,17 @@ def obj_fmt(
                     (
                         indent_str
                         + (
-                            _k_str := obj_fmt(
+                            _k_str := _obj_fmt(
                                 k,
-                                indent=indent,
-                                width=width,
                                 _layer=_layer + 1,
                                 _llen=len(indent_str),
-                                default_color=default_color,
-                                bracket_color=bracket_color,
-                                str_color=str_color,
-                                obj_color=obj_color,
                             )
                         )
                         + ": "
-                        + obj_fmt(
+                        + _obj_fmt(
                             v,
-                            indent=indent,
-                            width=width,
                             _layer=_layer + 1,
                             _llen=len(indent_str) + len(_k_str.rsplit("\n", 1)) + 2,
-                            default_color=default_color,
-                            bracket_color=bracket_color,
-                            str_color=str_color,
-                            obj_color=obj_color,
                         )
                         + ","
                     )
@@ -673,30 +708,25 @@ def obj_fmt(
 
     if isinstance(obj, Iterable):
         obj_str = str(obj)
+        match obj:
+            case tuple():
+                bracket = "()"
+            case set() | frozenset():
+                bracket = "{}"
+            case list():
+                bracket = "[]"
+            case _:
+                return f"\x1b[{obj_color}m{obj!r}{def_cs}"
         if len(obj_str) + _llen > width:
-            match obj:
-                case tuple():
-                    bracket = "()"
-                case set() | frozenset():
-                    bracket = "{}"
-                case _:
-                    bracket = "[]"
-
             obj_str = "\n".join(
                 (
                     bracket_cs + bracket[0] + def_cs,
                     *(
                         (
                             " " * indent * (_layer + 1)
-                            + obj_fmt(
+                            + _obj_fmt(
                                 v,
-                                indent=indent,
-                                width=width,
                                 _layer=_layer + 1,
-                                default_color=default_color,
-                                bracket_color=bracket_color,
-                                str_color=str_color,
-                                obj_color=obj_color,
                             )
                             + ","
                         )
@@ -705,15 +735,16 @@ def obj_fmt(
                     " " * indent * _layer + bracket_cs + bracket[1] + def_cs,
                 )
             )
-        # return (
-        #     bracket_cs
-        #     + obj_str[0]
-        #     + def_cs
-        #     + obj_str[1:-1]
-        #     + bracket_cs
-        #     + obj_str[-1]
-        #     + def_cs
-        # )
-        return obj_str  # TODO: 还有生成器问题 -i testVideo1080p23.98.mkv -p x264 -crf 12 -c:a libopus -b:a 80k
+        else:
+            obj_str = (
+                bracket_cs
+                + bracket[0]
+                + def_cs
+                + f"{def_cs}, ".join(map(_obj_fmt, obj))
+                + bracket_cs
+                + bracket[1]
+                + def_cs
+            )
+        return obj_str
 
     return f"\x1b[{obj_color}m{obj}{def_cs}"

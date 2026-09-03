@@ -972,6 +972,7 @@ class Ripper:
                     log.error("Run {} failed", "subset")
 
                 if self.option.muxer is None:
+                    terminal_progress.clear()
                     return subset_res
 
                 suffix = ".mks"

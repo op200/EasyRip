@@ -295,6 +295,7 @@ def run_ripper_list(
     total: Final[int] = len(Ripper.ripper_list)
     warning_num: Final[int] = log.warning_num
     error_num: Final[int] = log.error_num
+    title.log_num_base = (warning_num, error_num)
 
     if enable_multithreading:
         threading_lock = threading.Lock()
