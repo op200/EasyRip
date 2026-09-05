@@ -3,7 +3,7 @@
   "explorer.fileNesting.patterns": {
     "pyproject.toml": "ruff.toml, .markdownlint.jsonc, .oxfmtrc.jsonc"
   },
-  "python.testing.unittestArgs": ["-v", "-s", ".", "-p", "*test*.py"],
+  "python.testing.unittestArgs": ["-v", "-s", "./tests", "-p", "test_*.py"],
   "python.testing.pytestEnabled": false,
   "python.testing.unittestEnabled": true,
   "python-envs.defaultEnvManager": "ms-python.python:system",

@@ -10,6 +10,6 @@
 !/README.md
 !/easyrip/
 !/resources/
-!/tests.py
+!/tests/
 
 __pycache__
