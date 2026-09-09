@@ -135,6 +135,8 @@ class Title:
         self._log_num_base: Title.Log_num = (0, 0)
         self._log_num: Title.Log_num = (0, 0)
 
+        self.enable: bool = False
+
     @property
     def temp_status(self):
         return self._temp_status
@@ -176,6 +178,9 @@ class Title:
             self.refresh_title()
 
     def refresh_title(self):
+        if not self.enable:
+            return
+
         from .easyrip_log import log
 
         res_log = ""

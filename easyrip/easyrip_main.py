@@ -1219,6 +1219,8 @@ def run_command(command: "Iterable[str] | str") -> bool:
 
 
 def init(is_first_run: bool = False) -> None:
+    title.enable = True
+
     if os.name == "nt":
         try:
             ctypes.windll.user32.SetProcessDPIAware()

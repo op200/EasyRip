@@ -525,7 +525,9 @@ class TestCommandRouting(SelfContainedTestCase):
             media_info.assert_called_once_with(str(media))
 
         self.assertTrue(
-            run_command(["assinfo", str(ass), "-use-libass-spec", "0", "-show-chars-len", "1"])
+            run_command(
+                ["assinfo", str(ass), "-use-libass-spec", "0", "-show-chars-len", "1"]
+            )
         )
 
         prompt_custom = self.work_dir / "custom.toml"
@@ -654,15 +656,15 @@ class TestPromptAndConfig(SelfContainedTestCase):
         with (
             patch.object(easyrip_prompt, "PROMPT_CUSTOM_FILE", prompt_custom),
             patch.object(
-                easyrip_prompt, "_easyrip_prompt__prompt_custom_data", {"build": "version"}
+                easyrip_prompt,
+                "_easyrip_prompt__prompt_custom_data",
+                {"build": "version"},
             ),
         ):
             from easyrip.easyrip_prompt import CustomPromptCompleter
 
             completions = list(
-                CustomPromptCompleter().get_completions(
-                    Document("bu"), CompleteEvent()
-                )
+                CustomPromptCompleter().get_completions(Document("bu"), CompleteEvent())
             )
             self.assertEqual(completions[0].text, "version")
         self.assertEqual(highlight_fuzzy_match("alpha", "z")[0][1], "alpha")
@@ -741,7 +743,10 @@ class TestMockedExternalServices(SelfContainedTestCase):
                 return request
 
         with (
-            patch("easyrip.easyrip_config.config.config.get_user_profile", return_value="{'https': 'http://proxy'}"),
+            patch(
+                "easyrip.easyrip_config.config.config.get_user_profile",
+                return_value="{'https': 'http://proxy'}",
+            ),
             patch("urllib.request.build_opener", return_value=Opener()) as build_opener,
         ):
             request = third_party_api.urllib.request.Request("https://example.invalid")
@@ -749,7 +754,10 @@ class TestMockedExternalServices(SelfContainedTestCase):
             self.assertTrue(build_opener.called)
 
         with (
-            patch("easyrip.easyrip_config.config.config.get_user_profile", return_value="auto"),
+            patch(
+                "easyrip.easyrip_config.config.config.get_user_profile",
+                return_value="auto",
+            ),
             patch("urllib.request.getproxies", return_value={"http": "http://system"}),
             patch("urllib.request.build_opener", return_value=Opener()),
         ):
