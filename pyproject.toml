@@ -21,7 +21,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "fonttools>=4.63.0",
+  "fonttools>=4.65.0",
   "prompt-toolkit>=3.0.53",
   "pycryptodome>=3.23.0",
   "pyperclip>=1.11.0",

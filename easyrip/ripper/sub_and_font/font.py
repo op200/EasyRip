@@ -9,7 +9,7 @@ from typing import Final
 
 from fontTools import subset
 from fontTools.ttLib import TTCollection, TTFont
-from fontTools.ttLib.tables._n_a_m_e import NameRecord, makeName, table__n_a_m_e
+from fontTools.ttLib.tables._n_a_m_e import makeName, table__n_a_m_e
 from fontTools.ttLib.ttFont import TTLibError
 
 from ...easyrip_log import log
@@ -237,7 +237,7 @@ def subset_font(font: Font, subset_str: str, affix: str) -> tuple[TTFont, bool]:
     assert table_name is not None
     assert subset_table_name is not None
 
-    subset_table_name.names = list[NameRecord]()  # 重写 name table
+    subset_table_name.names.clear()  # 重写 name table
     for record in table_name.names:
         name_id = int(record.nameID)
 
