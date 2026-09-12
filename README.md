@@ -3,10 +3,14 @@
 Self-use codec tool: param preset, auto mux, intelligent terminal...  
 自用压制工具: 参数预设、自动封装、智能终端...
 
-**[Easy Rip Web Panel (relatively outdated)  
-Easy Rip 网页版控制台 (较为过时)](https://op200.github.io/EasyRip-WebPanel/)**
+![PyPI Python Version](https://img.shields.io/pypi/pyversions/easyrip)
+![PyPI Version](https://img.shields.io/pypi/v/easyrip)
+[![PyPI Downloads](https://static.pepy.tech/personalized-badge/easyrip?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=BLUE&left_text=downloads)](https://pepy.tech/projects/easyrip)
 
 [![Star History Chart](https://api.star-history.com/chart?repos=op200/EasyRip&type=date&legend=top-left&sealed_token=mREINCr-gQ9RaM_m6OtSqvakGorAkEKgNKsLyI3RPjSYawB7oyPx489GA3zMeBAQkAo-5w0sgKmfEPSnsbdz0_7gAysuGtzFm2ef1o9AQgSZHS6aTCt8fg)](https://www.star-history.com/?repos=op200%2FEasyRip&type=date&legend=top-left)
+
+**[Easy Rip Web Panel (relatively outdated)  
+Easy Rip 网页版控制台 (较为过时)](https://op200.github.io/EasyRip-WebPanel/)**
 
 ## Start
 
