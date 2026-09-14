@@ -103,8 +103,6 @@ class Ripper:
         speed: float
         """当前输出速率 倍"""
 
-    _progress: _Progress
-
     def __init__(
         self,
         input_path: "Iterable[str | Path]",
@@ -143,6 +141,7 @@ class Ripper:
             self.option = option
 
         self._progress: Ripper._Progress = {}
+        self.progress_hook: Callable[[Ripper._Progress], None] | None = None
 
     def __str__(
         self,
@@ -1150,6 +1149,9 @@ class Ripper:
                         int(out_time_us) if out_time_us != "N/A" else 0
                     )
                     self._progress["speed"] = float(speed) if speed != "N/A" else 0
+
+                    if self.progress_hook is not None:
+                        self.progress_hook(self._progress)
 
                     if easyrip_web.http_server.Event.is_run_command:
                         easyrip_web.http_server.Event.progress.append(self._progress)
