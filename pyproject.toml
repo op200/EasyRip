@@ -5,7 +5,7 @@ requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
 authors = [{ name = "op200" }]
 classifiers = [
-  "Development Status :: 5 - Production/Stable",
+  "Development Status :: 6 - Mature",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Intended Audience :: End Users/Desktop",
@@ -21,7 +21,7 @@ classifiers = [
   "Typing :: Typed",
 ]
 dependencies = [
-  "fonttools>=4.65.0",
+  "fonttools>=4.66.0",
   "prompt-toolkit>=3.0.53",
   "pycryptodome>=3.23.0",
   "pyperclip>=1.11.0",
