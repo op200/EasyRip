@@ -949,6 +949,22 @@ def run_command(command: "Iterable[str] | str") -> bool:
                 _skip += 1
 
                 match cmd_list[i]:
+                    case "-loglevel":
+                        levels = cmd_list[i + 1].split(":")
+                        if not levels:
+                            log.error("-loglevel need set level")
+                            return False
+                        if len(levels) > 2:
+                            log.error("Too many log levels")
+                            return False
+                        for level in levels:
+                            if level not in log.LogLevel.__members__:
+                                log.error("{!r} is not a LogLevel", level)
+                                return False
+                        log.print_level = log.LogLevel[levels[0]]
+                        if len(levels) == 2:
+                            log.write_level = log.LogLevel[levels[1]]
+
                     case "-i":
                         match cmd_list[i + 1]:
                             case "fd" | "cfd" as fd_param:

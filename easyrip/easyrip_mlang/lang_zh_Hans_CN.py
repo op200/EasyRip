@@ -95,6 +95,7 @@ LANG_MAP: Lang_map = {
         "\n"
         "往 Ripper list 中添加一个 Ripper, 你可以单独设置预设中每个选项的值, 使用 -run 执行 Ripper"
     ),
+    Opt_type._loglevel.value.description: "修改日志等级",
     Opt_type._i.value.description: (
         "输入文件的路径名或输入 'fd' 以使用文件对话框, 'cfd' 从当前目录打开\n"
         "部分情况下允许使用 '?' 作为间隔符往一个 Ripper 中输入多个, 例如 '-preset subset' 允许输入多个 ASS"

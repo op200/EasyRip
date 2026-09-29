@@ -53,9 +53,12 @@ def run() -> NoReturn:
     Thread(target=_print_ver).start()
 
     if len(sys.argv) > 1:
+        write_level = log.write_level
+        log.write_level = log.LogLevel.none
         run_command(sys.argv[1:])
         if len(Ripper.ripper_list) == 0:
             sys.exit(0)
+        log.write_level = write_level
 
     key_bindings = KeyBindings()
 

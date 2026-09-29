@@ -357,6 +357,11 @@ class Cmd_type(enum.Enum):
 
 
 class Opt_type(enum.Enum):
+    _loglevel = Cmd_type_val(
+        ("-loglevel",),
+        param="<print level>[:<write level>]",
+        description="Change the log level",
+    )
     _i = Cmd_type_val(
         ("-i",),
         param="<<path>[::<path>[?<path>...]...] | 'fd' | 'cfd'>",
