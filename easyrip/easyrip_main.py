@@ -572,6 +572,11 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         _media_info_dict = {
                             "video": [v._org_data for v in _media_info.video],
                             "audio": [v._org_data for v in _media_info.audio],
+                            "subtitle": [v._org_data for v in _media_info.subtitle],
+                            "attachment": [v._org_data for v in _media_info.attachment],
+                            "other_streams": [
+                                v._org_data for v in _media_info.other_streams
+                            ],
                         }
                         log.send(f"{_path}: {obj_fmt(_media_info_dict)}")
                 case Cmd_type.assinfo:

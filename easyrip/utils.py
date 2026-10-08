@@ -29,6 +29,7 @@ from collections.abc import (
 )
 from dataclasses import asdict, is_dataclass
 from functools import partial
+from numbers import Number
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -40,6 +41,7 @@ from typing import (
     Never,
     NoReturn,
     NotRequired,
+    Protocol,
     Required,
     TypeAliasType,
     TypeGuard,
@@ -59,6 +61,14 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 BASE62 = string.digits + string.ascii_letters
+
+
+class Strable(Protocol):
+    def __str__(self) -> str: ...
+
+
+type JsonObjVal = str | int | float | bool | list[JsonObjVal] | JsonObj | None
+type JsonObj = dict[str, JsonObjVal]
 
 
 class AES:
@@ -650,10 +660,20 @@ def obj_fmt(
     indent: int = 2,
     width: int | None = None,
     *,
-    default_color: int = 0,
-    bracket_color: int = 32,
-    str_color: int = 33,
-    obj_color: int = 36,
+    default_color: Strable = "0",
+    bracket_color: Strable | tuple[Strable, ...] = (
+        "38;5;70",
+        "33",
+        "31",
+        "38;5;62",
+        "38;5;212",
+        "38;5;116",
+    ),
+    str_color: Strable = "38;5;173",
+    num_color: Strable = "38;2;186;205;171",
+    type_color: Strable = "32",
+    const_color: Strable = "38;2;111;191;249",
+    obj_color: Strable = "38;5;153",
     _layer: int = 0,
     _llen: int = 0,
 ) -> str:
@@ -661,11 +681,13 @@ def obj_fmt(
     部分情况下替代 pformat
 
     - str 不换行
-    - dict 绝对换行
-    - list 等视长度换行
+    - dict 非空绝对换行
+    - list 等可迭代对象视长度换行
     - 优先使用 str 而不是 repr
     """
     width = shutil.get_terminal_size().columns if width is None else width
+    if not isinstance(bracket_color, tuple):
+        bracket_color = (bracket_color,)
 
     _obj_fmt = partial(
         obj_fmt,
@@ -674,11 +696,14 @@ def obj_fmt(
         default_color=default_color,
         bracket_color=bracket_color,
         str_color=str_color,
+        num_color=num_color,
+        type_color=type_color,
+        const_color=const_color,
         obj_color=obj_color,
     )
 
     def_cs = f"\x1b[{default_color}m"
-    bracket_cs = f"\x1b[{bracket_color}m"
+    bracket_cs = f"\x1b[{bracket_color[_layer % len(bracket_color)]}m"
 
     if isinstance(obj, str | bytes):
         return f"\x1b[{str_color}m{obj!r}{def_cs}"
@@ -690,9 +715,12 @@ def obj_fmt(
         indent_str = " " * indent * (_layer + 1)
         if not obj:
             return f"{bracket_cs}{obj}{def_cs}"
+        bracket = "{}"
+        if sys.version_info >= (3, 15) and isinstance(obj, frozendict):  # noqa: F821
+            bracket = ("frozendict({", "})")
         return "\n".join(
             (
-                f"{bracket_cs}{{{def_cs}",
+                f"{bracket_cs}{bracket[0]}{def_cs}",
                 *(
                     (
                         indent_str
@@ -713,7 +741,7 @@ def obj_fmt(
                     )
                     for k, v in obj.items()
                 ),
-                " " * indent * _layer + f"{bracket_cs}}}{def_cs}",
+                " " * indent * _layer + f"{bracket_cs}{bracket[1]}{def_cs}",
             )
         )
 
@@ -722,13 +750,17 @@ def obj_fmt(
         match obj:
             case tuple():
                 bracket = "()"
-            case set() | frozenset():
+            case set():
                 bracket = "{}"
+            case frozenset():
+                bracket = ("frozenset({", "})")
             case list():
                 bracket = "[]"
             case _:
                 return f"\x1b[{obj_color}m{obj!r}{def_cs}"
-        if len(obj_str) + _llen > width:
+        if not obj:
+            return f"{bracket_cs}{obj_str}{def_cs}"
+        if any(isinstance(v, Mapping) for v in obj) or len(obj_str) + _llen > width:
             obj_str = "\n".join(
                 (
                     bracket_cs + bracket[0] + def_cs,
@@ -751,11 +783,23 @@ def obj_fmt(
                 bracket_cs
                 + bracket[0]
                 + def_cs
-                + f"{def_cs}, ".join(map(_obj_fmt, obj))
+                + f"{def_cs}, ".join(map(partial(_obj_fmt, _layer=_layer + 1), obj))
                 + bracket_cs
                 + bracket[1]
                 + def_cs
             )
         return obj_str
 
-    return f"\x1b[{obj_color}m{obj}{def_cs}"
+    match obj:
+        case bool() | None:
+            color = const_color
+        case Number():
+            color = num_color
+        case type():
+            color = type_color
+            obj = obj.__name__
+        case e if isinstance(e, enum.Enum):
+            return f"\x1b[{type_color}m{e.__class__.__name__}{def_cs}.\x1b[{const_color}m{e.value}{def_cs}"
+        case _:
+            color = obj_color
+    return f"\x1b[{color}m{obj}{def_cs}"

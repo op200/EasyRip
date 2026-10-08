@@ -1,23 +1,28 @@
+import itertools
 import json
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Self
+from typing import Any, Self, cast
 
 from ..easyrip_log import log
 from ..easyrip_mlang import Mlang_exception
-from ..utils import time_str_to_sec, type_match
+from ..utils import JsonObj, obj_fmt, time_str_to_sec, type_match
 
 
 class Stream_error(Mlang_exception):
     pass
 
 
-@dataclass(slots=True, kw_only=True)
-class Audio_info:
+@dataclass(slots=False, kw_only=True)
+class Stream_info:
     _org_data: dict[Any, Any] = field(default_factory=dict)
 
     index: int
+
+
+@dataclass(slots=True, kw_only=True)
+class Audio_info(Stream_info):
     sample_fmt: str = ""
     sample_rate: int = 0
     bits_per_sample: int = 0
@@ -25,9 +30,7 @@ class Audio_info:
 
 
 @dataclass(slots=True, kw_only=True)
-class Video_info:
-    _org_data: dict[Any, Any] = field(default_factory=dict)
-
+class Video_info(Stream_info):
     width: int = 0
     height: int = 0
 
@@ -42,22 +45,44 @@ class Video_info:
 
 
 @dataclass(slots=True, kw_only=True)
+class Subtitle_info(Stream_info):
+    pass
+
+
+@dataclass(slots=True, kw_only=True)
+class Attachment_info(Stream_info):
+    pass
+
+
+@dataclass(slots=True, kw_only=True)
 class Media_info:
+    _org_streams: list[JsonObj]
     video: list[Video_info] = field(default_factory=list[Video_info])
     audio: list[Audio_info] = field(default_factory=list[Audio_info])
+    subtitle: list[Stream_info] = field(default_factory=list[Stream_info])
+    attachment: list[Attachment_info] = field(default_factory=list[Attachment_info])
+    other_streams: list[Stream_info] = field(default_factory=list[Stream_info])
+
+    @property
+    def streams(self) -> list[Stream_info]:
+        return sorted(
+            itertools.chain(
+                self.video,
+                self.audio,
+                self.subtitle,
+                self.attachment,
+                self.other_streams,
+            ),
+            key=lambda s: s.index,
+        )
 
     @classmethod
     def from_path(cls, path: str | Path, /) -> Self:
         path = Path(path)
-        media_info = cls()
-
-        # 第一个视频轨
         _cmd = [
             "ffprobe",
             "-v",
             "0",
-            "-select_streams",
-            "v:0",
             "-show_streams",
             "-print_format",
             "json",
@@ -72,115 +97,89 @@ class Media_info:
                 encoding="utf-8",
             ).communicate()[0]
         )
-        _info_list = _info.get("streams", [])
-        if not type_match(_info_list, list[dict]):
-            _info_list = list[dict]()
+        streams = _info.get("streams", [])
 
-        _video_info_dict = _info_list[0] if _info_list else {}
+        if not type_match(streams, list[JsonObj]):
+            raise Stream_error("Streams type error: {}", obj_fmt(streams))
 
-        video_info = Video_info(_org_data=_video_info_dict)
+        media_info = cls(_org_streams=streams)
 
-        video_info.width = int(_video_info_dict.get("width", "0"))
-        video_info.height = int(_video_info_dict.get("height", "0"))
-
-        _fps_str: str = _video_info_dict.get("r_frame_rate", "0") + "/1"
-        _fps = [int(s) for s in _fps_str.split("/")]
-        video_info.r_frame_rate = (_fps[0], _fps[1])
-
-        video_info.nb_frames = int(_video_info_dict.get("nb_frames", 0))
-
-        if (_duration := _video_info_dict.get("duration")) is None:
-            _duration = _video_info_dict.get("tags")
-            if isinstance(_duration, dict):
-                _duration = _duration.get("DURATION", "0")
-                _duration = time_str_to_sec(_duration)
-            else:
-                _duration = 0
-        else:
-            _duration = float(_duration)
-        video_info.duration = _duration
-
-        media_info.video.append(video_info)
-
-        # 遍历所有音频轨
-        _cmd = [
-            "ffprobe",
-            "-v",
-            "0",
-            "-select_streams",
-            "a",
-            "-show_streams",
-            "-print_format",
-            "json",
-            path,
-        ]
-        log.debug(_cmd, print_level=log.LogLevel._detail)
-        _info: dict = json.loads(
-            subprocess.Popen(
-                _cmd,
-                stdout=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-            ).communicate()[0]
-        )
-        _info_list = _info.get("streams", [])
-        if not type_match(_info_list, list[dict[str, Any]]):
-            _info_list = list[dict]()
-
-        for _audio_info_dict in _info_list:
-            index = _audio_info_dict.get("index")
-            if index is None:
-                raise RuntimeWarning
-
-            sample_fmt = _audio_info_dict.get("sample_fmt")
-            if sample_fmt is None:
-                log.debug(
-                    'Failed to get audio info: {}. file "{}" track index {}',
-                    "sample_fmt",
-                    path,
-                    index,
+        for stream in streams:
+            index = stream.get("index")
+            if not isinstance(index, int):
+                raise Stream_error(
+                    "The key 'index' is not int in stream: {}",
+                    obj_fmt(stream),
                 )
-                sample_fmt = ""
+            stream_info = Stream_info(_org_data=stream, index=index)
 
-            sample_rate = _audio_info_dict.get("sample_rate")
-            if sample_rate is None:
-                log.debug(
-                    'Failed to get audio info: {}. file "{}" track index {}',
-                    "sample_rate",
-                    path,
-                    index,
-                )
-                sample_rate = 0
+            match stream["codec_type"]:
+                case "video":  # 视频轨
+                    video_info = Video_info(**vars(stream_info))
 
-            bits_per_sample = _audio_info_dict.get("bits_per_sample")
-            if bits_per_sample is None:
-                log.debug(
-                    'Failed to get audio info: {}. file "{}" track index {}',
-                    "bits_per_sample",
-                    path,
-                    index,
-                )
-                bits_per_sample = 0
+                    video_info.width = int(cast("int", stream.get("width", 0)))
+                    video_info.height = int(cast("int", stream.get("height", 0)))
 
-            bits_per_raw_sample = _audio_info_dict.get("bits_per_raw_sample")
-            if bits_per_raw_sample is None:
-                log.debug(
-                    'Failed to get audio info: {}. file "{}" track index {}',
-                    "bits_per_raw_sample",
-                    path,
-                    index,
-                )
-                bits_per_raw_sample = 0
+                    _fps_str: str = str(stream.get("r_frame_rate", "0")) + "/1"
+                    _fps = [int(s) for s in _fps_str.split("/")]
+                    video_info.r_frame_rate = (_fps[0], _fps[1])
 
-            media_info.audio.append(
-                Audio_info(
-                    _org_data=_audio_info_dict,
-                    index=int(index),
-                    sample_fmt=str(sample_fmt),
-                    sample_rate=int(sample_rate),
-                    bits_per_sample=int(bits_per_sample),
-                    bits_per_raw_sample=int(bits_per_raw_sample),
-                )
-            )
+                    video_info.nb_frames = int(cast("int", stream.get("nb_frames", 0)))
+
+                    if (_duration := stream.get("duration")) is None:
+                        _duration = stream.get("tags")
+                        if isinstance(_duration, dict):
+                            _duration = str(_duration.get("DURATION", "0"))
+                            _duration = time_str_to_sec(_duration)
+                        else:
+                            _duration = 0
+                    else:
+                        _duration = float(str(_duration))
+                    video_info.duration = _duration
+
+                    media_info.video.append(video_info)
+
+                case "audio":  # 音频轨
+                    ERROR_FMT = 'Failed to get audio info: {}. file "{}" track index {}'
+                    sample_fmt = cast("str | None", stream.get("sample_fmt"))
+                    if sample_fmt is None:
+                        log.debug(ERROR_FMT, "sample_fmt", path, index)
+                        sample_fmt = ""
+
+                    sample_rate = cast("str | None", stream.get("sample_rate"))
+                    if sample_rate is None:
+                        log.debug(ERROR_FMT, "sample_rate", path, index)
+                        sample_rate = 0
+
+                    bits_per_sample = cast("int | None", stream.get("bits_per_sample"))
+                    if bits_per_sample is None:
+                        log.debug(ERROR_FMT, "bits_per_sample", path, index)
+                        bits_per_sample = 0
+
+                    bits_per_raw_sample = cast(
+                        "str | None", stream.get("bits_per_raw_sample")
+                    )
+                    if bits_per_raw_sample is None:
+                        log.debug(ERROR_FMT, "bits_per_raw_sample", path, index)
+                        bits_per_raw_sample = 0
+
+                    media_info.audio.append(
+                        Audio_info(
+                            **vars(stream_info),
+                            sample_fmt=str(sample_fmt),
+                            sample_rate=int(sample_rate),
+                            bits_per_sample=int(bits_per_sample),
+                            bits_per_raw_sample=int(bits_per_raw_sample),
+                        )
+                    )
+
+                case "subtitle":
+                    media_info.subtitle.append(Subtitle_info(**vars(stream_info)))
+
+                case "attachment":
+                    media_info.attachment.append(Attachment_info(**vars(stream_info)))
+
+                case _:
+                    media_info.other_streams.append(stream_info)
 
         return media_info
