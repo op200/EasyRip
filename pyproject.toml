@@ -52,6 +52,9 @@ easyrip = "easyrip"
 [tool.setuptools.package-data]
 easyrip = ["resources/**/*"]
 
+[tool.tombi.format.rules]
+line-ending = "lf"
+
 [[tool.tombi.schemas]]
 path = "tombi://www.schemastore.org/pyproject.json"
 include = ["pyproject.toml"]

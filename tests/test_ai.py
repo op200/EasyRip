@@ -93,8 +93,8 @@ class SelfContainedTestCase(unittest.TestCase):
 
     def create_media(self, name: str = "generated.mkv") -> Path:
         ffmpeg = shutil.which("ffmpeg")
-        if ffmpeg is None:
-            self.skipTest("ffmpeg is not available on PATH")
+        self.assertIsNotNone(ffmpeg, "ffmpeg is not available on PATH")
+        assert ffmpeg is not None
 
         path = self.work_dir / name
         subprocess.run(
@@ -194,8 +194,9 @@ class TestGeneratedSubtitle(SelfContainedTestCase):
 class TestGeneratedMedia(SelfContainedTestCase):
     def setUp(self) -> None:
         super().setUp()
-        if shutil.which("ffprobe") is None:
-            self.skipTest("ffprobe is not available on PATH")
+        self.assertIsNotNone(
+            shutil.which("ffprobe"), "ffprobe is not available on PATH"
+        )
 
     def test_media_info_from_generated_media(self) -> None:
         media = self.create_media()
@@ -308,11 +309,10 @@ class TestGeneratedMedia(SelfContainedTestCase):
             def communicate(self) -> tuple[str, str]:
                 return (self.data, "")
 
-        video = '{"streams": [{"width": "8", "height": "6", "r_frame_rate": "24/1", "tags": {"DURATION": "00:00:01.50"}}]}'
-        audio = '{"streams": [{"index": 1}]}'
+        probe_data = '{"streams": [{"index": 0, "codec_type": "video", "width": "8", "height": "6", "r_frame_rate": "24/1", "tags": {"DURATION": "00:00:01.50"}}, {"index": 1, "codec_type": "audio"}]}'
         with patch(
             "easyrip.ripper.media_info.subprocess.Popen",
-            side_effect=(Probe(video), Probe(audio)),
+            return_value=Probe(probe_data),
         ):
             info = Media_info.from_path("virtual.mkv")
 
