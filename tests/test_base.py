@@ -285,7 +285,7 @@ class TestRip(unittest.TestCase):
                     "v:0",
                     "-show_streams",
                     "-show_data",
-                    "-print_format",
+                    "-of",
                     "json",
                     f"{output_basename}.v.mp4",
                 ],

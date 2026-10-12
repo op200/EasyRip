@@ -50,15 +50,15 @@ def run() -> NoReturn:
         log.debug(f"fonttools: v{fontTools.__version__}")
         log.debug(f"pycryptodome: v{Crypto.__version__}")
 
-    Thread(target=_print_ver).start()
-
     if len(sys.argv) > 1:
-        write_level = log.write_level
-        log.write_level = log.LogLevel.none
+        print_level, write_level = log.print_level, log.write_level
+        log.print_level, log.write_level = log.LogLevel.send, log.LogLevel.none
         run_command(sys.argv[1:])
         if len(Ripper.ripper_list) == 0:
             sys.exit(0)
-        log.write_level = write_level
+        log.print_level, log.write_level = print_level, write_level
+
+    Thread(target=_print_ver).start()
 
     key_bindings = KeyBindings()
 

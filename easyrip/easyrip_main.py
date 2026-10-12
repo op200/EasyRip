@@ -549,51 +549,61 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         initialdir=Path.cwd() if fd_param == "cfd" else None,
                     )
                 case _:
-                    if isinstance(command, str):
-                        _path = command.split(None, maxsplit=1)
-                        _path_tuple = (
-                            None
-                            if len(_path) <= 1
-                            else tuple(_path[1].strip('"').strip("'").split("?"))
-                        )
-
-                    if _path_tuple is None:
-                        _path_tuple = tuple(cmd_list[1].split("?"))
+                    _path_tuple = (
+                        cmd_list[1:2]
+                        if Path(cmd_list[1]).exists()
+                        else tuple(cmd_list[1].split("?"))
+                    )
 
             match cmd_type:
                 case Cmd_type.cd:
                     try:
-                        os.chdir(_path_tuple[0])
+                        os.chdir(
+                            command.split(None, maxsplit=1)[1].strip('"').strip("'")
+                            if (
+                                not Path(_path_tuple[0]).is_dir()
+                                and isinstance(command, str)
+                            )
+                            else _path_tuple[0]
+                        )
                     except OSError as e:
                         log.error(e)
+
                 case Cmd_type.mediainfo:
+                    JSON_OPT_NAME = "-json"
+                    print_json: bool = False
+                    for i, s in tuple(enumerate(cmd_list))[2:]:
+                        if s == JSON_OPT_NAME:
+                            print_json = cmd_list[i + 1] != "0"
                     for _path in _path_tuple:
                         _media_info = Media_info.from_path(_path)
                         _media_info_dict = {
-                            "video": [v._org_data for v in _media_info.video],
-                            "audio": [v._org_data for v in _media_info.audio],
-                            "subtitle": [v._org_data for v in _media_info.subtitle],
-                            "attachment": [v._org_data for v in _media_info.attachment],
+                            "videos": [v._org_data for v in _media_info.video],
+                            "audios": [v._org_data for v in _media_info.audio],
+                            "subtitles": [v._org_data for v in _media_info.subtitle],
+                            "attachments": [
+                                v._org_data for v in _media_info.attachment
+                            ],
                             "other_streams": [
                                 v._org_data for v in _media_info.other_streams
                             ],
+                            "chapters": [v._org_data for v in _media_info.chapter],
                         }
-                        log.send(f"{_path}: {obj_fmt(_media_info_dict)}")
+                        if print_json:
+                            log.print(json.dumps({_path: _media_info_dict}), end="\n")
+                        else:
+                            log.send(f"{_path}: {obj_fmt(_media_info_dict)}")
+
                 case Cmd_type.assinfo:
                     USE_LIBASS_SPEC_OPT_NAME = "-use-libass-spec"
                     use_libass_spec: bool = True
                     SHOW_CHARS_LEN_OPT_NAME = "-show-chars-len"
                     show_chars_len: bool = False
-                    is_use_opt: bool = False
                     for i, s in tuple(enumerate(cmd_list))[2:]:
                         if s == USE_LIBASS_SPEC_OPT_NAME:
                             use_libass_spec = cmd_list[i + 1] != "0"
-                            is_use_opt = True
                         if s == SHOW_CHARS_LEN_OPT_NAME:
                             show_chars_len = cmd_list[i + 1] != "0"
-                            is_use_opt = True
-                    if is_use_opt:
-                        _path_tuple = cmd_list[1:2]
                     log.send(
                         "  ".join(
                             (
@@ -628,9 +638,12 @@ def run_command(command: "Iterable[str] | str") -> bool:
                     except Exception as e:
                         log.error(e)
                         return False
-                    log.send("Total:")
-                    for font_sign, ss in sorted(font_sign__ss.items()):
-                        _send_assinfo(font_sign, len(ss))
+
+                    if len(_path_tuple) > 1:
+                        log.send("Total:")
+                        for font_sign, ss in sorted(font_sign__ss.items()):
+                            _send_assinfo(font_sign, len(ss))
+
                 case Cmd_type.fontinfo:
                     for _font in itertools.chain.from_iterable(
                         load_fonts(_path) for _path in _path_tuple

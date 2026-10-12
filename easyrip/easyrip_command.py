@@ -306,7 +306,7 @@ class Cmd_type(enum.Enum):
     )
     mediainfo = Cmd_type_val(
         ("mediainfo",),
-        param="<<path> | 'fd' | 'cfd'>",
+        param="<<path> | 'fd' | 'cfd'> [-json <0|1>]",
         description="Get the media info by the Media_info class",
         childs=(
             Cmd_type_val(("fd",)),

@@ -16,7 +16,7 @@ class Stream_error(Mlang_exception):
 
 @dataclass(slots=False, kw_only=True)
 class Stream_info:
-    _org_data: dict[Any, Any] = field(default_factory=dict)
+    _org_data: dict[str, Any] = field(default_factory=dict)
 
     index: int
 
@@ -55,6 +55,11 @@ class Attachment_info(Stream_info):
 
 
 @dataclass(slots=True, kw_only=True)
+class Chapter_info:
+    _org_data: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(slots=True, kw_only=True)
 class Media_info:
     _org_streams: list[JsonObj]
     video: list[Video_info] = field(default_factory=list[Video_info])
@@ -62,6 +67,7 @@ class Media_info:
     subtitle: list[Stream_info] = field(default_factory=list[Stream_info])
     attachment: list[Attachment_info] = field(default_factory=list[Attachment_info])
     other_streams: list[Stream_info] = field(default_factory=list[Stream_info])
+    chapter: list[Chapter_info] = field(default_factory=list[Chapter_info])
 
     @property
     def streams(self) -> list[Stream_info]:
@@ -84,7 +90,8 @@ class Media_info:
             "-v",
             "0",
             "-show_streams",
-            "-print_format",
+            "-show_chapters",
+            "-of",
             "json",
             path,
         ]
@@ -181,5 +188,15 @@ class Media_info:
 
                 case _:
                     media_info.other_streams.append(stream_info)
+
+        del streams
+
+        chapters = _info.get("chapters", [])
+
+        if not type_match(chapters, list[JsonObj]):
+            raise Stream_error("Chapters type error: {}", obj_fmt(chapters))
+
+        for chapter in chapters:
+            media_info.chapter.append(Chapter_info(_org_data=chapter))
 
         return media_info
