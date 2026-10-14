@@ -84,7 +84,7 @@ def subset(
     # 解析 ASS 并生成子字符集
     font_sign__subset_str: dict[tuple[str, Font_type], dict[str, str]] = {}
     for _ass_path in sub_path_list:
-        path_and_sub = Ass(_ass_path := Path(_ass_path))
+        path_and_sub = Ass.from_path(_ass_path := Path(_ass_path))
         _ass_path_abs = str(_ass_path.absolute())
 
         # Styles

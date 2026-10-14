@@ -628,7 +628,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         for _path in _path_tuple:
                             log.send(_path)
                             for font_sign, ss in Ass.analysis_font_info(
-                                _path, use_libass_spec=use_libass_spec
+                                Path(_path), use_libass_spec=use_libass_spec
                             ).items():
                                 _send_assinfo(font_sign, len(ss))
                                 if font_sign in font_sign__ss:

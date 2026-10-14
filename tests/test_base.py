@@ -391,7 +391,7 @@ class TestSubset(unittest.TestCase):
         log.info(
             f"Test ASS class {TEST_ASS_NUMBER} times: {
                 timeit.timeit(
-                    lambda: Ass('test.zh-Hans.ass').__str__(
+                    lambda: Ass.from_path('test.zh-Hans.ass').__str__(
                         drop_non_render=True,
                         drop_unkow_data=True,
                         drop_fonts=False,

@@ -669,11 +669,7 @@ class Ass_generate_error(Mlang_exception):
 
 
 class Ass:
-    def __init__(self, path: str | Path) -> None:
-        path = Path(path)
-        if not path.is_file():
-            raise Ass_generate_error("Not a file: {}", path)
-
+    def __init__(self, text: str) -> None:
         self.script_info: Script_info = Script_info()
         self.styles: Styles = Styles()
         self.attachments: Attachments = Attachments()
@@ -691,7 +687,7 @@ class Ass:
         state: State = State.unknown
         new_unknown_data: Unknown_data | None = None
 
-        for line in filter(bool, map(str.strip, read_text(path).splitlines())):
+        for line in filter(bool, map(str.strip, text.splitlines())):
             try:
                 if line.startswith("[") and line.endswith("]"):
                     if new_unknown_data is not None:
@@ -838,6 +834,13 @@ class Ass:
 
         if new_unknown_data is not None:
             self.unknown_data.append(new_unknown_data)
+
+    @classmethod
+    def from_path(cls, path: Path | str, /) -> Self:
+        path = Path(path)
+        if not path.is_file():
+            raise Ass_generate_error("Not a file: {}", path)
+        return cls(read_text(path))
 
     def __str__(
         self,
@@ -1022,8 +1025,9 @@ class Ass:
         *,
         use_libass_spec: bool = True,
     ):
-        if isinstance(ass, str):
-            ass = Path(ass)
+        """:param ass: Ass: ASS obj, Path: file path, str: ASS text"""
         if isinstance(ass, Path):
+            ass = cls.from_path(ass)
+        elif isinstance(ass, str):
             ass = cls(ass)
         return ass.get_font_info(use_libass_spec=use_libass_spec)

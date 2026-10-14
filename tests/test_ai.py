@@ -130,7 +130,7 @@ class SelfContainedTestCase(unittest.TestCase):
 
 class TestGeneratedSubtitle(SelfContainedTestCase):
     def test_ass_round_trip_and_font_analysis(self) -> None:
-        ass = Ass(self.write_ass())
+        ass = Ass.from_path(self.write_ass())
 
         self.assertEqual(len(ass.styles.data), 1)
         self.assertEqual(len(ass.events.data), 2)
@@ -157,12 +157,12 @@ class TestGeneratedSubtitle(SelfContainedTestCase):
 
     def test_ass_rejects_missing_or_invalid_files(self) -> None:
         with self.assertRaises(Ass_generate_error):
-            Ass(self.work_dir / "missing.ass")
+            Ass.from_path(self.work_dir / "missing.ass")
 
         invalid_ass = self.work_dir / "invalid.ass"
         invalid_ass.write_text("[Events]\nFormat: Layer\n", encoding="utf-8")
         with self.assertRaises(Ass_generate_error):
-            Ass(invalid_ass)
+            Ass.from_path(invalid_ass)
 
     def test_subset_writes_subtitle_when_fonts_are_unavailable(self) -> None:
         source = self.write_ass()
