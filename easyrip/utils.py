@@ -30,6 +30,7 @@ from collections.abc import (
 from dataclasses import asdict, is_dataclass
 from functools import partial
 from numbers import Number
+from types import GenericAlias
 from typing import (
     TYPE_CHECKING,
     Annotated,
@@ -45,6 +46,7 @@ from typing import (
     Required,
     TypeAliasType,
     TypeGuard,
+    Union,
     cast,
     get_args,
     get_origin,
@@ -59,6 +61,12 @@ from .global_val import PROJECT_TITLE
 
 if TYPE_CHECKING:
     from pathlib import Path
+
+if sys.version_info >= (3, 15):
+    from typing import TypeForm
+else:
+    TypeForm = type
+
 
 BASE62 = string.digits + string.ascii_letters
 
@@ -443,6 +451,8 @@ def non_ascii_str_len(s: str) -> int:
 
 
 @overload
+def type_match[T](val: Any, t: "TypeForm[T]") -> TypeGuard[T]: ...
+@overload
 def type_match[T](val: Any, t: type[T] | TypeAliasType) -> TypeGuard[T]: ...
 @overload
 def type_match(val: Any, t: object) -> bool: ...
@@ -745,7 +755,7 @@ def obj_fmt(
             )
         )
 
-    if isinstance(obj, Iterable):
+    if isinstance(obj, Iterable) and not isinstance(obj, TypeAliasType | GenericAlias):
         obj_str = str(obj)
         match obj:
             case tuple():
@@ -795,11 +805,14 @@ def obj_fmt(
             color = const_color
         case Number():
             color = num_color
-        case type():
+        case type() | TypeAliasType() | GenericAlias():
             color = type_color
             obj = obj.__name__
         case e if isinstance(e, enum.Enum):
-            return f"\x1b[{type_color}m{e.__class__.__name__}{def_cs}.\x1b[{const_color}m{e.value}{def_cs}"
+            return f"\x1b[{type_color}m{e.__class__.__name__}{def_cs}.\x1b[{const_color}m{e.name}{def_cs}"
         case _:
             color = obj_color
+            if sys.version_info >= (3, 14):
+                if isinstance(obj, Union):
+                    color = type_color
     return f"\x1b[{color}m{obj}{def_cs}"

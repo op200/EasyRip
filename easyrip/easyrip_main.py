@@ -614,7 +614,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
                     )
 
                     def _send_assinfo(
-                        font_sign: tuple[str, Font_type], ss_len: int, /
+                        font_sign: tuple[str, "Font_type"], ss_len: int, /
                     ) -> None:
                         show_chars_len_log_str = ""
                         if show_chars_len:

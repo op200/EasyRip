@@ -154,7 +154,7 @@ def translate_subtitles(
     res_file_list: Final[list[tuple[Path, str]]] = []
     res_file_dict: Final[dict[int, tuple[Path, str]]] = {}
 
-    def _tr(index: int, path: Path, org_text: str) -> None:
+    def _tr(index: int, path: "Path", org_text: str) -> None:
         log.info('Start translating file "{}"', path)
         res_file_dict[index] = (
             path,
