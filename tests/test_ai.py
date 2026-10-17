@@ -85,6 +85,8 @@ class SelfContainedTestCase(unittest.TestCase):
     def tearDown(self) -> None:
         Ripper.ripper_list.clear()
         self._temp_dir.cleanup()
+        config.init()
+        log.debug_num = 0
 
     def write_ass(self, name: str = "generated.zh-Hans.ass") -> Path:
         path = self.work_dir / name
