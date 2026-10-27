@@ -816,3 +816,10 @@ def obj_fmt(
                 if isinstance(obj, Union):
                     color = type_color
     return f"\x1b[{color}m{obj}{def_cs}"
+
+
+_ERASE_ANSI_COLOR_PATTERN: Final = re.compile(r"\x1b\[[0-9;:]*m")
+
+
+def erase_ansi_color(s: str) -> str:
+    return _ERASE_ANSI_COLOR_PATTERN.sub("", s)

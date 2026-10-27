@@ -25,7 +25,14 @@ from ..easyrip_mlang import (
     gettext,
     translate_subtitles,
 )
-from ..utils import get_base62_time, obj_fmt, terminal_progress, title, type_match
+from ..utils import (
+    erase_ansi_color,
+    get_base62_time,
+    obj_fmt,
+    terminal_progress,
+    title,
+    type_match,
+)
 from .media_info import Media_info, Stream_error
 from .param import (
     FONT_SUFFIX_SET,
@@ -295,20 +302,6 @@ class Ripper:
             log.debug(f"-track-name <- {_track_name_org_str!r}", is_format=False)
             log.debug(f"-track-name -> {track_name_list!r}", is_format=False)
 
-        mkv_all_need_opt_str: str = (
-            ("".join(f"--track-name {track_name} " for track_name in track_name_list))
-            + (
-                f"--chapters {chapters} "
-                if (chapters := self.option_map.get("chapters"))
-                else ""
-            )
-            + (
-                _mkvmerge_params + " "
-                if (_mkvmerge_params := self.option_map.get("mkvmerge-params"))
-                else ""
-            )
-        )
-
         if muxer := self.option_map.get("muxer"):
             muxer = Ripper.Muxer(muxer)
 
@@ -353,7 +346,26 @@ class Ripper:
                                 if force_fps and only_mux_sub_file_list is None
                                 else ""
                             )
-                            + mkv_all_need_opt_str
+                            + (
+                                "".join(
+                                    f"--track-name {track_name} "
+                                    for track_name in track_name_list
+                                )
+                                + (
+                                    f"--chapters {chapters} "
+                                    if (chapters := self.option_map.get("chapters"))
+                                    else ""
+                                )
+                                + (
+                                    _mkvmerge_params + " "
+                                    if (
+                                        _mkvmerge_params := self.option_map.get(
+                                            "mkvmerge-params"
+                                        )
+                                    )
+                                    else ""
+                                )
+                            )
                             + (
                                 " ".join(
                                     (
@@ -502,19 +514,13 @@ class Ripper:
                                 _encoder_format_str += f" -rem {_audio_info.index + 1}"
                         else:
                             _encoder_format_str = (
-                                'mkvmerge -o "{output}" '
-                                + mkv_all_need_opt_str
-                                + '--no-audio "{input}"'
+                                'mkvmerge -o "{output}" --no-audio "{input}"'
                             )
                     case "copy":
                         _encoder_format_str = (
                             'MP4Box -add "{input}" -new "{output}"'
                             if muxer == Ripper.Muxer.mp4
-                            else (
-                                'mkvmerge -o "{output}" '
-                                + mkv_all_need_opt_str
-                                + '"{input}"'
-                            )
+                            else 'mkvmerge -o "{output}" "{input}"'
                         )
                 if _encoder_format_str is not None:
                     encoder_format_str_list = [_encoder_format_str]
@@ -1087,15 +1093,15 @@ class Ripper:
             else ""
         )
         log.write_html_log(
-            '<hr style="color:aqua;margin:4px 0 0;">'
-            '<div style="background-color:#b4b4b4;padding:0 1rem;">'
-            f'<span style="color:green;">{run_start_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:aqua;">{gettext("Start")}{run_sign}</span><br>'
-            f'{gettext("Input file pathname")}: <span style="color:darkcyan;">"{self.input_path_list[0]}"</span><br>'
-            f'{gettext("Output directory")}: <span style="color:darkcyan;">"{self.output_dir}"</span><br>'
-            f'{gettext("Temporary file name")}: <span style="color:darkcyan;">"{temp_name}"</span><br>'
-            f'{gettext("Output file name")}: <span style="color:darkcyan;">"{output_filename}"</span><br>'
+            '<hr style="color:aqua;margin:4px 0 0">'
+            '<div style="background-color:#b4b4b4;padding:0 1rem">'
+            f'<span style="color:green">{run_start_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:aqua">{gettext("Start")}{run_sign}</span><br>'
+            f'{gettext("Input file pathname")}: <span style="color:darkcyan">"{self.input_path_list[0]}"</span><br>'
+            f'{gettext("Output directory")}: <span style="color:darkcyan">"{self.output_dir}"</span><br>'
+            f'{gettext("Temporary file name")}: <span style="color:darkcyan">"{temp_name}"</span><br>'
+            f'{gettext("Output file name")}: <span style="color:darkcyan">"{output_filename}"</span><br>'
             "Ripper:<br>"
-            f'<span style="white-space:pre-wrap;color:darkcyan;">{self}</span>'
+            f'<span style="white-space:pre-wrap;color:darkcyan">{erase_ansi_color(str(self))}</span>'
             # "</div>"
         )
 
@@ -1244,7 +1250,7 @@ class Ripper:
                         break
 
         log.write_html_log(
-            f'{gettext("Encoding speed")}: <span style="color:darkcyan;">{speed}</span><br>'
+            f'{gettext("Encoding speed")}: <span style="color:darkcyan">{speed}</span><br>'
         )
 
         # 获取 ffmpeg report 中的报错
@@ -1536,11 +1542,11 @@ class Ripper:
         # 写入日志
         run_end_time = datetime.now()
         log.write_html_log(
-            f'{gettext("File size")}: <span style="color:darkcyan;">{file_size} MiB</span><br>'
-            f'{gettext("Time consuming")}: <span style="color:darkcyan;">{str(run_end_time - run_start_time)[:-4]}</span><br>'
-            f'<span style="color:green;">{run_end_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:brown;">{gettext("End")}{run_sign}</span><br>'
+            f'{gettext("File size")}: <span style="color:darkcyan">{file_size} MiB</span><br>'
+            f'{gettext("Time consuming")}: <span style="color:darkcyan">{str(run_end_time - run_start_time)[:-4]}</span><br>'
+            f'<span style="color:green">{run_end_time.strftime("%Y.%m.%d %H:%M:%S.%f")[:-4]}</span> <span style="color:brown">{gettext("End")}{run_sign}</span><br>'
             "</div>"
-            '<hr style="color:brown;margin:0 0 6px;">'
+            '<hr style="color:brown;margin:0 0 6px">'
         )
 
         # 删除临时文件
