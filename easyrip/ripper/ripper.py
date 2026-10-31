@@ -200,7 +200,7 @@ class Ripper:
 
         ff_input_option: list[str]
         ff_input_option = ["-"] if is_pipe_input else ['"{input}"']
-        ff_stream_option: list[str] = ["0:v"]
+        ff_stream_option: list[str] = ["0:v?"]
         ff_vf_option: list[str] = (
             s.split(",") if (s := self.option_map.get("vf")) else []
         )
@@ -564,7 +564,7 @@ class Ripper:
                     _flac_encode_str_list.extend(
                         [
                             (
-                                f"flac -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
+                                f"flac --ignore-chunk-sizes -j 32 -8 -e -p -l {'19' if _audio_info.sample_rate > 48000 else '12'} "
                                 f'-o "{_new_output_str}.flac" "{_new_output_str}.wav"'
                             ),
                             f'{cmd_head_del} "{_new_output_str}.wav"',
@@ -1110,7 +1110,7 @@ class Ripper:
 
         self._progress["frame_count"] = 0
         self._progress["duration"] = 0
-        if self.input_path_list[0].suffix != ".vpy":
+        if self.input_path_list[0].suffix != ".vpy" and self.media_info.video:
             self._progress["frame_count"] = self.media_info.video[0].nb_frames
             self._progress["duration"] = self.media_info.video[0].duration
 
@@ -1164,7 +1164,8 @@ class Ripper:
                         easyrip_web.http_server.Event.progress.popleft()
 
                     if (
-                        self.media_info.video[0].nb_frames
+                        self.media_info.video
+                        and self.media_info.video[0].nb_frames
                         and self._progress["frame"] != -1
                     ):
                         terminal_progress.set(
@@ -1175,7 +1176,8 @@ class Ripper:
                             )
                         )
                     elif (
-                        self.media_info.video[0].duration > 0
+                        self.media_info.video
+                        and self.media_info.video[0].duration > 0
                         and self._progress["out_time_us"]
                     ):
                         terminal_progress.set(

@@ -210,13 +210,13 @@ class Title:
         self.change_title(
             " - ".join(
                 s
-                for s in (self.temp_status, self.progress, res_log, PROJECT_TITLE)
+                for s in (self.temp_status, self.progress, res_log, self.project_title)
                 if s
             )
         )
 
 
-title = Title()
+title = Title(PROJECT_TITLE)
 """本项目用的单例"""
 
 

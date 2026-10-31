@@ -1,3 +1,4 @@
+import atexit
 import sys
 from threading import Thread
 from typing import TYPE_CHECKING, NoReturn
@@ -30,12 +31,19 @@ from .easyrip_prompt import (
     easyrip_prompt,
 )
 from .global_val import C_D, C_H, C_Z
+from .utils import terminal_progress
 
 if TYPE_CHECKING:
     from collections.abc import Iterable
 
 
+def _before_exit() -> None:
+    terminal_progress.clear()
+
+
 def run() -> NoReturn:
+    atexit.register(_before_exit)
+
     init(True)
 
     def _print_ver() -> None:

@@ -349,6 +349,7 @@ class Event_fmt_it(enum.Enum):
 
     # 兼容旧版和不规范格式
     Marked = Layer
+    Effects = Effect
     Actor = Name
 
 
@@ -731,10 +732,16 @@ class Ass:
                             if len(format_order) != 10:
                                 raise Ass_generate_error("Event Format len != 10")
 
+                            _old_fmt_log = "The ASS Events Format version too old: {}"
                             if "Marked" in formats_tuple:
                                 log.error(
-                                    "The ASS Events Format version too old: {}",
+                                    _old_fmt_log,
                                     "It used 'Marked' instead of 'Layer'. 'Marked' has been replaced with 'Layer', which will result in irreversible info loss",
+                                )
+                            if "Effects" in formats_tuple:
+                                log.error(
+                                    _old_fmt_log,
+                                    "It used 'Effects' instead of 'Effect'. 'Effects' has been replaced with 'Effect', which will result in irreversible info loss",
                                 )
 
                             self.events.fmt_order = format_order
