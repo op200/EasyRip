@@ -50,7 +50,7 @@ class Log:
     default_background_color: int = 49
     time_color: int = 32
     debug_color: int = 32
-    info_color: int = 34
+    info_color: int = 36
     warning_color: int = 33
     error_color: int = 31
     send_color: int = 35
@@ -116,8 +116,8 @@ class Log:
                 self.debug_color = self.time_color = 92
 
             if (
-                self.default_background_color == 44
-                or self.default_foreground_color == 34
+                self.default_background_color == 46
+                or self.default_foreground_color == 36
             ):
                 self.info_color = 96
 

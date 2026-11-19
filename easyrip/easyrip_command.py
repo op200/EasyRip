@@ -411,9 +411,7 @@ class Opt_type(enum.Enum):
             "Preset name:\n"
             f"{Preset_name.to_help_string('  ')}"
         ),
-        childs=(
-            Cmd_type_val(tuple(Preset_name._value2member_map_), is_no_doc_child=True),
-        ),
+        childs=(Cmd_type_val(tuple(Preset_name._member_map_), is_no_doc_child=True),),
     )
     _pipe = Cmd_type_val(
         ("-pipe",),

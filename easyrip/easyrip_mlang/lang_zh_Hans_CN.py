@@ -282,7 +282,7 @@ LANG_MAP: Lang_map = {
     "Time consuming": "耗时",
     "End": "结束",
     # region ripper
-    "'{}' is not a member of preset": "'{}' 不存在于 preset",
+    "'{}' is not a member of {}": "'{}' 不存在于 {}",
     "Failed to add Ripper: {}": "添加 Ripper 失败: {}",
     "'{}' is not a valid '{}', set to default value '{}'. Valid options are: {}": "'{}' 不存在于 '{}', 已设为默认值 '{}'。有以下值可用: {}",
     "The preset custom must have custom:format or custom:template": "custom 预设必须要有 custom:format 或 custom:template",

@@ -64,7 +64,7 @@ class Preset_name(enum.Enum):
                 lambda acc, add: (
                     f"{acc}{' ' if add.startswith(acc.split()[-1][:4]) else '\n'}{add}"
                 ),
-                tuple[str, ...](cls._value2member_map_),
+                cls._value2member_map_,
             ),
             prefix=prefix,
         )

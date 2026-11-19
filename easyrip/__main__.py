@@ -1,7 +1,7 @@
 import atexit
 import sys
 from threading import Thread
-from typing import TYPE_CHECKING, NoReturn
+from typing import TYPE_CHECKING, Never
 
 from prompt_toolkit import ANSI, prompt
 from prompt_toolkit.application import get_app
@@ -41,7 +41,7 @@ def _before_exit() -> None:
     terminal_progress.clear()
 
 
-def run() -> NoReturn:
+def run() -> Never:
     atexit.register(_before_exit)
 
     init(True)

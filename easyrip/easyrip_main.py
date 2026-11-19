@@ -447,8 +447,8 @@ def run_command(command: "Iterable[str] | str") -> bool:
                     case Opt_type._preset:
                         if not cmd_list[2]:
                             log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
-                        elif cmd_list[2] in Ripper.Preset_name._value2member_map_:
-                            _preset = Ripper.Preset_name(cmd_list[2])
+                        elif cmd_list[2] in Ripper.Preset_name.__members__:
+                            _preset = Ripper.Preset_name[cmd_list[2]]
                             _param_default_dict = _preset.get_param_default_dict()
                             _param_name_set = _preset.get_param_name_set()
                             if not any((_param_default_dict, _param_name_set)):
@@ -485,7 +485,55 @@ def run_command(command: "Iterable[str] | str") -> bool:
                                     ),
                                 )
                         else:
-                            log.error("'{}' is not a member of preset", cmd_list[2])
+                            log.error(
+                                "'{}' is not a member of {}", cmd_list[2], "preset"
+                            )
+
+                    case Opt_type._c_a:
+                        if not cmd_list[2]:
+                            log.send(_want_doc_cmd_type.value.to_doc(), is_format=False)
+                        elif cmd_list[2] in Ripper.Audio_codec.__members__:
+                            _a_enc = Ripper.Audio_codec[cmd_list[2]]
+                            _param_default_dict = _a_enc.get_param_default_dict()
+                            _param_name_set = _a_enc.get_param_name_set()
+                            if not any((_param_default_dict, _param_name_set)):
+                                log.send(
+                                    "The audio codec '{}' has no separate help",
+                                    cmd_list[2],
+                                )
+                            if _param_name_set:
+                                log.send(
+                                    "Params that can be directly used:\n{}",
+                                    textwrap.indent(
+                                        "\n".join(f"-{n}" for n in _param_name_set),
+                                        prefix="  ",
+                                    ),
+                                )
+                            if _param_default_dict:
+                                max_name_len = (
+                                    max(len(str(n)) for n in _param_default_dict) + 1
+                                )
+                                log.send(
+                                    "Default val:\n{}",
+                                    textwrap.indent(
+                                        "\n".join(
+                                            f"{f'-{n}':>{max_name_len}}  {v}"
+                                            for n, v in _param_default_dict.items()
+                                        ),
+                                        prefix="  ",
+                                    ),
+                                )
+                                log.send(
+                                    "  FFmpeg format:\n    {}",
+                                    ":".join(
+                                        f"{n}={v}"
+                                        for n, v in _param_default_dict.items()
+                                    ),
+                                )
+                        else:
+                            log.error(
+                                "'{}' is not a member of {}", cmd_list[2], "audio codec"
+                            )
 
                     case None:
                         log.error("'{}' does not exist", cmd_list[1])
@@ -1067,14 +1115,14 @@ def run_command(command: "Iterable[str] | str") -> bool:
             if not preset_name:
                 log.warning("Missing '-preset' option, set to default value 'custom'")
                 preset_name = "custom"
-            if preset_name not in Ripper.Preset_name._value2member_map_:
-                log.error("'{}' is not a member of preset", preset_name)
+            if preset_name not in Ripper.Preset_name.__members__:
+                log.error("'{}' is not a member of {}", preset_name, "preset")
                 return False
 
-            preset_name = Ripper.Preset_name(preset_name)
+            preset_name = Ripper.Preset_name[preset_name]
 
             if (
-                preset_name is Ripper.Preset_name.custom
+                preset_name == Ripper.Preset_name.custom
                 and easyrip_web.http_server.Event.is_run_command
             ):
                 log.error(
