@@ -599,6 +599,7 @@ class Opt_type(enum.Enum):
             "Specify the chapters file to add\n"
             "Supports the same iteration syntax as '-o'"
         ),
+        childs=(Cmd_type_val(("auto",), is_no_doc_child=True),),
     )
     _custom_template = _custom = _custom_format = Cmd_type_val(
         ("-custom", "-custom:format", "-custom:template"),

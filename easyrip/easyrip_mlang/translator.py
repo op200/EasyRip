@@ -41,7 +41,7 @@ def translate_subtitles(
     for f in directory.iterdir():
         if (
             not f.is_file()
-            or f.suffix not in {".ass", ".ssa", ".srt"}
+            or f.suffix.lower() not in {".ass", ".ssa", ".srt"}
             or (
                 file_intersection_selector is not None
                 and not all(map(f.samefile, file_intersection_selector))

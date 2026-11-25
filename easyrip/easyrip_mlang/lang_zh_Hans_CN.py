@@ -233,11 +233,12 @@ LANG_MAP: Lang_map = {
         "例如 -p subset 或 -p copy"
     ),
     # region utils
+    "Can not find the BOM from {}. Defaulting to UTF-8": "在 {} 中无法找到 BOM。默认 UTF-8",
+    # region main
+    "Check env...": "检测环境中...",
     "{} has new version ({} -> {}). Suggest upgrading it: {}": "检测到 {} 有新版本 ({} -> {})。建议更新: {}",
     "{} not found, download it: {}": "没找到 {}, 在此下载: {}",
     "flac ver ({}) must >= 1.5.0": "flac 版本 ({}) 必须 >= 1.5.0",
-    # region main
-    "Check env...": "检测环境中...",
     "Total:": "总计:",
     # "The MediaInfo must be CLI ver": "MediaInfo 必须是 CLI 版本",
     "Easy Rip command": "Easy Rip 命令",
@@ -257,6 +258,9 @@ LANG_MAP: Lang_map = {
     "Missing '-preset' option, set to default value 'custom'": "缺少 '-preset' 选项, 自动设为默认值 'custom'",
     "Input file number == 0": "输入的文件数量为 0",
     'The file "{}" does not exist': '文件 "{}" 不存在',
+    "Found multiple chapter files (XML takes precedence over TXT): {}": "找到多个章节文件 (XML 优先于 TXT): {}",
+    "Chapter file not found": "没找到章节文件",
+    "The '-chapters' file {} does not exist": "没找到 '-chapters' 指定的文件 {}",
     "No subtitle file exist as -sub auto when -i {} -o:dir {}": "-sub auto 没有在 -i {} -o:dir {} 中找到对应字幕文件",
     "The new value is the same as the old value, cancel the modification": "新值与旧值相同, 取消修改",
     "'{}' successfully: {}": "'{}' 成功: {}",

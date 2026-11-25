@@ -1166,6 +1166,13 @@ def run_command(command: "Iterable[str] | str") -> bool:
 
                         return _iterator_fmt_replace
 
+                    input_path_list: list[Path] = list(
+                        map(Path, input_pathname.split("?"))
+                    )
+                    for path in input_path_list:
+                        if not path.exists():
+                            log.warning('The file "{}" does not exist', path)
+
                     try:
                         new_output_basename = (
                             None
@@ -1178,29 +1185,56 @@ def run_command(command: "Iterable[str] | str") -> bool:
                         )
 
                         if chapters := option_map.get("chapters"):
-                            chapters = re.sub(
-                                r"\?\{([^}]*)\}",
-                                _create_iterator_fmt_replace(fmt_time, i),
-                                chapters,
-                            )
+                            if chapters == "auto":
+                                _chapter_file: Path | None = None
 
-                            if not Path(chapters).is_file():
-                                log.warning(
-                                    "The '-chapters' file {} does not exist", chapters
+                                for _path in (
+                                    output_dir or Path.cwd().resolve()
+                                ).iterdir():
+                                    if (
+                                        _path.suffix.lower()
+                                        in {
+                                            ".xml",
+                                            ".txt",
+                                        }
+                                        and _path.stem
+                                        == input_path_list[0].stem + ".chapter"
+                                    ):
+                                        if _chapter_file is None:
+                                            _chapter_file = _path
+                                            continue
+                                        log.warning(
+                                            "Found multiple chapter files (XML takes precedence over TXT): {}",
+                                            f'"{_chapter_file}" & "{_path}"',
+                                        )
+                                        if (
+                                            _chapter_file.suffix.lower() == ".txt"
+                                            and _path.suffix.lower() == ".xml"
+                                        ):
+                                            _chapter_file = _path
+
+                                if _chapter_file is None:
+                                    log.error("Chapter file not found")
+                                else:
+                                    new_option_map["chapters"] = str(_chapter_file)
+                            else:
+                                chapters = re.sub(
+                                    r"\?\{([^}]*)\}",
+                                    _create_iterator_fmt_replace(fmt_time, i),
+                                    chapters,
                                 )
 
-                            new_option_map["chapters"] = chapters
+                                if not Path(chapters).is_file():
+                                    log.warning(
+                                        "The '-chapters' file {} does not exist",
+                                        chapters,
+                                    )
+
+                                new_option_map["chapters"] = chapters
 
                     except ValueError as e:
                         log.error("Unsupported param: {}", e)
                         return False
-
-                    input_path_list: list[Path] = list(
-                        map(Path, input_pathname.split("?"))
-                    )
-                    for path in input_path_list:
-                        if not path.exists():
-                            log.warning('The file "{}" does not exist', path)
 
                     _input_basename = Path(input_path_list[0].name)
 
@@ -1217,7 +1251,7 @@ def run_command(command: "Iterable[str] | str") -> bool:
 
                             for _path in (output_dir or Path.cwd().resolve()).iterdir():
                                 if (
-                                    _path.suffix == ".ass"
+                                    _path.suffix.lower() == ".ass"
                                     and _path.stem.startswith(_input_prefix)
                                     and (
                                         len(sub_map_list) == 1
@@ -1385,7 +1419,7 @@ def init(is_first_run: bool = False) -> None:
         for f in itertools.chain(Path().iterdir(), config._config_dir.iterdir())
         if f.stem.startswith("lang_")
     ):
-        match file.suffix:
+        match file.suffix.lower():
             case ".json":
                 lang_map = dict(json.loads(read_text(file)))
             case ".toml":

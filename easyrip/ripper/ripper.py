@@ -196,7 +196,9 @@ class Ripper:
         if vpy_pathname and not Path(vpy_pathname).exists():
             log.error('The file "{}" does not exist', vpy_pathname)
 
-        is_pipe_input = bool(self.input_path_list[0].suffix == ".vpy" or vpy_pathname)
+        is_pipe_input = bool(
+            self.input_path_list[0].suffix.lower() == ".vpy" or vpy_pathname
+        )
 
         ff_input_option: list[str]
         ff_input_option = ["-"] if is_pipe_input else ['"{input}"']
@@ -422,7 +424,7 @@ class Ripper:
 
         def get_vs_ff_cmd(enc_opt: str) -> str:
             vspipe_input: str = ""
-            if self.input_path_list[0].suffix == ".vpy":
+            if self.input_path_list[0].suffix.lower() == ".vpy":
                 vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} "{{input}}" - |'
             elif vpy_pathname:
                 vspipe_input = f'vspipe -c y4m {" ".join(f'-a "{k}={v}"' for k, v in pipe_gvar_dict.items())} -a "input={{input}}" "{vpy_pathname}" - |'
@@ -914,7 +916,7 @@ class Ripper:
                 _other_sub_list: Final[list[Path]] = []
 
                 for path in itertools.chain(self.input_path_list, add_tr_file_list):
-                    if path.suffix == ".ass":
+                    if path.suffix.lower() == ".ass":
                         _ass_list.append(path)
                     else:
                         _other_sub_list.append(path)

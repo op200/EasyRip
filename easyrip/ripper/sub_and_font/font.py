@@ -68,7 +68,7 @@ def load_fonts(
         try:
             for font in (
                 list[TTFont](TTCollection(file=file, lazy=lazy))
-                if suffix == ".ttc"
+                if suffix.lower() == ".ttc"
                 else [TTFont(file=file, lazy=lazy)]
             ):
                 skip_this_font: bool = False
